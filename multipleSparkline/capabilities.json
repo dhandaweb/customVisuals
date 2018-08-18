@@ -1,0 +1,149 @@
+{
+    "dataRoles": [
+        {
+            "displayName": "Actual",
+            "name": "actual",
+            "kind": "Measure",
+            "requiredTypes": [
+                {
+                    "integer": true
+                },
+                {
+                    "numeric": true
+                }
+            ],
+            "preferredTypes": [
+                {
+                    "numeric": true
+                }
+            ]
+        },
+        {
+            "displayName": "Target",
+            "name": "target",
+            "kind": "Measure",
+            "requiredTypes": [
+                {
+                    "integer": true
+                },
+                {
+                    "numeric": true
+                }
+            ],
+            "preferredTypes": [
+                {
+                    "numeric": true
+                }
+            ]
+        },
+        {
+            "displayName": "Period",
+            "name": "period",
+            "kind": "Grouping"
+
+        },
+        {
+            "displayName": "Group",
+            "name": "group",
+            "kind": "Grouping"
+        }
+    ],
+    "dataViewMappings": [
+        {
+            "table": {
+                "rows": {
+                    "select": [
+                        {
+                            "for": {
+                                "in": "period"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "group"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "actual"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "target"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "objects": {
+        "Actual": {
+            "displayName": "Actual",
+            "properties": {
+                "showActual": {
+                    "displayName": "Show Actual",
+                    "type": { "bool": true }
+                },
+                "actualHeader": {
+                    "displayName": "Actual Header",
+                    "type": { "text": true }
+                },
+                "showChange": {
+                    "displayName": "Show change",
+                    "type": { "bool": true }
+                },
+                "changeHeader": {
+                    "displayName": "Change header",
+                    "type": { "text": true }
+                },
+                "showPerChange": {
+                    "displayName": "Show per change",
+                    "type": { "bool": true }
+                },
+                "percentageChangeHeader": {
+                    "displayName": "Percentage change header",
+                    "type": { "text": true }
+                },
+                "showTotalChange": {
+                    "displayName": "Show total change",
+                    "type": { "bool": true }
+                },
+                "totalChangeHeader": {
+                    "displayName": "Tot change",
+                    "type": { "text": true }
+                }
+            }
+        },
+        "Target": {
+            "displayName": "Target",
+            "properties": {
+                "showTarget": {
+                    "displayName": "Show Target",
+                    "type": { "bool": true }
+                },
+                "targetHeader": {
+                    "displayName": "Header Text",
+                    "type": { "text": true }
+                },
+                "showVariance": {
+                    "displayName": "Show Variance",
+                    "type": { "bool": true }
+                },
+                "varianceHeader": {
+                    "displayName": "Variance Header",
+                    "type": { "text": true }
+                },
+                "showVariancePer": {
+                    "displayName": "Show % Variance",
+                    "type": { "bool": true }
+                },
+                "variancePerHeader": {
+                    "displayName": "Variance % Header",
+                    "type": { "text": true }
+                }
+            }
+        }
+    }
+} 
