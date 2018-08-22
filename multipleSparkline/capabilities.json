@@ -37,6 +37,24 @@
             ]
         },
         {
+            "displayName": "Additional",
+            "name": "additional",
+            "kind": "Measure",
+            "requiredTypes": [
+                {
+                    "integer": true
+                },
+                {
+                    "numeric": true
+                }
+            ],
+            "preferredTypes": [
+                {
+                    "numeric": true
+                }
+            ]
+        },
+        {
             "displayName": "Period",
             "name": "period",
             "kind": "Grouping"
@@ -53,14 +71,15 @@
             "table": {
                 "rows": {
                     "select": [
+
                         {
                             "for": {
-                                "in": "period"
+                                "in": "group"
                             }
                         },
                         {
                             "for": {
-                                "in": "group"
+                                "in": "period"
                             }
                         },
                         {
@@ -72,10 +91,33 @@
                             "for": {
                                 "in": "target"
                             }
+                        },
+                        {
+                            "for": {
+                                "in": "additional"
+                            }
                         }
                     ]
                 }
-            }
+            },
+            "conditions": [
+                {
+                    "actual": {
+                        "max": 1
+                    },
+                    "target": {
+                        "max": 1
+                    },
+                    "period": {
+                        "min": 0,
+                        "max": 1
+                    },
+                    "group": {
+                        "min": 0,
+                        "max": 1
+                    }
+                }
+            ]
         }
     ],
     "objects": {
@@ -142,6 +184,57 @@
                 "variancePerHeader": {
                     "displayName": "Variance % Header",
                     "type": { "text": true }
+                }
+            }
+        },
+        "Trend": {
+            "displayName": "Trend",
+            "properties": {
+                "show": {
+                    "displayName": "Trend",
+                    "type": { "bool": true }
+                },
+                "flipTrendDirection": {
+                    "displayName": "Flip Trend Direction",
+                    "type": { "bool": true }
+                },
+                "trendColor": {
+                    "displayName": "Trend Color Scheme",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "RedGreen",
+                                "displayName": "Red Green"
+                            },
+                            {
+                                "value": "GreenRed",
+                                "displayName": "GreenRed"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "Intensity": {
+            "displayName": "Intensity",
+            "properties": {
+                "show": {
+                    "displayName": "Intensity",
+                    "type": { "bool": true }
+                },
+                "intensityScale": {
+                    "displayName": "Intensity Scale",
+                    "type": { "text": true }
+                },
+                "intensityColor": {
+                    "displayName": "Intensity Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
                 }
             }
         }

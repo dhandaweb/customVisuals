@@ -8668,6 +8668,10 @@ var powerbi;
                     function VisualSettings() {
                         var _this = _super !== null && _super.apply(this, arguments) || this;
                         _this.dataPoint = new dataPointSettings();
+                        _this.IndicatorColor = {
+                            "RedGreen": ["red", "green"],
+                            "GreenRed": ["green", "red"]
+                        };
                         return _this;
                     }
                     return VisualSettings;
@@ -8933,15 +8937,26 @@ var powerbi;
                         this.varianceHeader = "Variance";
                         this.showVariancePer = true;
                         this.variancePerHeader = "% Variance";
-                        // console.log('Visual constructor', options);
+                        this.trendIndicator = true;
+                        this.trendColor = "GreenRed";
+                        this.trendColorOptions = {
+                            "RedGreen": ["red", "green"],
+                            "GreenRed": ["green", "red"]
+                        };
+                        this.intensity = true;
+                        this.intensityScale = "10,40 60,80";
+                        this.intensityColor = { solid: { color: "#F2C80F" } };
                         this.element = d3.select(options.element);
                         this.host = options.host;
                         this.tooltipServiceWrapper = multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
-                        console.log("calling cont");
+                        this.selectionManager = options.host.createSelectionManager();
                     }
                     Visual.prototype.update = function (options) {
-                        //console.log("updating", options.dataViews[0].metadata.objects);
                         var _this = this;
+                        this.columns = options.dataViews[0].metadata.columns;
+                        this.selectionManager.registerOnSelectCallback(function () {
+                            rows.style("opacity", 1);
+                        });
                         if (options.dataViews[0].metadata.objects) {
                             if (options.dataViews[0].metadata.objects["Actual"]) {
                                 var actObj = options.dataViews[0].metadata.objects["Actual"];
@@ -8977,12 +8992,30 @@ var powerbi;
                                 if (targetObj["variancePerHeader"] !== undefined)
                                     this.variancePerHeader = targetObj["variancePerHeader"];
                             }
+                            if (options.dataViews[0].metadata.objects["Trend"]) {
+                                var trendObj = options.dataViews[0].metadata.objects["Trend"];
+                                if (trendObj["show"] !== undefined)
+                                    this.trendIndicator = trendObj["show"];
+                                if (trendObj["flipTrendDirection"] !== undefined)
+                                    this.flipTrendDirection = trendObj["flipTrendDirection"];
+                                if (trendObj["trendColor"] !== undefined)
+                                    this.trendColor = trendObj["trendColor"];
+                            }
+                            if (options.dataViews[0].metadata.objects["Intensity"]) {
+                                var intensityObj = options.dataViews[0].metadata.objects["Intensity"];
+                                if (intensityObj["show"] !== undefined)
+                                    this.intensity = intensityObj["show"];
+                                if (intensityObj["intensityScale"] !== undefined)
+                                    this.intensityScale = intensityObj["intensityScale"];
+                                if (intensityObj["intensityColor"] !== undefined)
+                                    this.intensityColor = intensityObj["intensityColor"];
+                            }
                         }
                         this.hasTarget = false;
                         this.hasActual = false;
                         this.hasPeriod = false;
                         this.hasGroup = false;
-                        options.dataViews[0].metadata.columns.map(function (d, i) {
+                        this.columns.map(function (d, i) {
                             if (d.roles["target"]) {
                                 _this.hasTarget = true;
                                 _this.targetIndex = i;
@@ -9002,11 +9035,15 @@ var powerbi;
                             return d;
                         });
                         this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ value: 1001 });
-                        if (this.actualIndex)
+                        if (this.hasActual)
                             this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.actualIndex].format });
-                        else if (this.targetIndex)
+                        else if (this.hasTarget)
                             this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.targetIndex].format });
-                        var nestedData, data = [];
+                        var nestedData, data = [], identityData;
+                        options.dataViews[0].table.rows = options.dataViews[0].table.rows.map(function (d, i) {
+                            d.identity = options.dataViews[0].table.identity[i];
+                            return d;
+                        });
                         if (this.hasGroup && this.hasPeriod) {
                             nestedData = d3.nest()
                                 .key(function (d) { return d[_this.groupIndex]; })
@@ -9018,7 +9055,7 @@ var powerbi;
                                     values: options.dataViews[0].table.rows
                                 }];
                         }
-                        nestedData.map(function (d) {
+                        nestedData.map(function (d, i) {
                             var actual = _this.hasActual ? d.values[d.values.length - 1][_this.actualIndex] : 0;
                             var secondLastActual = _this.hasActual ? d.values[d.values.length - 2][_this.actualIndex] : 0;
                             var firstActual = _this.hasActual ? d.values[0][_this.actualIndex] : 0;
@@ -9038,7 +9075,8 @@ var powerbi;
                                 target: target,
                                 variance: actual - target,
                                 variancePer: (actual - target / target).toFixed(2),
-                                values: d.values
+                                values: d.values,
+                                identity: d.values[0].identity
                             });
                         });
                         this.element.style("overflow", "auto");
@@ -9049,7 +9087,6 @@ var powerbi;
                             .attr("style", "width:100%;")
                             .append("table")
                             .attr("style", "width:100%;text-align:left;border-spacing:0");
-                        console.log("Level 4");
                         if (this.hasActual === false) {
                             table
                                 .append("html")
@@ -9064,6 +9101,26 @@ var powerbi;
                             .enter()
                             .append("tr")
                             .style("background", function (d, i) { return i % 2 === 0 ? "#fff" : "#ececec"; });
+                        rows.on("click", function (d, i) {
+                            rows.each(function (e) {
+                                if (e.key === d.key)
+                                    d.isFiltered = !d.isFiltered;
+                                else
+                                    e.isFiltered = false;
+                            });
+                            var identity = d.values.map(function (d) { return d.identity; });
+                            var categoryColumn = {
+                                source: options.dataViews[0].table.columns[_this.groupIndex],
+                                values: null,
+                                identity: [d.identity]
+                            };
+                            var id = _this.host.createSelectionIdBuilder()
+                                .withCategory(categoryColumn, 0)
+                                .createSelectionId();
+                            _this.selectionManager.select(id);
+                            _this.setFilterOpacity(rows);
+                        });
+                        this.showIntensityCircle(rows, thead);
                         this.drawMetric(rows, thead);
                         this.drawSparkline(data, rows, thead);
                         this.drawBisectorToolTip();
@@ -9073,7 +9130,6 @@ var powerbi;
                         this.drawPerChange(rows, thead);
                         this.drawTotalChange(rows, thead);
                         this.showTrendIndicator(rows, thead);
-                        this.showIntensityCircle(rows, thead);
                         this.drawActual(rows, thead);
                         this.drawBullet(data, rows, thead);
                         this.drawTarget(rows, thead);
@@ -9081,6 +9137,19 @@ var powerbi;
                         this.drawVariancePer(rows, thead);
                         this.drawAdditionalFields(rows, thead);
                         this.updateRowStyle(tbody, thead);
+                    };
+                    Visual.prototype.setFilterOpacity = function (rows) {
+                        var anyFilter = false;
+                        rows.each(function (d) {
+                            if (d.isFiltered === true)
+                                anyFilter = true;
+                        });
+                        if (anyFilter) {
+                            rows.style("opacity", function (d) { return d.isFiltered ? 1 : 0.2; });
+                        }
+                        else {
+                            rows.style("opacity", 1);
+                        }
                     };
                     Visual.prototype.drawMetric = function (rows, thead) {
                         thead.append("th")
@@ -9191,50 +9260,63 @@ var powerbi;
                         }
                     };
                     Visual.prototype.showTrendIndicator = function (rows, thead) {
-                        thead.append("th")
-                            .append("span")
-                            .html(" ");
-                        var trendIndicator = rows
-                            .append("td")
-                            .append("svg")
-                            .attr("width", 20)
-                            .attr("height", 20);
-                        var triangleDown = d3.svg.symbol().type('triangle-down').size(70);
-                        trendIndicator
-                            .append("path")
-                            .attr('d', triangleDown)
-                            .attr('transform', function (d) {
-                            return "translate(10,12), rotate(" + d.trend + ")";
-                        });
+                        this.trendIndicator;
+                        var color = this.trendColorOptions[this.trendColor];
+                        if (this.trendIndicator === true) {
+                            thead.append("th")
+                                .append("span")
+                                .html(" ");
+                            var trendIndicator = rows
+                                .append("td")
+                                .append("svg")
+                                .attr("width", 20)
+                                .attr("height", 20);
+                            var triangleDirection = this.flipTrendDirection === false ? 'triangle-down' : 'triangle-up';
+                            var triangle = d3.svg.symbol().type(triangleDirection).size(70);
+                            trendIndicator
+                                .append("path")
+                                .attr('d', triangle)
+                                .attr('transform', function (d) {
+                                return "translate(10,12), rotate(" + d.trend + ")";
+                            })
+                                .style("fill", function (d) { return d.trend === 0 ? color[0] : color[1]; });
+                        }
                     };
                     Visual.prototype.showIntensityCircle = function (rows, thead) {
-                        var rangeArr = [10, 40, 60, 80];
-                        var threshold = 10;
-                        var colorRange = (d3.range(1, 10, (10 / (rangeArr.length - 1)))).concat([10]);
-                        var colorIntensityScale = d3.scale.threshold()
-                            .domain((rangeArr))
-                            .range(colorRange);
-                        thead.append("th")
-                            .append("span")
-                            .html(" ");
-                        var intensityCircle = rows
-                            .append("td")
-                            .append("svg")
-                            .attr("width", 20)
-                            .attr("height", 20)
-                            .append("circle")
-                            .attr("cx", 5)
-                            .attr("cy", 10)
-                            .attr("r", 5)
-                            .attr("fill", "red")
-                            .style("opacity", function (d) {
-                            var retVal;
-                            if (Math.abs(d.perChange) > threshold)
-                                retVal = colorIntensityScale(Math.abs(d.perChange));
-                            else
-                                return retVal = 0;
-                            return retVal / 10;
-                        });
+                        if (this.intensity === true) {
+                            var rangeArr = [10, 40, 60, 80];
+                            var threshold = 10;
+                            if (this.intensityScale.length > 0) {
+                                var rangeArrr = this.intensityScale.split(",");
+                                threshold = parseFloat(rangeArrr[0]);
+                                rangeArr = rangeArrr.map(function (d) { return parseFloat(d); }).concat([100]);
+                            }
+                            var colorRange = (d3.range(1, 10, (10 / (rangeArr.length - 1)))).concat([10]);
+                            var colorIntensityScale = d3.scale.threshold()
+                                .domain((rangeArr))
+                                .range(colorRange);
+                            thead.append("th")
+                                .append("span")
+                                .html(" ");
+                            var intensityCircle = rows
+                                .append("td")
+                                .append("svg")
+                                .attr("width", 20)
+                                .attr("height", 20)
+                                .append("circle")
+                                .attr("cx", 5)
+                                .attr("cy", 10)
+                                .attr("r", 5)
+                                .attr("fill", this.intensityColor.solid.color)
+                                .style("opacity", function (d) {
+                                var retVal;
+                                if (Math.abs(d.perChange) > threshold)
+                                    retVal = colorIntensityScale(Math.abs(d.perChange));
+                                else
+                                    return retVal = 0;
+                                return retVal / 10;
+                            });
+                        }
                     };
                     Visual.prototype.drawBullet = function (data, rows, thead) {
                         if (this.hasTarget) {
@@ -9302,7 +9384,20 @@ var powerbi;
                         }
                     };
                     Visual.prototype.drawAdditionalFields = function (rows, thead) {
-                        console.log("Drawing additional fields");
+                        var additional = this.columns.filter(function (d, i) {
+                            d.Index = i;
+                            return d.roles["additional"] == true;
+                        });
+                        additional.map(function (d) {
+                            var format = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.format });
+                            thead.append("th")
+                                .append("span")
+                                .html(d.displayName);
+                            rows
+                                .append("td")
+                                .append("html")
+                                .text(function (e) { return format.format(e.values[e.values.length - 1][d.Index]); });
+                        });
                     };
                     //#region Tooltip
                     Visual.prototype.drawBisectorToolTip = function () {
@@ -9448,9 +9543,18 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { showVariancePer: this.showVariancePer }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { variancePerHeader: this.variancePerHeader }, selector: null });
                                 break;
+                            case 'Trend':
+                                objectEnumeration.push({ objectName: objectName, properties: { show: this.trendIndicator }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { flipTrendDirection: this.flipTrendDirection }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { trendColor: this.trendColor }, selector: null });
+                                break;
+                            case 'Intensity':
+                                objectEnumeration.push({ objectName: objectName, properties: { show: this.intensity }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { intensityScale: this.intensityScale }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { intensityColor: this.intensityColor }, selector: null });
+                                break;
                         }
                         ;
-                        // console.log(objectEnumeration);
                         return objectEnumeration;
                         //return VisualSettings.enumerateObjectInstances(this.settings || VisualSettings.getDefault(), options);
                     };
@@ -9467,8 +9571,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
-                name: 'multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
+            plugins.multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E = {
+                name: 'multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E',
                 displayName: 'MultipleSparkline',
                 class: 'Visual',
                 version: '1.0.0',

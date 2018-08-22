@@ -33,11 +33,12 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
         private host: IVisualHost;
       //  private tooltipServiceWrapper: ITooltipServiceWrapper;
 
+        private selectionManager: ISelectionManager;
         private updateCount: number;
         private settings: VisualSettings;
         private textNode: Text;
 
-
+        private columns: any;
         private showActual: any = true;
         private actualHeader: any = "Actual";
         private showChange: any = true;
@@ -54,6 +55,17 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
         private showVariancePer: any = true;
         private variancePerHeader: any = "% Variance";
 
+        private trendIndicator: any = true;
+        private flipTrendDirection: any;
+        private trendColor: any = "GreenRed";
+        private trendColorOptions: any = {
+            "RedGreen": ["red", "green"],
+            "GreenRed": ["green", "red"]
+        };
+        private intensity: any = true;
+        private intensityScale: any = "10,40 60,80";
+        private intensityColor: any = { solid: { color: "#F2C80F" } };
+        
         private actualIndex: number;
         private hasActual: any;
         private targetIndex: number;
@@ -62,7 +74,6 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
         private groupIndex: number;
         private hasPeriod: any;
         private periodIndex: number;
-       
        
         private iValueFormatter:any;
         private element: d3.Selection<SVGElement>;
@@ -79,10 +90,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
         private TooltipEventArgs: any;
         public  TooltipEnabledDataPoint: any;
 
-        private IntensityCircles: any;
-        private IntensityCirclesRange: any;
-        private ShowTrendDirection: any;
-        private FlipIndicatorColor: any;
+      
         private HeaderTextColor: any;
         private BoldHeaderText: any;
         private RowBanding: any;
@@ -90,17 +98,20 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
         private NegativeTextColor: any;
 
        constructor(options: VisualConstructorOptions) {
-           // console.log('Visual constructor', options);
-            this.element = d3.select(options.element);
-            this.host = options.host;
+           
+           this.element = d3.select(options.element);
+           this.host = options.host;
            this.tooltipServiceWrapper = createTooltipServiceWrapper(this.host.tooltipService, options.element);
-           console.log("calling cont");
+           this.selectionManager = options.host.createSelectionManager();
         }
 
        public update(options: VisualUpdateOptions) {
-           
-           //console.log("updating", options.dataViews[0].metadata.objects);
-         
+           this.columns = options.dataViews[0].metadata.columns;
+          
+           this.selectionManager.registerOnSelectCallback(() => {
+               rows.style("opacity", 1);
+           });
+
            if (options.dataViews[0].metadata.objects) {
                if (options.dataViews[0].metadata.objects["Actual"]) {
                    var actObj = options.dataViews[0].metadata.objects["Actual"];
@@ -124,13 +135,30 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                    if (targetObj["showVariancePer"] !== undefined) this.showVariancePer = targetObj["showVariancePer"];
                    if (targetObj["variancePerHeader"] !== undefined) this.variancePerHeader = targetObj["variancePerHeader"];
                }
+               if (options.dataViews[0].metadata.objects["Trend"]) {
+                   var trendObj = options.dataViews[0].metadata.objects["Trend"];
+
+                   if (trendObj["show"] !== undefined) this.trendIndicator = trendObj["show"];
+                   if (trendObj["flipTrendDirection"] !== undefined) this.flipTrendDirection = trendObj["flipTrendDirection"];
+                   if (trendObj["trendColor"] !== undefined) this.trendColor = trendObj["trendColor"];
+                }
+               if (options.dataViews[0].metadata.objects["Intensity"]) {
+                   var intensityObj = options.dataViews[0].metadata.objects["Intensity"];
+
+                   if (intensityObj["show"] !== undefined) this.intensity = intensityObj["show"];
+                   if (intensityObj["intensityScale"] !== undefined) this.intensityScale = intensityObj["intensityScale"];
+                   if (intensityObj["intensityColor"] !== undefined) this.intensityColor = intensityObj["intensityColor"];
+                   
+               }
+
+                
            }
            this.hasTarget = false;
            this.hasActual = false;
            this.hasPeriod = false;
            this.hasGroup = false;
-
-           options.dataViews[0].metadata.columns.map((d,i) => {
+          
+           this.columns.map((d,i) => {
                if (d.roles["target"]) {
                    this.hasTarget = true;
                    this.targetIndex = i;
@@ -152,15 +180,20 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
         
            this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ value:1001 });
            
-           if (this.actualIndex) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.actualIndex].format });
-           else if (this.targetIndex) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.targetIndex].format });
+           if (this.hasActual) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.actualIndex].format });
+           else if (this.hasTarget) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.targetIndex].format });
          
-           var nestedData, data = [];
+           var nestedData, data = [], identityData;
+           options.dataViews[0].table.rows = options.dataViews[0].table.rows.map((d:any,i) => {
+                        d.identity = options.dataViews[0].table.identity[i]
+                   return d;
+           });
 
            if (this.hasGroup && this.hasPeriod) {
                nestedData  = d3.nest()
                    .key((d) => d[this.groupIndex])
                    .entries(options.dataViews[0].table.rows);
+
            }
            else if (this.hasPeriod){
                nestedData = [{
@@ -168,8 +201,9 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                    values: options.dataViews[0].table.rows
                }];
            }
+
           
-           nestedData.map((d)=> {
+           nestedData.map((d,i)=> {
                var actual = this.hasActual ? d.values[d.values.length - 1][this.actualIndex] : 0;
                var secondLastActual = this.hasActual ? d.values[d.values.length - 2][this.actualIndex] : 0;
                var firstActual = this.hasActual ? d.values[0][this.actualIndex] : 0;
@@ -179,7 +213,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                    d.yValue = this.hasActual ? d[this.actualIndex] : 0;
                    d.xValue = this.hasPeriod ? d[this.periodIndex] : "";
                });
-              
+
                data.push({
                    key: d.key,
                    actual: actual,
@@ -191,7 +225,8 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                    target: target,
                    variance: actual - target,
                    variancePer: (actual - target / target).toFixed(2),
-                   values: d.values
+                   values: d.values,
+                   identity: d.values[0].identity
                });
               
            });
@@ -200,12 +235,12 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
            this.element.select('.multipleSparkline').remove();
 
            var table = this.element
-               .append("div")
-               .attr("class", "multipleSparkline")
-               .attr("style", "width:100%;")
-               .append("table")
-               .attr("style", "width:100%;text-align:left;border-spacing:0");
-           console.log("Level 4");
+                           .append("div")
+                           .attr("class", "multipleSparkline")
+                           .attr("style", "width:100%;")
+                           .append("table")
+                           .attr("style", "width:100%;text-align:left;border-spacing:0");
+           
            if (this.hasActual === false) {
                table
                    .append("html")
@@ -219,11 +254,36 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
            var tbody = table.append("tbody");
 
            var rows = tbody.selectAll(".rows")
-               .data(data)
-               .enter()
-               .append("tr")
-               .style("background", function (d, i) { return i % 2 === 0 ? "#fff" : "#ececec" });
+                           .data(data)
+                           .enter()
+                           .append("tr")
+                           .style("background", function (d, i) { return i % 2 === 0 ? "#fff" : "#ececec" });
 
+           rows.on("click", (d, i) => {
+
+               rows.each(e => {
+                   if (e.key === d.key) d.isFiltered = !d.isFiltered;
+                   else e.isFiltered = false;
+               });
+
+               var identity = d.values.map(function (d) { return d.identity });
+
+               const categoryColumn: DataViewCategoryColumn = {
+                   source: options.dataViews[0].table.columns[this.groupIndex],
+                   values: null,
+                   identity: [d.identity]
+               };
+
+               var id =  this.host.createSelectionIdBuilder()
+                                   .withCategory(categoryColumn, 0)
+                                   .createSelectionId();
+
+               this.selectionManager.select(id);
+
+               this.setFilterOpacity(rows);
+           })
+
+           this.showIntensityCircle(rows, thead);
            this.drawMetric(rows, thead);
 
            this.drawSparkline(data, rows, thead);
@@ -235,7 +295,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
            this.drawPerChange(rows, thead);
            this.drawTotalChange(rows, thead);
            this.showTrendIndicator(rows, thead);
-           this.showIntensityCircle(rows, thead);
+        
            this.drawActual(rows, thead);
            this.drawBullet(data, rows, thead);
            this.drawTarget(rows, thead);
@@ -243,8 +303,24 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
            this.drawVariancePer(rows, thead);
            this.drawAdditionalFields(rows, thead);
            this.updateRowStyle(tbody, thead);
+          
 
-       }
+        }
+        public setFilterOpacity(rows) {
+           
+            var anyFilter = false;
+            rows.each(d => {
+                if (d.isFiltered === true) anyFilter = true;
+            });
+           
+            if (anyFilter) {
+                rows.style("opacity", d => d.isFiltered ? 1 : 0.2);
+            }
+            else {
+                rows.style("opacity", 1);
+            } 
+            
+        }
 
         public drawMetric(rows: any, thead: any) {
 
@@ -399,32 +475,48 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
         }
 
         public showTrendIndicator(rows: any, thead: any) {
+            this.trendIndicator
+            let color = this.trendColorOptions[this.trendColor];
+            
+            if (this.trendIndicator === true) {
 
-            thead.append("th")
-                .append("span")
-                .html(" ");
+                thead.append("th")
+                    .append("span")
+                    .html(" ");
 
-            var trendIndicator = rows
-                                    .append("td")
-                                    .append("svg")
-                                    .attr("width", 20)
-                                    .attr("height", 20);
+                var trendIndicator = rows
+                    .append("td")
+                    .append("svg")
+                    .attr("width", 20)
+                    .attr("height", 20);
 
-           var triangleDown = d3.svg.symbol().type('triangle-down').size(70);
+                var triangleDirection = this.flipTrendDirection === false ? 'triangle-down' : 'triangle-up';
+                var triangle = d3.svg.symbol().type(triangleDirection).size(70);
 
-           trendIndicator
-               .append("path")
-               .attr('d', triangleDown)
-               .attr('transform', function (d) {
-                   return "translate(10,12), rotate(" + d.trend + ")"
-               });
+                trendIndicator
+                    .append("path")
+                    .attr('d', triangle)
+                    .attr('transform', function (d) {
+                        return "translate(10,12), rotate(" + d.trend + ")"
+                    })
+                    .style("fill", d => d.trend === 0 ? color[0] : color[1]);
+
+            }
             
        }
 
         public showIntensityCircle(rows: any, thead: any) {
-
+        
+            if(this.intensity === true) {
             var rangeArr = [10, 40, 60, 80];
             var threshold = 10;
+
+            if (this.intensityScale.length > 0) {
+                var rangeArrr = this.intensityScale.split(",");
+                threshold = parseFloat(rangeArrr[0]);
+                rangeArr = rangeArrr.map(function (d) { return parseFloat(d); }).concat([100]);
+            }
+
             var colorRange = (d3.range(1, 10, (10 / (rangeArr.length - 1)))).concat([10]);
 
             var colorIntensityScale = d3.scale.threshold()
@@ -434,7 +526,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
             thead.append("th")
                 .append("span")
                 .html(" ");
-
+         
             var intensityCircle = rows
                 .append("td")
                 .append("svg")
@@ -444,17 +536,15 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                 .attr("cx", 5)
                 .attr("cy", 10)
                 .attr("r", 5)
-                .attr("fill", "red")
+                .attr("fill", this.intensityColor.solid.color)
                 .style("opacity", function (d) {
+                    var retVal;
+                    if (Math.abs(d.perChange) > threshold) retVal = colorIntensityScale(Math.abs(d.perChange));
+                    else return retVal = 0;
 
-
-                var retVal;
-
-                if (Math.abs(d.perChange) > threshold) retVal = colorIntensityScale(Math.abs(d.perChange));
-                else return retVal = 0;
-
-                return retVal / 10;
-            });
+                    return retVal / 10;
+                });
+        }
         }
 
         public drawBullet(data: any, rows: any, thead: any) {
@@ -551,7 +641,25 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
         }
 
         public drawAdditionalFields(rows: any, thead: any) {
-            console.log("Drawing additional fields");
+           
+            var additional = this.columns.filter((d,i) => {
+                d.Index = i;
+                return d.roles["additional"] == true
+            });
+           
+            additional.map((d) => {
+                var format = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.format });
+
+                thead.append("th")
+                        .append("span")
+                        .html(d.displayName);
+
+                rows
+                    .append("td")
+                    .append("html")
+                    .text((e) => format.format(e.values[e.values.length - 1][d.Index]));
+            });
+           
        }
 
         //#region Tooltip
@@ -732,10 +840,22 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                     objectEnumeration.push({ objectName: objectName, properties: { showVariancePer: this.showVariancePer }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { variancePerHeader: this.variancePerHeader }, selector: null });
                     break;
-               
+ 
+                case 'Trend':
+                    objectEnumeration.push({ objectName: objectName, properties: { show: this.trendIndicator }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { flipTrendDirection: this.flipTrendDirection }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { trendColor: this.trendColor }, selector: null });
+                    break;
+                case 'Intensity':
+                    objectEnumeration.push({ objectName: objectName, properties: { show: this.intensity }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { intensityScale: this.intensityScale }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { intensityColor: this.intensityColor }, selector: null });
+                    
+                    break;
+                    
             };
-           // console.log(objectEnumeration);
-
+           
+           
             return objectEnumeration;
             //return VisualSettings.enumerateObjectInstances(this.settings || VisualSettings.getDefault(), options);
         }

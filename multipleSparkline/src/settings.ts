@@ -27,11 +27,16 @@
 module powerbi.extensibility.visual {
     "use strict";
 
-
     import DataViewObjectsParser = powerbi.extensibility.utils.dataview.DataViewObjectsParser;
 
     export class VisualSettings extends DataViewObjectsParser {
-      public dataPoint: dataPointSettings = new dataPointSettings();
+        public dataPoint: dataPointSettings = new dataPointSettings();
+
+        public IndicatorColor = {
+            "RedGreen": ["red", "green"],
+            "GreenRed": ["green", "red"]
+        };
+
       }
 
     export class dataPointSettings {
