@@ -39,7 +39,7 @@ module powerbi.extensibility.visual {
         private textNode: Text;
 
         private columns: any;
-        private showActual: any = true;
+        private showActual: any = false;
         private actualHeader: any = "Actual";
         private showChange: any = true;
         private changeHeader: any = "Change";
@@ -56,16 +56,28 @@ module powerbi.extensibility.visual {
         private variancePerHeader: any = "% Variance";
 
         private trendIndicator: any = true;
-        private flipTrendDirection: any;
+        private flipTrendDirection: any = false;
         private trendColor: any = "GreenRed";
         private trendColorOptions: any = {
             "RedGreen": ["red", "green"],
             "GreenRed": ["green", "red"]
         };
+
         private intensity: any = true;
         private intensityScale: any = "10,40 60,80";
         private intensityColor: any = { solid: { color: "#F2C80F" } };
+
+        private conditionalBullet: any = true;
+        private conditionalBulletColorScale: any = "5,10,100";
         
+        private conditionalBulletColorOptions: any = {
+            "RedBlueGreen": ["red", "#4682b4", "green"],
+            "GreenBlueRed": ["green", "#4682b4", "red"]
+        };
+      
+        private conditionalBulletColor: any = "RedBlueGreen";
+        private singleBulletColor: any = { solid: { color: "#4682b4" } };
+
         private actualIndex: number;
         private hasActual: any;
         private targetIndex: number;
@@ -105,7 +117,7 @@ module powerbi.extensibility.visual {
            this.selectionManager = options.host.createSelectionManager();
         }
 
-       public update(options: VisualUpdateOptions) {
+        public update(options: VisualUpdateOptions) {
            this.columns = options.dataViews[0].metadata.columns;
           
            this.selectionManager.registerOnSelectCallback(() => {
@@ -115,7 +127,7 @@ module powerbi.extensibility.visual {
            if (options.dataViews[0].metadata.objects) {
                if (options.dataViews[0].metadata.objects["Actual"]) {
                    var actObj = options.dataViews[0].metadata.objects["Actual"];
-                   if (actObj.showActual !== undefined) this.showActual = actObj["showActual"];
+                   //if (actObj.showActual !== undefined) this.showActual = actObj["showActual"];
                    if (actObj["actualHeader"] !== undefined) this.actualHeader = actObj["actualHeader"];
                    if (actObj["showChange"] !== undefined) this.showChange = actObj["showChange"];
                    if (actObj["changeHeader"] !== undefined) this.changeHeader = actObj["changeHeader"];
@@ -129,11 +141,13 @@ module powerbi.extensibility.visual {
                    var targetObj = options.dataViews[0].metadata.objects["Target"];
 
                    if (targetObj["showTarget"] !== undefined) this.showTarget = targetObj["showTarget"];
+                   if (targetObj["showTarget"] !== undefined) this.showTarget = targetObj["showTarget"];
                    if (targetObj["targetHeader"] !== undefined) this.targetHeader = targetObj["targetHeader"];
                    if (targetObj["showVariance"] !== undefined) this.showVariance = targetObj["showVariance"];
                    if (targetObj["varianceHeader"] !== undefined) this.varianceHeader = targetObj["varianceHeader"];
                    if (targetObj["showVariancePer"] !== undefined) this.showVariancePer = targetObj["showVariancePer"];
                    if (targetObj["variancePerHeader"] !== undefined) this.variancePerHeader = targetObj["variancePerHeader"];
+                   
                }
                if (options.dataViews[0].metadata.objects["Trend"]) {
                    var trendObj = options.dataViews[0].metadata.objects["Trend"];
@@ -141,7 +155,16 @@ module powerbi.extensibility.visual {
                    if (trendObj["show"] !== undefined) this.trendIndicator = trendObj["show"];
                    if (trendObj["flipTrendDirection"] !== undefined) this.flipTrendDirection = trendObj["flipTrendDirection"];
                    if (trendObj["trendColor"] !== undefined) this.trendColor = trendObj["trendColor"];
-                }
+               }
+               if (options.dataViews[0].metadata.objects["Bullet"]) {
+                   var bulletObj = options.dataViews[0].metadata.objects["Bullet"];
+
+                   if (bulletObj["conditionalBullet"] !== undefined) this.conditionalBullet = bulletObj["conditionalBullet"];
+                   if (bulletObj["conditionalBulletColor"] !== undefined) this.conditionalBulletColor = bulletObj["conditionalBulletColor"];
+                   if (bulletObj["conditionalBulletColor"] !== undefined) this.conditionalBulletColor = bulletObj["conditionalBulletColor"];
+                   if (bulletObj["conditionalBulletColorScale"] !== undefined) this.conditionalBulletColorScale = bulletObj["conditionalBulletColorScale"];
+                   
+               }
                if (options.dataViews[0].metadata.objects["Intensity"]) {
                    var intensityObj = options.dataViews[0].metadata.objects["Intensity"];
 
@@ -179,10 +202,10 @@ module powerbi.extensibility.visual {
            });
         
            this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ value:1001 });
-           
+        
            if (this.hasActual) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.actualIndex].format });
            else if (this.hasTarget) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.targetIndex].format });
-         
+
            var nestedData, data = [], identityData;
            options.dataViews[0].table.rows = options.dataViews[0].table.rows.map((d:any,i) => {
                         d.identity = options.dataViews[0].table.identity[i]
@@ -202,7 +225,6 @@ module powerbi.extensibility.visual {
                }];
            }
 
-          
            nestedData.map((d,i)=> {
                var actual = this.hasActual ? d.values[d.values.length - 1][this.actualIndex] : 0;
                var secondLastActual = this.hasActual ? d.values[d.values.length - 2][this.actualIndex] : 0;
@@ -213,7 +235,7 @@ module powerbi.extensibility.visual {
                    d.yValue = this.hasActual ? d[this.actualIndex] : 0;
                    d.xValue = this.hasPeriod ? d[this.periodIndex] : "";
                });
-
+              
                data.push({
                    key: d.key,
                    actual: actual,
@@ -306,6 +328,7 @@ module powerbi.extensibility.visual {
           
 
         }
+
         public setFilterOpacity(rows) {
            
             var anyFilter = false;
@@ -490,16 +513,16 @@ module powerbi.extensibility.visual {
                     .attr("width", 20)
                     .attr("height", 20);
 
-                var triangleDirection = this.flipTrendDirection === false ? 'triangle-down' : 'triangle-up';
+                var triangleDirection = this.flipTrendDirection == false ? 'triangle-down' : 'triangle-up';
                 var triangle = d3.svg.symbol().type(triangleDirection).size(70);
 
                 trendIndicator
                     .append("path")
                     .attr('d', triangle)
                     .attr('transform', function (d) {
-                        return "translate(10,12), rotate(" + d.trend + ")"
+                        return "translate(10,12), rotate(0)";
                     })
-                    .style("fill", d => d.trend === 0 ? color[0] : color[1]);
+                    .style("fill", d => d.trend === 0 ? color[1] : color[0]);
 
             }
             
@@ -569,10 +592,25 @@ module powerbi.extensibility.visual {
 
                bullet.append("rect").attr("width", 120).attr("height", 20).attr("style", "fill:#d0cece;")
 
-               bullet.append("rect")
-                   .attr("width",(d) => barScale(d.actual))
-                   .attr("height", 20)
-                   .attr("style", "fill:#fdd247;")
+               if (this.conditionalBullet === false) {
+                   bullet.append("rect")
+                       .attr("width", (d) => barScale(d.actual))
+                       .attr("height", 20)
+                       .style("fill", this.singleBulletColor.solid.color);
+               }
+               else {
+                   bullet.append("rect")
+                       .attr("width", (d) => barScale(d.actual))
+                       .attr("height", 20)
+                       .style("fill", d => {
+                           var scale = this.conditionalBulletColorScale.split(",");
+                          
+                           if (d.variancePer < parseFloat(scale[0])) return this.conditionalBulletColorOptions[this.conditionalBulletColor][0];
+                           else if (d.variancePer < parseFloat(scale[1])) return this.conditionalBulletColorOptions[this.conditionalBulletColor][1];
+                           else return this.conditionalBulletColorOptions[this.conditionalBulletColor][2];
+                            
+                       });
+               }
 
                bullet.append("rect")
                    .attr("width", 2)
@@ -815,15 +853,15 @@ module powerbi.extensibility.visual {
          * objects and properties you want to expose to the users in the property pane.
          * 
          */
-        public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {
+       public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {
 
             let objectName = options.objectName;
             let objectEnumeration: VisualObjectInstance[] = [];
           
             switch (objectName) {
                 case 'Actual':
-                    objectEnumeration.push({ objectName: objectName, properties: { showActual: this.showActual}, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { actualHeader: this.actualHeader},selector: null});
+                   // objectEnumeration.push({ objectName: objectName, properties: { showActual: this.showActual}, selector: null });
+                   // objectEnumeration.push({ objectName: objectName, properties: { actualHeader: this.actualHeader},selector: null});
                     objectEnumeration.push({ objectName: objectName, properties: { showChange: this.showChange }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { changeHeader: this.changeHeader }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { showPerChange: this.showPerChange }, selector: null });
@@ -846,16 +884,24 @@ module powerbi.extensibility.visual {
                     objectEnumeration.push({ objectName: objectName, properties: { flipTrendDirection: this.flipTrendDirection }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { trendColor: this.trendColor }, selector: null });
                     break;
+
                 case 'Intensity':
                     objectEnumeration.push({ objectName: objectName, properties: { show: this.intensity }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { intensityScale: this.intensityScale }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { intensityColor: this.intensityColor }, selector: null });
-                    
+                    break;
+
+                case 'Bullet':
+                    objectEnumeration.push({ objectName: objectName, properties: { conditionalBullet: this.conditionalBullet }, selector: null });
+                    if (this.conditionalBullet) objectEnumeration.push({ objectName: objectName, properties: { conditionalBulletColor: this.conditionalBulletColor }, selector: null });
+                    if (this.conditionalBullet) objectEnumeration.push({ objectName: objectName, properties: { conditionalBulletColorScale: this.conditionalBulletColorScale }, selector: null });
+                    if (!this.conditionalBullet) objectEnumeration.push({ objectName: objectName, properties: { singleBulletColor: this.singleBulletColor }, selector: null });
+
                     break;
                     
             };
            
-           
+
             return objectEnumeration;
             //return VisualSettings.enumerateObjectInstances(this.settings || VisualSettings.getDefault(), options);
         }

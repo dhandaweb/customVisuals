@@ -8923,7 +8923,7 @@ var powerbi;
                 "use strict";
                 var Visual = (function () {
                     function Visual(options) {
-                        this.showActual = true;
+                        this.showActual = false;
                         this.actualHeader = "Actual";
                         this.showChange = true;
                         this.changeHeader = "Change";
@@ -8938,6 +8938,7 @@ var powerbi;
                         this.showVariancePer = true;
                         this.variancePerHeader = "% Variance";
                         this.trendIndicator = true;
+                        this.flipTrendDirection = false;
                         this.trendColor = "GreenRed";
                         this.trendColorOptions = {
                             "RedGreen": ["red", "green"],
@@ -8946,6 +8947,14 @@ var powerbi;
                         this.intensity = true;
                         this.intensityScale = "10,40 60,80";
                         this.intensityColor = { solid: { color: "#F2C80F" } };
+                        this.conditionalBullet = true;
+                        this.conditionalBulletColorScale = "5,10,100";
+                        this.conditionalBulletColorOptions = {
+                            "RedBlueGreen": ["red", "#4682b4", "green"],
+                            "GreenBlueRed": ["green", "#4682b4", "red"]
+                        };
+                        this.conditionalBulletColor = "RedBlueGreen";
+                        this.singleBulletColor = { solid: { color: "#4682b4" } };
                         this.element = d3.select(options.element);
                         this.host = options.host;
                         this.tooltipServiceWrapper = multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
@@ -8960,8 +8969,7 @@ var powerbi;
                         if (options.dataViews[0].metadata.objects) {
                             if (options.dataViews[0].metadata.objects["Actual"]) {
                                 var actObj = options.dataViews[0].metadata.objects["Actual"];
-                                if (actObj.showActual !== undefined)
-                                    this.showActual = actObj["showActual"];
+                                //if (actObj.showActual !== undefined) this.showActual = actObj["showActual"];
                                 if (actObj["actualHeader"] !== undefined)
                                     this.actualHeader = actObj["actualHeader"];
                                 if (actObj["showChange"] !== undefined)
@@ -8979,6 +8987,8 @@ var powerbi;
                             }
                             if (options.dataViews[0].metadata.objects["Target"]) {
                                 var targetObj = options.dataViews[0].metadata.objects["Target"];
+                                if (targetObj["showTarget"] !== undefined)
+                                    this.showTarget = targetObj["showTarget"];
                                 if (targetObj["showTarget"] !== undefined)
                                     this.showTarget = targetObj["showTarget"];
                                 if (targetObj["targetHeader"] !== undefined)
@@ -9000,6 +9010,17 @@ var powerbi;
                                     this.flipTrendDirection = trendObj["flipTrendDirection"];
                                 if (trendObj["trendColor"] !== undefined)
                                     this.trendColor = trendObj["trendColor"];
+                            }
+                            if (options.dataViews[0].metadata.objects["Bullet"]) {
+                                var bulletObj = options.dataViews[0].metadata.objects["Bullet"];
+                                if (bulletObj["conditionalBullet"] !== undefined)
+                                    this.conditionalBullet = bulletObj["conditionalBullet"];
+                                if (bulletObj["conditionalBulletColor"] !== undefined)
+                                    this.conditionalBulletColor = bulletObj["conditionalBulletColor"];
+                                if (bulletObj["conditionalBulletColor"] !== undefined)
+                                    this.conditionalBulletColor = bulletObj["conditionalBulletColor"];
+                                if (bulletObj["conditionalBulletColorScale"] !== undefined)
+                                    this.conditionalBulletColorScale = bulletObj["conditionalBulletColorScale"];
                             }
                             if (options.dataViews[0].metadata.objects["Intensity"]) {
                                 var intensityObj = options.dataViews[0].metadata.objects["Intensity"];
@@ -9271,15 +9292,15 @@ var powerbi;
                                 .append("svg")
                                 .attr("width", 20)
                                 .attr("height", 20);
-                            var triangleDirection = this.flipTrendDirection === false ? 'triangle-down' : 'triangle-up';
+                            var triangleDirection = this.flipTrendDirection == false ? 'triangle-down' : 'triangle-up';
                             var triangle = d3.svg.symbol().type(triangleDirection).size(70);
                             trendIndicator
                                 .append("path")
                                 .attr('d', triangle)
                                 .attr('transform', function (d) {
-                                return "translate(10,12), rotate(" + d.trend + ")";
+                                return "translate(10,12), rotate(0)";
                             })
-                                .style("fill", function (d) { return d.trend === 0 ? color[0] : color[1]; });
+                                .style("fill", function (d) { return d.trend === 0 ? color[1] : color[0]; });
                         }
                     };
                     Visual.prototype.showIntensityCircle = function (rows, thead) {
@@ -9319,6 +9340,7 @@ var powerbi;
                         }
                     };
                     Visual.prototype.drawBullet = function (data, rows, thead) {
+                        var _this = this;
                         if (this.hasTarget) {
                             thead.append("th")
                                 .append("span")
@@ -9333,10 +9355,26 @@ var powerbi;
                                 .attr("height", 20)
                                 .attr("class", "bullet");
                             bullet.append("rect").attr("width", 120).attr("height", 20).attr("style", "fill:#d0cece;");
-                            bullet.append("rect")
-                                .attr("width", function (d) { return barScale(d.actual); })
-                                .attr("height", 20)
-                                .attr("style", "fill:#fdd247;");
+                            if (this.conditionalBullet === false) {
+                                bullet.append("rect")
+                                    .attr("width", function (d) { return barScale(d.actual); })
+                                    .attr("height", 20)
+                                    .style("fill", this.singleBulletColor.solid.color);
+                            }
+                            else {
+                                bullet.append("rect")
+                                    .attr("width", function (d) { return barScale(d.actual); })
+                                    .attr("height", 20)
+                                    .style("fill", function (d) {
+                                    var scale = _this.conditionalBulletColorScale.split(",");
+                                    if (d.variancePer < parseFloat(scale[0]))
+                                        return _this.conditionalBulletColorOptions[_this.conditionalBulletColor][0];
+                                    else if (d.variancePer < parseFloat(scale[1]))
+                                        return _this.conditionalBulletColorOptions[_this.conditionalBulletColor][1];
+                                    else
+                                        return _this.conditionalBulletColorOptions[_this.conditionalBulletColor][2];
+                                });
+                            }
                             bullet.append("rect")
                                 .attr("width", 2)
                                 .attr("x", function (d) { return barScale(d.target); })
@@ -9526,8 +9564,8 @@ var powerbi;
                         var objectEnumeration = [];
                         switch (objectName) {
                             case 'Actual':
-                                objectEnumeration.push({ objectName: objectName, properties: { showActual: this.showActual }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { actualHeader: this.actualHeader }, selector: null });
+                                // objectEnumeration.push({ objectName: objectName, properties: { showActual: this.showActual}, selector: null });
+                                // objectEnumeration.push({ objectName: objectName, properties: { actualHeader: this.actualHeader},selector: null});
                                 objectEnumeration.push({ objectName: objectName, properties: { showChange: this.showChange }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { changeHeader: this.changeHeader }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { showPerChange: this.showPerChange }, selector: null });
@@ -9552,6 +9590,15 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { show: this.intensity }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { intensityScale: this.intensityScale }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { intensityColor: this.intensityColor }, selector: null });
+                                break;
+                            case 'Bullet':
+                                objectEnumeration.push({ objectName: objectName, properties: { conditionalBullet: this.conditionalBullet }, selector: null });
+                                if (this.conditionalBullet)
+                                    objectEnumeration.push({ objectName: objectName, properties: { conditionalBulletColor: this.conditionalBulletColor }, selector: null });
+                                if (this.conditionalBullet)
+                                    objectEnumeration.push({ objectName: objectName, properties: { conditionalBulletColorScale: this.conditionalBulletColorScale }, selector: null });
+                                if (!this.conditionalBullet)
+                                    objectEnumeration.push({ objectName: objectName, properties: { singleBulletColor: this.singleBulletColor }, selector: null });
                                 break;
                         }
                         ;

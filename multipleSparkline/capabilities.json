@@ -71,7 +71,6 @@
             "table": {
                 "rows": {
                     "select": [
-
                         {
                             "for": {
                                 "in": "group"
@@ -100,6 +99,7 @@
                     ]
                 }
             },
+
             "conditions": [
                 {
                     "actual": {
@@ -228,6 +228,44 @@
                 },
                 "intensityColor": {
                     "displayName": "Intensity Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "Bullet": {
+            "displayName": "Bullet",
+            "properties": {
+                "conditionalBullet": {
+                    "displayName": "Conditional Bullet",
+                    "type": { "bool": true }
+                },
+                "conditionalBulletColor": {
+                    "displayName": "Conditional Bullet Color",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "RedBlueGreen",
+                                "displayName": "RedBlueGreen"
+                            },
+                            {
+                                "value": "GreenBlueRed",
+                                "displayName": "GreenBlueRed"
+                            }
+                        ]
+                    }
+                },
+                "conditionalBulletColorScale": {
+                    "displayName": "Conditional Bullet Color Scale",
+                    "type": { "text": true }
+                },
+                "singleBulletColor": {
+                    "displayName": "Single Bullet Color",
                     "type": {
                         "fill": {
                             "solid": {
