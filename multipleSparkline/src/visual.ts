@@ -45,7 +45,7 @@ module powerbi.extensibility.visual {
         private changeHeader: any = "Change";
         private showPerChange: any = true;
         private percentageChangeHeader: any = "% Change";
-        private showTotalChange: any = true;
+        private showTotalChange: any = false;
         private totalChangeHeader: any = "Tot Change";
 
         private showTarget: any = true;
@@ -54,28 +54,29 @@ module powerbi.extensibility.visual {
         private varianceHeader: any = "Variance";
         private showVariancePer: any = true;
         private variancePerHeader: any = "% Variance";
+        private bulletScaleMinZero: any = true;
 
         private trendIndicator: any = true;
         private flipTrendDirection: any = false;
-        private trendColor: any = "GreenRed";
+        private trendColor: any = "RedGreen";
         private trendColorOptions: any = {
-            "RedGreen": ["red", "green"],
-            "GreenRed": ["green", "red"]
+            "RedGreen": ["#ff4701", "#00ad00"],
+            "GreenRed": ["#00ad00", "#ff4701"]
         };
 
         private intensity: any = true;
         private intensityScale: any = "10,40 60,80";
-        private intensityColor: any = { solid: { color: "#F2C80F" } };
+        private intensityColor: any = { solid: { color: "#4682b4" } };
 
         private conditionalBullet: any = true;
         private conditionalBulletColorScale: any = "5,10,100";
         
         private conditionalBulletColorOptions: any = {
-            "RedBlueGreen": ["red", "#4682b4", "green"],
-            "GreenBlueRed": ["green", "#4682b4", "red"]
+            "RedGreen": ["#ff4701", "#00ad00"],
+            "GreenRed": ["#00ad00","#ff4701"]
         };
-      
-        private conditionalBulletColor: any = "RedBlueGreen";
+
+        private conditionalBulletColor: any = "GreenRed";
         private singleBulletColor: any = { solid: { color: "#4682b4" } };
 
         private actualIndex: number;
@@ -108,6 +109,7 @@ module powerbi.extensibility.visual {
         private RowBanding: any;
         private HighlightNegative: any;
         private NegativeTextColor: any;
+       
 
        constructor(options: VisualConstructorOptions) {
            
@@ -119,7 +121,7 @@ module powerbi.extensibility.visual {
 
         public update(options: VisualUpdateOptions) {
            this.columns = options.dataViews[0].metadata.columns;
-          
+            //console.log(options.dataViews[0]);
            this.selectionManager.registerOnSelectCallback(() => {
                rows.style("opacity", 1);
            });
@@ -133,7 +135,7 @@ module powerbi.extensibility.visual {
                    if (actObj["changeHeader"] !== undefined) this.changeHeader = actObj["changeHeader"];
                    if (actObj["showPerChange"] !== undefined) this.showPerChange = actObj["showPerChange"];
                    if (actObj["percentageChangeHeader"] !== undefined) this.percentageChangeHeader = actObj["percentageChangeHeader"];
-                   if (actObj["showTotalChange"] !== undefined) this.showTotalChange = actObj["showTotalChange"];
+                  // if (actObj["showTotalChange"] !== undefined) this.showTotalChange = actObj["showTotalChange"];
                    if (actObj["totalChangeHeader"] !== undefined) this.totalChangeHeader = actObj["totalChangeHeader"];
 
                }
@@ -163,6 +165,7 @@ module powerbi.extensibility.visual {
                    if (bulletObj["conditionalBulletColor"] !== undefined) this.conditionalBulletColor = bulletObj["conditionalBulletColor"];
                    if (bulletObj["conditionalBulletColor"] !== undefined) this.conditionalBulletColor = bulletObj["conditionalBulletColor"];
                    if (bulletObj["conditionalBulletColorScale"] !== undefined) this.conditionalBulletColorScale = bulletObj["conditionalBulletColorScale"];
+                   if (bulletObj["bulletScaleMinZero"] !== undefined) this.bulletScaleMinZero = bulletObj["bulletScaleMinZero"];
                    
                }
                if (options.dataViews[0].metadata.objects["Intensity"]) {
@@ -173,9 +176,8 @@ module powerbi.extensibility.visual {
                    if (intensityObj["intensityColor"] !== undefined) this.intensityColor = intensityObj["intensityColor"];
                    
                }
+            }
 
-                
-           }
            this.hasTarget = false;
            this.hasActual = false;
            this.hasPeriod = false;
@@ -227,6 +229,7 @@ module powerbi.extensibility.visual {
 
            nestedData.map((d,i)=> {
                var actual = this.hasActual ? d.values[d.values.length - 1][this.actualIndex] : 0;
+              
                var secondLastActual = this.hasActual ? d.values[d.values.length - 2][this.actualIndex] : 0;
                var firstActual = this.hasActual ? d.values[0][this.actualIndex] : 0;
                var target = this.hasTarget ? d.values[d.values.length - 1][this.targetIndex] : 0;
@@ -235,7 +238,26 @@ module powerbi.extensibility.visual {
                    d.yValue = this.hasActual ? d[this.actualIndex] : 0;
                    d.xValue = this.hasPeriod ? d[this.periodIndex] : "";
                });
-              
+               
+               var VP = 0;
+
+               if (this.hasActual && this.hasTarget) {
+                   var current = d.values[d.values.length - 1][this.actualIndex];
+                   var target = d.values[d.values.length - 1][this.targetIndex];
+                   VP = ((current - target) / Math.abs(target)) * 100;
+               }
+               var percentage, last, secondlast, retVal;
+               if (d.values.length > 1) {
+                   var last = d.values[d.values.length - 1][this.actualIndex];
+                   var secondlast = d.values[d.values.length - 2][this.targetIndex];
+                  
+                   percentage = ((last - secondlast) / Math.abs(secondlast)) * 100;
+
+                   if (last === null || secondlast === null) percentage = 0;
+
+               }
+               else percentage = 0;
+
                data.push({
                    key: d.key,
                    actual: actual,
@@ -246,8 +268,9 @@ module powerbi.extensibility.visual {
                    trend: actual > secondLastActual ? 180 : 0,
                    target: target,
                    variance: actual - target,
-                   variancePer: (actual - target / target).toFixed(2),
+                   variancePer: (VP).toFixed(2),
                    values: d.values,
+                   percentage: percentage,
                    identity: d.values[0].identity
                });
               
@@ -282,25 +305,30 @@ module powerbi.extensibility.visual {
                            .style("background", function (d, i) { return i % 2 === 0 ? "#fff" : "#ececec" });
 
            rows.on("click", (d, i) => {
+               d.isFiltered = !d.isFiltered;
+               //rows.each(e => {
+               //    if (e.key === d.key) d.isFiltered = !d.isFiltered;
+               //    else e.isFiltered = false;
+               //});
 
-               rows.each(e => {
-                   if (e.key === d.key) d.isFiltered = !d.isFiltered;
-                   else e.isFiltered = false;
+               d.values.forEach(d => {
+
+                   const categoryColumn: DataViewCategoryColumn = {
+                       source: options.dataViews[0].table.columns[this.groupIndex],
+                       values: null,
+                       identity: [d.identity]
+                   };
+
+                   var id = this.host.createSelectionIdBuilder()
+                       .withCategory(categoryColumn, 0)
+                       .createSelectionId();
+
+                   this.selectionManager.select(id, true);
+                   
                });
 
-               var identity = d.values.map(function (d) { return d.identity });
+               
 
-               const categoryColumn: DataViewCategoryColumn = {
-                   source: options.dataViews[0].table.columns[this.groupIndex],
-                   values: null,
-                   identity: [d.identity]
-               };
-
-               var id =  this.host.createSelectionIdBuilder()
-                                   .withCategory(categoryColumn, 0)
-                                   .createSelectionId();
-
-               this.selectionManager.select(id);
 
                this.setFilterOpacity(rows);
            })
@@ -498,7 +526,7 @@ module powerbi.extensibility.visual {
         }
 
         public showTrendIndicator(rows: any, thead: any) {
-            this.trendIndicator
+            
             let color = this.trendColorOptions[this.trendColor];
             
             if (this.trendIndicator === true) {
@@ -520,9 +548,9 @@ module powerbi.extensibility.visual {
                     .append("path")
                     .attr('d', triangle)
                     .attr('transform', function (d) {
-                        return "translate(10,12), rotate(0)";
+                        return "translate(10,12), rotate(" + d.trend + ")";
                     })
-                    .style("fill", d => d.trend === 0 ? color[1] : color[0]);
+                    .style("fill", d => d.trend === 0 ? color[0] : color[1]);
 
             }
             
@@ -561,11 +589,15 @@ module powerbi.extensibility.visual {
                 .attr("r", 5)
                 .attr("fill", this.intensityColor.solid.color)
                 .style("opacity", function (d) {
-                    var retVal;
-                    if (Math.abs(d.perChange) > threshold) retVal = colorIntensityScale(Math.abs(d.perChange));
-                    else return retVal = 0;
+                    
+                    var retVal, change = d.percentage * 100;
+
+                    if (Math.abs(change/100) > threshold) retVal = colorIntensityScale(Math.abs(d.percentage));
+                    else retVal = 0;
 
                     return retVal / 10;
+
+                    
                 });
         }
         }
@@ -580,8 +612,10 @@ module powerbi.extensibility.visual {
                var actualMax = d3.max(data.map((d) => d.actual));
 
                var backgroundBarLen = d3.max([targetMax, actualMax]) * 1.15;
+               var min = 0;
+               if (this.bulletScaleMinZero === false) min = d3.min(data.map((d) => d.actual));
 
-               var barScale = d3.scale.linear().range([0, 120]).domain([0, backgroundBarLen]);
+               var barScale = d3.scale.linear().range([0, 120]).domain([min, backgroundBarLen]);
 
                var bullet = rows.append("td")
                    .append("svg")
@@ -603,11 +637,9 @@ module powerbi.extensibility.visual {
                        .attr("width", (d) => barScale(d.actual))
                        .attr("height", 20)
                        .style("fill", d => {
-                           var scale = this.conditionalBulletColorScale.split(",");
-                          
-                           if (d.variancePer < parseFloat(scale[0])) return this.conditionalBulletColorOptions[this.conditionalBulletColor][0];
-                           else if (d.variancePer < parseFloat(scale[1])) return this.conditionalBulletColorOptions[this.conditionalBulletColor][1];
-                           else return this.conditionalBulletColorOptions[this.conditionalBulletColor][2];
+                           
+                           if (d.variance > 0) return this.conditionalBulletColorOptions[this.conditionalBulletColor][0];
+                           else return this.conditionalBulletColorOptions[this.conditionalBulletColor][1];
                             
                        });
                }
@@ -805,7 +837,6 @@ module powerbi.extensibility.visual {
         }
 
        private static parseSettings(dataView: DataView): VisualSettings {
-
             return VisualSettings.parse(dataView) as VisualSettings;
         }
 
@@ -848,11 +879,6 @@ module powerbi.extensibility.visual {
             return retData;
         }
 
-        /** 
-         * This function gets called for each of the objects defined in the capabilities files and allows you to select which of the 
-         * objects and properties you want to expose to the users in the property pane.
-         * 
-         */
        public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {
 
             let objectName = options.objectName;
@@ -866,7 +892,7 @@ module powerbi.extensibility.visual {
                     objectEnumeration.push({ objectName: objectName, properties: { changeHeader: this.changeHeader }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { showPerChange: this.showPerChange }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { percentageChangeHeader: this.percentageChangeHeader }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showTotalChange: this.showTotalChange }, selector: null });
+                    //objectEnumeration.push({ objectName: objectName, properties: { showTotalChange: this.showTotalChange }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { totalChangeHeader: this.totalChangeHeader }, selector: null });
                     break;
 
@@ -896,7 +922,9 @@ module powerbi.extensibility.visual {
                     if (this.conditionalBullet) objectEnumeration.push({ objectName: objectName, properties: { conditionalBulletColor: this.conditionalBulletColor }, selector: null });
                     if (this.conditionalBullet) objectEnumeration.push({ objectName: objectName, properties: { conditionalBulletColorScale: this.conditionalBulletColorScale }, selector: null });
                     if (!this.conditionalBullet) objectEnumeration.push({ objectName: objectName, properties: { singleBulletColor: this.singleBulletColor }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { bulletScaleMinZero: this.bulletScaleMinZero }, selector: null });
 
+                    
                     break;
                     
             };

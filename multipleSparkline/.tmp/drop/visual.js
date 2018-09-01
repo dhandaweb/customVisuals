@@ -8929,7 +8929,7 @@ var powerbi;
                         this.changeHeader = "Change";
                         this.showPerChange = true;
                         this.percentageChangeHeader = "% Change";
-                        this.showTotalChange = true;
+                        this.showTotalChange = false;
                         this.totalChangeHeader = "Tot Change";
                         this.showTarget = true;
                         this.targetHeader = "Target";
@@ -8937,23 +8937,24 @@ var powerbi;
                         this.varianceHeader = "Variance";
                         this.showVariancePer = true;
                         this.variancePerHeader = "% Variance";
+                        this.bulletScaleMinZero = true;
                         this.trendIndicator = true;
                         this.flipTrendDirection = false;
-                        this.trendColor = "GreenRed";
+                        this.trendColor = "RedGreen";
                         this.trendColorOptions = {
-                            "RedGreen": ["red", "green"],
-                            "GreenRed": ["green", "red"]
+                            "RedGreen": ["#ff4701", "#00ad00"],
+                            "GreenRed": ["#00ad00", "#ff4701"]
                         };
                         this.intensity = true;
                         this.intensityScale = "10,40 60,80";
-                        this.intensityColor = { solid: { color: "#F2C80F" } };
+                        this.intensityColor = { solid: { color: "#4682b4" } };
                         this.conditionalBullet = true;
                         this.conditionalBulletColorScale = "5,10,100";
                         this.conditionalBulletColorOptions = {
-                            "RedBlueGreen": ["red", "#4682b4", "green"],
-                            "GreenBlueRed": ["green", "#4682b4", "red"]
+                            "RedGreen": ["#ff4701", "#00ad00"],
+                            "GreenRed": ["#00ad00", "#ff4701"]
                         };
-                        this.conditionalBulletColor = "RedBlueGreen";
+                        this.conditionalBulletColor = "GreenRed";
                         this.singleBulletColor = { solid: { color: "#4682b4" } };
                         this.element = d3.select(options.element);
                         this.host = options.host;
@@ -8963,6 +8964,7 @@ var powerbi;
                     Visual.prototype.update = function (options) {
                         var _this = this;
                         this.columns = options.dataViews[0].metadata.columns;
+                        //console.log(options.dataViews[0]);
                         this.selectionManager.registerOnSelectCallback(function () {
                             rows.style("opacity", 1);
                         });
@@ -8980,8 +8982,7 @@ var powerbi;
                                     this.showPerChange = actObj["showPerChange"];
                                 if (actObj["percentageChangeHeader"] !== undefined)
                                     this.percentageChangeHeader = actObj["percentageChangeHeader"];
-                                if (actObj["showTotalChange"] !== undefined)
-                                    this.showTotalChange = actObj["showTotalChange"];
+                                // if (actObj["showTotalChange"] !== undefined) this.showTotalChange = actObj["showTotalChange"];
                                 if (actObj["totalChangeHeader"] !== undefined)
                                     this.totalChangeHeader = actObj["totalChangeHeader"];
                             }
@@ -9021,6 +9022,8 @@ var powerbi;
                                     this.conditionalBulletColor = bulletObj["conditionalBulletColor"];
                                 if (bulletObj["conditionalBulletColorScale"] !== undefined)
                                     this.conditionalBulletColorScale = bulletObj["conditionalBulletColorScale"];
+                                if (bulletObj["bulletScaleMinZero"] !== undefined)
+                                    this.bulletScaleMinZero = bulletObj["bulletScaleMinZero"];
                             }
                             if (options.dataViews[0].metadata.objects["Intensity"]) {
                                 var intensityObj = options.dataViews[0].metadata.objects["Intensity"];
@@ -9085,6 +9088,22 @@ var powerbi;
                                 d.yValue = _this.hasActual ? d[_this.actualIndex] : 0;
                                 d.xValue = _this.hasPeriod ? d[_this.periodIndex] : "";
                             });
+                            var VP = 0;
+                            if (_this.hasActual && _this.hasTarget) {
+                                var current = d.values[d.values.length - 1][_this.actualIndex];
+                                var target = d.values[d.values.length - 1][_this.targetIndex];
+                                VP = ((current - target) / Math.abs(target)) * 100;
+                            }
+                            var percentage, last, secondlast, retVal;
+                            if (d.values.length > 1) {
+                                var last = d.values[d.values.length - 1][_this.actualIndex];
+                                var secondlast = d.values[d.values.length - 2][_this.targetIndex];
+                                percentage = ((last - secondlast) / Math.abs(secondlast)) * 100;
+                                if (last === null || secondlast === null)
+                                    percentage = 0;
+                            }
+                            else
+                                percentage = 0;
                             data.push({
                                 key: d.key,
                                 actual: actual,
@@ -9095,8 +9114,9 @@ var powerbi;
                                 trend: actual > secondLastActual ? 180 : 0,
                                 target: target,
                                 variance: actual - target,
-                                variancePer: (actual - target / target).toFixed(2),
+                                variancePer: (VP).toFixed(2),
                                 values: d.values,
+                                percentage: percentage,
                                 identity: d.values[0].identity
                             });
                         });
@@ -9123,22 +9143,22 @@ var powerbi;
                             .append("tr")
                             .style("background", function (d, i) { return i % 2 === 0 ? "#fff" : "#ececec"; });
                         rows.on("click", function (d, i) {
-                            rows.each(function (e) {
-                                if (e.key === d.key)
-                                    d.isFiltered = !d.isFiltered;
-                                else
-                                    e.isFiltered = false;
+                            d.isFiltered = !d.isFiltered;
+                            //rows.each(e => {
+                            //    if (e.key === d.key) d.isFiltered = !d.isFiltered;
+                            //    else e.isFiltered = false;
+                            //});
+                            d.values.forEach(function (d) {
+                                var categoryColumn = {
+                                    source: options.dataViews[0].table.columns[_this.groupIndex],
+                                    values: null,
+                                    identity: [d.identity]
+                                };
+                                var id = _this.host.createSelectionIdBuilder()
+                                    .withCategory(categoryColumn, 0)
+                                    .createSelectionId();
+                                _this.selectionManager.select(id, true);
                             });
-                            var identity = d.values.map(function (d) { return d.identity; });
-                            var categoryColumn = {
-                                source: options.dataViews[0].table.columns[_this.groupIndex],
-                                values: null,
-                                identity: [d.identity]
-                            };
-                            var id = _this.host.createSelectionIdBuilder()
-                                .withCategory(categoryColumn, 0)
-                                .createSelectionId();
-                            _this.selectionManager.select(id);
                             _this.setFilterOpacity(rows);
                         });
                         this.showIntensityCircle(rows, thead);
@@ -9281,7 +9301,6 @@ var powerbi;
                         }
                     };
                     Visual.prototype.showTrendIndicator = function (rows, thead) {
-                        this.trendIndicator;
                         var color = this.trendColorOptions[this.trendColor];
                         if (this.trendIndicator === true) {
                             thead.append("th")
@@ -9298,9 +9317,9 @@ var powerbi;
                                 .append("path")
                                 .attr('d', triangle)
                                 .attr('transform', function (d) {
-                                return "translate(10,12), rotate(0)";
+                                return "translate(10,12), rotate(" + d.trend + ")";
                             })
-                                .style("fill", function (d) { return d.trend === 0 ? color[1] : color[0]; });
+                                .style("fill", function (d) { return d.trend === 0 ? color[0] : color[1]; });
                         }
                     };
                     Visual.prototype.showIntensityCircle = function (rows, thead) {
@@ -9330,11 +9349,11 @@ var powerbi;
                                 .attr("r", 5)
                                 .attr("fill", this.intensityColor.solid.color)
                                 .style("opacity", function (d) {
-                                var retVal;
-                                if (Math.abs(d.perChange) > threshold)
-                                    retVal = colorIntensityScale(Math.abs(d.perChange));
+                                var retVal, change = d.percentage * 100;
+                                if (Math.abs(change / 100) > threshold)
+                                    retVal = colorIntensityScale(Math.abs(d.percentage));
                                 else
-                                    return retVal = 0;
+                                    retVal = 0;
                                 return retVal / 10;
                             });
                         }
@@ -9348,7 +9367,10 @@ var powerbi;
                             var targetMax = d3.max(data.map(function (d) { return d.target; }));
                             var actualMax = d3.max(data.map(function (d) { return d.actual; }));
                             var backgroundBarLen = d3.max([targetMax, actualMax]) * 1.15;
-                            var barScale = d3.scale.linear().range([0, 120]).domain([0, backgroundBarLen]);
+                            var min = 0;
+                            if (this.bulletScaleMinZero === false)
+                                min = d3.min(data.map(function (d) { return d.actual; }));
+                            var barScale = d3.scale.linear().range([0, 120]).domain([min, backgroundBarLen]);
                             var bullet = rows.append("td")
                                 .append("svg")
                                 .attr("width", 120)
@@ -9366,13 +9388,10 @@ var powerbi;
                                     .attr("width", function (d) { return barScale(d.actual); })
                                     .attr("height", 20)
                                     .style("fill", function (d) {
-                                    var scale = _this.conditionalBulletColorScale.split(",");
-                                    if (d.variancePer < parseFloat(scale[0]))
+                                    if (d.variance > 0)
                                         return _this.conditionalBulletColorOptions[_this.conditionalBulletColor][0];
-                                    else if (d.variancePer < parseFloat(scale[1]))
-                                        return _this.conditionalBulletColorOptions[_this.conditionalBulletColor][1];
                                     else
-                                        return _this.conditionalBulletColorOptions[_this.conditionalBulletColor][2];
+                                        return _this.conditionalBulletColorOptions[_this.conditionalBulletColor][1];
                                 });
                             }
                             bullet.append("rect")
@@ -9554,11 +9573,6 @@ var powerbi;
                         });
                         return retData;
                     };
-                    /**
-                     * This function gets called for each of the objects defined in the capabilities files and allows you to select which of the
-                     * objects and properties you want to expose to the users in the property pane.
-                     *
-                     */
                     Visual.prototype.enumerateObjectInstances = function (options) {
                         var objectName = options.objectName;
                         var objectEnumeration = [];
@@ -9570,7 +9584,7 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { changeHeader: this.changeHeader }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { showPerChange: this.showPerChange }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { percentageChangeHeader: this.percentageChangeHeader }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { showTotalChange: this.showTotalChange }, selector: null });
+                                //objectEnumeration.push({ objectName: objectName, properties: { showTotalChange: this.showTotalChange }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { totalChangeHeader: this.totalChangeHeader }, selector: null });
                                 break;
                             case 'Target':
@@ -9599,6 +9613,7 @@ var powerbi;
                                     objectEnumeration.push({ objectName: objectName, properties: { conditionalBulletColorScale: this.conditionalBulletColorScale }, selector: null });
                                 if (!this.conditionalBullet)
                                     objectEnumeration.push({ objectName: objectName, properties: { singleBulletColor: this.singleBulletColor }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { bulletScaleMinZero: this.bulletScaleMinZero }, selector: null });
                                 break;
                         }
                         ;

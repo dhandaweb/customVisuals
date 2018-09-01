@@ -99,7 +99,6 @@
                     ]
                 }
             },
-
             "conditions": [
                 {
                     "actual": {
@@ -149,7 +148,7 @@
                     "type": { "text": true }
                 },
                 "showTotalChange": {
-                    "displayName": "Show total change",
+                    "displayName": "Show % change",
                     "type": { "bool": true }
                 },
                 "totalChangeHeader": {
@@ -208,7 +207,7 @@
                             },
                             {
                                 "value": "GreenRed",
-                                "displayName": "GreenRed"
+                                "displayName": "Green Red"
                             }
                         ]
                     }
@@ -241,6 +240,10 @@
         "Bullet": {
             "displayName": "Bullet",
             "properties": {
+                "bulletScaleMinZero": {
+                    "displayName": "Bullet Scale Min Zero",
+                    "type": { "bool": true }
+                },
                 "conditionalBullet": {
                     "displayName": "Conditional Bullet",
                     "type": { "bool": true }
@@ -250,12 +253,12 @@
                     "type": {
                         "enumeration": [
                             {
-                                "value": "RedBlueGreen",
-                                "displayName": "RedBlueGreen"
+                                "value": "RedGreen",
+                                "displayName": "Red Green"
                             },
                             {
-                                "value": "GreenBlueRed",
-                                "displayName": "GreenBlueRed"
+                                "value": "GreenRed",
+                                "displayName": "Green Red"
                             }
                         ]
                     }
