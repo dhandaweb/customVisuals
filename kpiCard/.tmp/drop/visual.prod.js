@@ -8956,7 +8956,6 @@ var powerbi;
                     Visual.prototype.update = function (options) {
                         var _this = this;
                         this.columns = options.dataViews[0].metadata.columns;
-                        console.log();
                         if (options.dataViews[0].metadata.objects) {
                             if (options.dataViews[0].metadata.objects["displayTemplate"]) {
                                 var displayTemplateObj = options.dataViews[0].metadata.objects["displayTemplate"];
@@ -9012,6 +9011,19 @@ var powerbi;
                                 _this.periodIndex = i;
                             }
                         });
+                        this.element.style("overflow", "auto");
+                        this.element.select('.kpiCard').remove();
+                        var container = this.element
+                            .append("div")
+                            .attr("class", "kpiCard")
+                            .attr("style", "width:100%;text-align:left;border-spacing:0");
+                        if (this.hasActual === false || this.hasTarget === false || this.hasPeriod === false) {
+                            container
+                                .append("html")
+                                .attr("style", "")
+                                .html("Data is missing to draw the visual");
+                            return;
+                        }
                         this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ value: 1001 });
                         if (this.hasActual)
                             this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.actualIndex].format });
@@ -9040,19 +9052,6 @@ var powerbi;
                             needed: { display: "Needed", value: target - act },
                             trend: { display: "", value: trend }
                         };
-                        this.element.style("overflow", "auto");
-                        this.element.select('.kpiCard').remove();
-                        var container = this.element
-                            .append("div")
-                            .attr("class", "kpiCard")
-                            .attr("style", "width:100%;text-align:left;border-spacing:0");
-                        if (this.hasActual === false) {
-                            container
-                                .append("html")
-                                .attr("style", "")
-                                .html("Actual is required to draw the visual");
-                            return;
-                        }
                         var tbody = container
                             .append("table")
                             .attr("style", "width:100%;table-layout: fixed;")
@@ -9373,8 +9372,7 @@ var powerbi;
                             value: val.toString(),
                             header: vtype
                         });
-                        console.log(retData);
-                        return vtype;
+                        return retData;
                     };
                     Visual.prototype.enumerateObjectInstances = function (options) {
                         var objectName = options.objectName;
