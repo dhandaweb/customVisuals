@@ -8935,6 +8935,7 @@ var powerbi;
                             "RedGreen": ["#ff4701", "#00ad00"],
                             "GreenRed": ["#00ad00", "#ff4701"]
                         };
+                        this.lineStroke = 20;
                         this.intensity = true;
                         this.intensityScale = "10,40 60,80";
                         this.intensityColor = { solid: { color: "#4682b4" } };
@@ -8964,6 +8965,11 @@ var powerbi;
                                 var targetObj = options.dataViews[0].metadata.objects["Target"];
                                 if (targetObj["targetHeader"] !== undefined)
                                     this.targetHeader = targetObj["targetHeader"];
+                            }
+                            if (options.dataViews[0].metadata.objects["Sparkline"]) {
+                                var sparkObj = options.dataViews[0].metadata.objects["Sparkline"];
+                                if (sparkObj["transparency"] !== undefined)
+                                    this.lineStroke = sparkObj["transparency"];
                             }
                             if (options.dataViews[0].metadata.objects["Trend"]) {
                                 var trendObj = options.dataViews[0].metadata.objects["Trend"];
@@ -9167,7 +9173,8 @@ var powerbi;
                                 .attr("height", 30);
                             this.sparklineSelection.append("path")
                                 .attr("class", "line")
-                                .attr("style", "stroke: steelblue; stroke-width:2; fill: none;")
+                                .attr("style", "stroke: steelblue; fill: none;")
+                                .style("stroke-width", this.lineStroke / 10)
                                 .attr("d", function (d) {
                                 var xDomain = [];
                                 var yDomain = [];
@@ -9332,6 +9339,9 @@ var powerbi;
                                 break;
                             case 'Target':
                                 objectEnumeration.push({ objectName: objectName, properties: { targetHeader: this.targetHeader }, selector: null });
+                                break;
+                            case 'Sparkline':
+                                objectEnumeration.push({ objectName: objectName, properties: { transparency: this.lineStroke }, selector: null });
                                 break;
                             case 'Trend':
                                 objectEnumeration.push({ objectName: objectName, properties: { show: this.trendIndicator }, selector: null });

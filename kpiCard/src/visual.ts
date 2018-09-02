@@ -56,6 +56,7 @@ module powerbi.extensibility.visual {
             "GreenRed": ["#00ad00", "#ff4701"]
         };
 
+        private lineStroke: any= 20;
         private intensity: any = true;
         private intensityScale: any = "10,40 60,80";
         private intensityColor: any = { solid: { color: "#4682b4" } };
@@ -118,6 +119,11 @@ module powerbi.extensibility.visual {
                    var targetObj = options.dataViews[0].metadata.objects["Target"];
                    if (targetObj["targetHeader"] !== undefined) this.targetHeader = targetObj["targetHeader"];
                    
+               }
+               if (options.dataViews[0].metadata.objects["Sparkline"]) {
+                   var sparkObj = options.dataViews[0].metadata.objects["Sparkline"];
+                   if (sparkObj["transparency"] !== undefined) this.lineStroke = sparkObj["transparency"];
+
                }
                if (options.dataViews[0].metadata.objects["Trend"]) {
                    var trendObj = options.dataViews[0].metadata.objects["Trend"];
@@ -359,7 +365,8 @@ module powerbi.extensibility.visual {
 
                this.sparklineSelection.append("path")
                    .attr("class", "line")
-                   .attr("style", "stroke: steelblue; stroke-width:2; fill: none;")
+                   .attr("style", "stroke: steelblue; fill: none;")
+                   .style("stroke-width", this.lineStroke/10)
                    .attr("d", function (d: any) {
 
                        var xDomain = [];
@@ -594,7 +601,10 @@ module powerbi.extensibility.visual {
                 case 'Target':
                     objectEnumeration.push({ objectName: objectName, properties: { targetHeader: this.targetHeader }, selector: null });
                     break;
- 
+
+                case 'Sparkline':
+                    objectEnumeration.push({ objectName: objectName, properties: { transparency: this.lineStroke }, selector: null });
+                    break;
                 case 'Trend':
                     objectEnumeration.push({ objectName: objectName, properties: { show: this.trendIndicator }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { flipTrendDirection: this.flipTrendDirection }, selector: null });
