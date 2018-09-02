@@ -9125,12 +9125,16 @@ var powerbi;
                             if (this.bulletScaleMinZero === false)
                                 min = d3.min(data.map(function (d) { return d.actual; }));
                             var barScale = d3.scale.linear().range([0, 220]).domain([min, backgroundBarLen]);
-                            var bullet = container
+                            var bulletG = container
                                 .append("svg")
                                 .attr("width", 220)
-                                .attr("height", 20)
+                                .attr("height", 24);
+                            var bullet = bulletG.append("g").attr("transform", "translate(0,2)")
                                 .attr("class", "bullet");
-                            bullet.append("rect").attr("width", 220).attr("height", 20).attr("style", "fill:#d0cece;");
+                            bullet.append("rect")
+                                .attr("width", 220)
+                                .attr("height", 20)
+                                .attr("style", "fill:#d0cece;");
                             if (this.conditionalBullet === false) {
                                 bullet.append("rect")
                                     .attr("width", function (d) { return barScale(_this.chartData.actual.value); })
@@ -9148,10 +9152,10 @@ var powerbi;
                                         return _this.conditionalBulletColorOptions[_this.conditionalBulletColor][1];
                                 });
                             }
-                            bullet.append("rect")
-                                .attr("width", 2)
+                            bulletG.append("rect")
+                                .attr("width", 1)
                                 .attr("x", function (d) { return barScale(_this.chartData.target.value); })
-                                .attr("height", 20)
+                                .attr("height", 24)
                                 .attr("style", "fill:#000;");
                         }
                     };
@@ -9338,8 +9342,7 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { conditionalBullet: this.conditionalBullet }, selector: null });
                                 if (this.conditionalBullet)
                                     objectEnumeration.push({ objectName: objectName, properties: { conditionalBulletColor: this.conditionalBulletColor }, selector: null });
-                                if (this.conditionalBullet)
-                                    objectEnumeration.push({ objectName: objectName, properties: { conditionalBulletColorScale: this.conditionalBulletColorScale }, selector: null });
+                                // if (this.conditionalBullet) objectEnumeration.push({ objectName: objectName, properties: { conditionalBulletColorScale: this.conditionalBulletColorScale }, selector: null });
                                 if (!this.conditionalBullet)
                                     objectEnumeration.push({ objectName: objectName, properties: { singleBulletColor: this.singleBulletColor }, selector: null });
                                 // objectEnumeration.push({ objectName: objectName, properties: { bulletScaleMinZero: this.bulletScaleMinZero }, selector: null });

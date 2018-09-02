@@ -308,14 +308,18 @@ module powerbi.extensibility.visual {
 
                 var barScale = d3.scale.linear().range([0, 220]).domain([min, backgroundBarLen]);
 
-                var bullet = container
+                var bulletG = container
                     .append("svg")
                     .attr("width", 220)
-                    .attr("height", 20)
+                    .attr("height", 24);
 
+                var bullet = bulletG.append("g").attr("transform","translate(0,2)")
                     .attr("class", "bullet");
 
-                bullet.append("rect").attr("width", 220).attr("height", 20).attr("style", "fill:#d0cece;")
+                bullet.append("rect")
+                    .attr("width", 220)
+                    .attr("height", 20)
+                    .attr("style", "fill:#d0cece;")
 
                 if (this.conditionalBullet === false) {
                     bullet.append("rect")
@@ -335,10 +339,10 @@ module powerbi.extensibility.visual {
                         });
                 }
 
-                bullet.append("rect")
-                    .attr("width", 2)
+                bulletG.append("rect")
+                    .attr("width", 1)
                     .attr("x", (d) => barScale(this.chartData.target.value))
-                    .attr("height", 20)
+                    .attr("height", 24)
                     .attr("style", "fill:#000;");
             }
 
@@ -600,7 +604,7 @@ module powerbi.extensibility.visual {
                 case 'Bullet':
                     objectEnumeration.push({ objectName: objectName, properties: { conditionalBullet: this.conditionalBullet }, selector: null });
                     if (this.conditionalBullet) objectEnumeration.push({ objectName: objectName, properties: { conditionalBulletColor: this.conditionalBulletColor }, selector: null });
-                    if (this.conditionalBullet) objectEnumeration.push({ objectName: objectName, properties: { conditionalBulletColorScale: this.conditionalBulletColorScale }, selector: null });
+                   // if (this.conditionalBullet) objectEnumeration.push({ objectName: objectName, properties: { conditionalBulletColorScale: this.conditionalBulletColorScale }, selector: null });
                     if (!this.conditionalBullet) objectEnumeration.push({ objectName: objectName, properties: { singleBulletColor: this.singleBulletColor }, selector: null });
                    // objectEnumeration.push({ objectName: objectName, properties: { bulletScaleMinZero: this.bulletScaleMinZero }, selector: null });
 
