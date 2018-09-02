@@ -21,3 +21,9 @@
 .visual-kpiCardCCFC224D9885417F9AAF5BB8D45B007E_DEBUG .kpiCenter {
   text-align: center;
 }
+.visual-kpiCardCCFC224D9885417F9AAF5BB8D45B007E_DEBUG .kpiAxis path {
+  fill: none;
+}
+.visual-kpiCardCCFC224D9885417F9AAF5BB8D45B007E_DEBUG .kpiAxis line {
+  stroke: #b3b3b3;
+}

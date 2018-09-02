@@ -82,20 +82,30 @@
         }
     ],
     "objects": {
-        "Actual": {
-            "displayName": "Actual",
+        "displayTemplate": {
+            "displayName": "Display & Template",
             "properties": {
+                "selectedTemplate": {
+                    "displayName": "Template",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "linear",
+                                "displayName": "Linear"
+                            },
+                            {
+                                "value": "group",
+                                "displayName": "Group"
+                            }
+                        ]
+                    }
+                },
                 "actualHeader": {
-                    "displayName": "Actual Header",
+                    "displayName": "Actual Display Name",
                     "type": { "text": true }
-                }
-            }
-        },
-        "Target": {
-            "displayName": "Target",
-            "properties": {
+                },
                 "targetHeader": {
-                    "displayName": "Header Text",
+                    "displayName": "Target Display Name",
                     "type": { "text": true }
                 }
             }

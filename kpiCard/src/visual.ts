@@ -39,12 +39,14 @@ module powerbi.extensibility.visual {
         private textNode: Text;
 
         private columns: any;
+
+        private selectedTemplate: any = "linear";
         private showActual: any = false;
         private actualHeader: any = "";
       
 
         private showTarget: any = true;
-        private targetHeader: any = "Target";
+        private targetHeader: any = "";
       
         private bulletScaleMinZero: any = true;
 
@@ -109,17 +111,16 @@ module powerbi.extensibility.visual {
 
         public update(options: VisualUpdateOptions) {
            this.columns = options.dataViews[0].metadata.columns;
-
+            console.log();
            if (options.dataViews[0].metadata.objects) {
-               if (options.dataViews[0].metadata.objects["Actual"]) {
-                   var actObj = options.dataViews[0].metadata.objects["Actual"];
-                   if (actObj["actualHeader"] !== undefined) this.actualHeader = actObj["actualHeader"];
-               }
-               if (options.dataViews[0].metadata.objects["Target"]) {
-                   var targetObj = options.dataViews[0].metadata.objects["Target"];
-                   if (targetObj["targetHeader"] !== undefined) this.targetHeader = targetObj["targetHeader"];
+               if (options.dataViews[0].metadata.objects["displayTemplate"]) {
+                   var displayTemplateObj = options.dataViews[0].metadata.objects["displayTemplate"];
+                   if (displayTemplateObj["actualHeader"] !== undefined) this.actualHeader = displayTemplateObj["actualHeader"];
+                   if (displayTemplateObj["targetHeader"] !== undefined) this.targetHeader = displayTemplateObj["targetHeader"];
+                   if (displayTemplateObj["selectedTemplate"] !== undefined) this.selectedTemplate = displayTemplateObj["selectedTemplate"];
                    
                }
+              
                if (options.dataViews[0].metadata.objects["Sparkline"]) {
                    var sparkObj = options.dataViews[0].metadata.objects["Sparkline"];
                    if (sparkObj["transparency"] !== undefined) this.lineStroke = sparkObj["transparency"];
@@ -184,64 +185,18 @@ module powerbi.extensibility.visual {
             var targetHeader = this.targetHeader.length === 0 ? this.columns[this.targetIndex].displayName : this.targetHeader;
 
             var act = data[data.length - 1].actual;
+            var prior = data[data.length - 2].actual;
             var target = data[data.length - 1].target;
             var actSecondLast = data[data.length - 2].actual;
+
             this.chartData = {
                 actual: { display: actHeader, value: act },
+                prior: { display: "Prior", value: prior },
                 target: { display: targetHeader, value: target },
                 growth: { display: "Growth", value: act - actSecondLast/act },
                 needed: { display: "Needed", value: target - act },
                 trend:  { display: "", value: trend }
             };
-
-           //nestedData.map((d,i)=> {
-           //    var actual = this.hasActual ? d.values[d.values.length - 1][this.actualIndex] : 0;
-              
-           //    var secondLastActual = this.hasActual ? d.values[d.values.length - 2][this.actualIndex] : 0;
-           //    var firstActual = this.hasActual ? d.values[0][this.actualIndex] : 0;
-           //    var target = this.hasTarget ? d.values[d.values.length - 1][this.targetIndex] : 0;
-
-           //    d.values.map((d) => {
-           //        d.yValue = this.hasActual ? d[this.actualIndex] : 0;
-           //        d.xValue = this.hasPeriod ? d[this.periodIndex] : "";
-           //    });
-               
-           //    var VP = 0;
-
-           //    if (this.hasActual && this.hasTarget) {
-           //        var current = d.values[d.values.length - 1][this.actualIndex];
-           //        var target = d.values[d.values.length - 1][this.targetIndex];
-           //        VP = ((current - target) / Math.abs(target)) * 100;
-           //    }
-           //    var percentage, last, secondlast, retVal;
-           //    if (d.values.length > 1) {
-           //        var last = d.values[d.values.length - 1][this.actualIndex];
-           //        var secondlast = d.values[d.values.length - 2][this.targetIndex];
-                  
-           //        percentage = ((last - secondlast) / Math.abs(secondlast)) * 100;
-
-           //        if (last === null || secondlast === null) percentage = 0;
-
-           //    }
-           //    else percentage = 0;
-
-           //    data.push({
-           //        key: d.key,
-           //        actual: actual,
-           //        secondLastActual: secondLastActual,
-           //        change: actual - secondLastActual,
-           //        perChange: ((actual - secondLastActual) / Math.abs(secondLastActual)) * 100,
-           //        totalChange: ((actual - firstActual) / Math.abs(firstActual)) * 100,
-           //        trend: actual > secondLastActual ? 180 : 0,
-           //        target: target,
-           //        variance: actual - target,
-           //        variancePer: (VP).toFixed(2),
-           //        values: d.values,
-           //        percentage: percentage,
-           //        identity: d.values[0].identity
-           //    });
-              
-           //});
 
            this.element.style("overflow", "auto");
            this.element.select('.kpiCard').remove();
@@ -264,66 +219,96 @@ module powerbi.extensibility.visual {
                 .attr("style", "width:100%;table-layout: fixed;")
                 .append("tbody");
 
-            var topRow = tbody.append("tr");
+            if (this.selectedTemplate === "linear") {
+                var topRow = tbody.append("tr");
 
-            var titleContainer = topRow.append("td").attr("colspan", "2").style("font-size","18px");
-            var bulletContainer = topRow.append("td").attr("colspan", "3");
+                var titleContainer = topRow.append("td").attr("colspan", "2");
+                var bulletContainer = topRow.append("td").attr("colspan", "3");
 
-            var secondRow = tbody.append("tr");
-            
-            secondRow.append("td").html("Actual").attr("class","kpiTitle");
-            secondRow.append("td").html("Trend").attr("class", "kpiTitle");
-            secondRow.append("td").html("Target").attr("class", "kpiTitle kpiCenter");
-            secondRow.append("td").html("Growth").attr("class", "kpiTitle kpiCenter");
-            secondRow.append("td").html("Needed").attr("class", "kpiTitle kpiCenter");
-            var thirdRow = tbody.append("tr");
+                var secondRow = tbody.append("tr");
 
-            var actualContainer = thirdRow.append("td");
-            var sparklineContainer = thirdRow.append("td");
-            var targetContainer = thirdRow.append("td").style("text-align", "center");
-            var growthContainer = thirdRow.append("td").style("text-align", "center");
-            var neededContainer = thirdRow.append("td").style("text-align", "center");
+                secondRow.append("td").html("Actual").attr("class", "kpiTitle");
+                secondRow.append("td").html("Trend").attr("class", "kpiTitle");
+                secondRow.append("td").html("Target").attr("class", "kpiTitle kpiCenter");
+                secondRow.append("td").html("Growth").attr("class", "kpiTitle kpiCenter");
+                secondRow.append("td").html("Needed").attr("class", "kpiTitle kpiCenter");
+                var thirdRow = tbody.append("tr");
 
-            this.drawTitle(titleContainer);
-            this.drawBullet(data, bulletContainer);
+                var actualContainer = thirdRow.append("td");
+                var sparklineContainer = thirdRow.append("td");
+                var targetContainer = thirdRow.append("td").style("text-align", "center");
+                var growthContainer = thirdRow.append("td").style("text-align", "center");
+                var neededContainer = thirdRow.append("td").style("text-align", "center");
 
-            this.drawActual(actualContainer);
-            this.drawSparkline(data, sparklineContainer);
-            this.drawBisectorToolTip(data);
-            this.drawTarget(targetContainer);
-            this.drawGrowth(growthContainer);
-            this.drawNeeded(neededContainer);
+                this.drawTitle(titleContainer);
+                this.drawBullet(data, bulletContainer, options.viewport.width/2);
 
-            this.showTrendIndicator(titleContainer);
-           
+                this.drawActual(actualContainer);
+                this.drawSparkline(data, sparklineContainer, options.viewport.width / 5,30);
+                this.drawBisectorToolTip(data, options.viewport.width / 5,30);
+                this.drawTarget(targetContainer);
+                this.drawGrowth(growthContainer);
+                this.drawNeeded(neededContainer);
 
+                this.showTrendIndicator(titleContainer);
+
+            }
+            else {
+                var titleContainer = tbody.append("tr").append("td").attr("colspan", "6");
+                var bulletContainer = tbody.append("tr").append("td").attr("colspan", "6");
+
+                var thirdRow = tbody.append("tr");
+                var priorContainer = tbody.append("td").attr("colspan", "3");
+                var growthContainer = tbody.append("td").attr("colspan", "3");
+
+                var sparklineContainer = tbody.append("tr").append("td");
+
+                this.drawTitle(titleContainer);
+                this.drawBullet(data, bulletContainer, options.viewport.width);
+
+                this.drawSparkline(data, sparklineContainer, options.viewport.width- 10, 100);
+                this.drawBisectorToolTip(data, options.viewport.width - 10, 100);
+                this.drawPrior(priorContainer);
+                this.drawGrowth(growthContainer);
+             
+                this.showTrendIndicator(titleContainer);
+
+            }
         }
+
         public drawTitle(container) {
-            container.append("span").text(this.chartData.actual.display);
+            var val = container.append("span").text(this.chartData.actual.display).attr("style","font-size:18px;");
+            if (this.selectedTemplate === "group") {
+                val.style("display","block");
+                container.append("span").text("vs " + this.chartData.target.display).style("font-size", "14px");
+            }
         }
 
-        public drawBullet(data: any, container: any) {
+        public drawBullet(data: any, container: any, bulletwidth: any) {
             if (this.hasTarget) {
 
                 var targetMax = d3.max(data.map((d) => d.target));
                 var actualMax = d3.max(data.map((d) => d.actual));
 
                 var backgroundBarLen = d3.max([targetMax, actualMax]) * 1.15;
+
+                var width = bulletwidth-5;
+
                 var min = 0;
                 if (this.bulletScaleMinZero === false) min = d3.min(data.map((d) => d.actual));
 
-                var barScale = d3.scale.linear().range([0, 220]).domain([min, backgroundBarLen]);
+                var barScale = d3.scale.linear().range([0, width]).domain([min, backgroundBarLen]);
 
                 var bulletG = container
                     .append("svg")
-                    .attr("width", 220)
+                    .attr("width", width)
                     .attr("height", 24);
 
                 var bullet = bulletG.append("g").attr("transform","translate(0,2)")
                     .attr("class", "bullet");
 
                 bullet.append("rect")
-                    .attr("width", 220)
+                    .attr("width", width)
                     .attr("height", 20)
                     .attr("style", "fill:#d0cece;")
 
@@ -354,32 +339,64 @@ module powerbi.extensibility.visual {
 
         }
 
-        public drawSparkline(data: any, sparklineContainer) {
+        public drawSparkline(data: any, sparklineContainer, width:any, height:any) {
            
            if (this.hasActual) {
 
-               this.sparklineSelection = sparklineContainer
-                                               .append("svg")
-                                               .attr("width", 120)
-                                               .attr("height", 30);
+               var xDomain = [];
+               var yDomain = [];
 
-               this.sparklineSelection.append("path")
+               data.map(function (d) {
+                   xDomain.push(d.period);
+                   yDomain.push(d.actual);
+               });
+               var xScale = d3.scale.ordinal().rangePoints([0, width]).domain(xDomain);
+               var yScale = d3.scale.linear().range([height, 0]).domain([d3.min(yDomain), d3.max(yDomain)]);
+
+               this.sparklineSelection = sparklineContainer
+                   .append("svg")
+                   .attr("width", width)
+                   .attr("height", height);
+
+              var sparklineSelectionG = this.sparklineSelection.append("g");
+
+               if (this.selectedTemplate === "group") {
+
+                   xScale.rangePoints([0, width-35]);
+                   yScale.range([height-30, 0])
+
+                   sparklineSelectionG.attr("transform", "translate(30,10)");
+                   //.tickFormat(this.iValueFormatter)
+                   var yaxis = d3.svg.axis().scale(yScale).orient("left").ticks(3);
+                   var xaxis = d3.svg.axis().scale(xScale).orient("bottom").ticks(3);
+
+                   sparklineSelectionG
+                       .append("g")
+                       .attr("transform", "translate(0,0)")
+                       .attr("class", "kpiAxis")
+                       .call(yaxis);
+
+                   sparklineSelectionG
+                       .append("g")
+                       .attr("transform", "translate(" + 0 + "," + (height-30) + ")")
+                       .attr("class", "kpiAxis")
+                       .call(xaxis)
+                       .selectAll("text").each(function (d, i) {
+                           if (i === 0 || i === xScale.domain().length - 1) {
+                               d3.select(this).attr("text-anchor", i === 0 ? "start" : "end")
+                           }
+                           else {
+                               d3.select(this).text("");
+                           }
+                       });
+
+               }
+
+               sparklineSelectionG.append("path")
                    .attr("class", "line")
                    .attr("style", "stroke: steelblue; fill: none;")
                    .style("stroke-width", this.lineStroke/10)
                    .attr("d", function (d: any) {
-
-                       var xDomain = [];
-                       var yDomain = [];
-                       
-                       data.map(function (d) {
-                           xDomain.push(d.period);
-                           yDomain.push(d.actual);
-                       });
-                     
-                       var xScale = d3.scale.ordinal().rangeRoundBands([0, 120]).domain(xDomain);
-                       var yScale = d3.scale.linear().range([25, 0]).domain([d3.min(yDomain), d3.max(yDomain)]);
-
                        return "M" + data.map((d) => {
                            return xScale(d.period) + ',' + yScale(d.actual);
                        }).join('L');
@@ -400,12 +417,34 @@ module powerbi.extensibility.visual {
                 );
             
         }
+        
+        public drawPrior(container: any) {
+
+            container
+                .append("span")
+                .attr("style","display:block;font-size:14px")
+                .text(this.iValueFormatter.format(this.chartData.prior.value));
+
+            container
+                .append("span")
+                .style("font-size", "16px")
+                .text("Prior");
+
+        }
 
         public drawGrowth(container: any) {
 
-           container
+           var val = container
                 .append("span")
-               .text(this.chartData.growth.value.toFixed(2));
+                .text(this.chartData.growth.value.toFixed(2));
+
+            if (this.selectedTemplate === "group") {
+                val.attr("style", "display:block;font-size:14px");
+                container.style("text-align","right")
+                    .append("span")
+                    .style("font-size", "16px")
+                    .text("Growth");
+            }
            
         }
 
@@ -429,11 +468,12 @@ module powerbi.extensibility.visual {
             
             if (this.trendIndicator === true) {
 
-
                 var trendIndicator = container
                     .append("svg")
                     .attr("width", 18)
                     .attr("height", 18);
+
+                if (this.selectedTemplate === "group")trendIndicator.attr("style","position: absolute;top: 0;right: 0;")  
 
                 var triangleDirection = this.flipTrendDirection == false ? 'triangle-down' : 'triangle-up';
                 var triangle = d3.svg.symbol().type(triangleDirection).size(50);
@@ -465,23 +505,35 @@ module powerbi.extensibility.visual {
         }
 
         //#region Tooltip
-        public drawBisectorToolTip(data) {
+        public drawBisectorToolTip(data, width, height) {
 
           var self = this;
+            var ht = this.selectedTemplate === "group" ? height - 30 : height
+            var ss = this.sparklineSelection
+                .append("rect")
+                .style("fill","transparent")
+                  .on("mouseover", d => {
+                        this.sparklineMarker.style("display", null);
+                    })
+                    .on("mouseout", d => {
+                        this.sparklineMarker.style("display", "none");
+                    })
+                  .on("mousemove", function (d) {
+                      self.mouseMove(data, this, width);
+                  });
 
-          this.sparklineSelection
-              .on("mouseover", d => {
-                    this.sparklineMarker.style("display", null);
-                })
-                .on("mouseout", d => {
-                    this.sparklineMarker.style("display", "none");
-                })
-              .on("mousemove", function (d) {
-                  self.mouseMove(data, this);
-              });
+            if (this.selectedTemplate === "group") {
+                ss.attr("width", width - 35)
+                    .attr("height", ht)
+                    .attr("transform", "translate(30,10)");
+            }
+            else {
+                ss.attr("width", width)
+                    .attr("height", ht);
+            }
 
             this.sparklineMarker = this.sparklineSelection
-                                        .append("g")
+                                    .append("g")
                                         .attr("display", "none")
                                         .attr("class", "bisector");
 
@@ -489,14 +541,14 @@ module powerbi.extensibility.visual {
                                             .attr('x1', 0)
                                             .attr('y1', 0)
                                             .attr('x2', 0)
-                                            .attr('y2', 30)
+                                            .attr('y2', ht)
                                             .attr('class', 'verticalLine')
                                             .attr("cursor", "pointer");
 
             this.sparklineCaptionName = this.sparklineMarker
-                .append("text")
-                .attr("dy", 15)
-                .attr("style", "cursor:pointer; text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;");
+                                            .append("text")
+                                            .attr("dy", 15)
+                                            .attr("style", "cursor:pointer; text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;");
 
 
             this.sparklineCaptionValue = this.sparklineMarker
@@ -506,26 +558,25 @@ module powerbi.extensibility.visual {
             
         }
 
-        public mouseMove(data: any, el:any) {
+        public mouseMove(data: any, el: any, width:any) {
+
+            var catScale = d3.scale.ordinal()
+                .rangePoints([0, width])
+                .domain(data.map(function (d) { return d.period; }));
 
 
             this.sparklineMarker.attr("style", "display:inherit");
-
-            var xPos = d3.mouse(el)[0];
+            var padding = (catScale(catScale.domain()[1]) - catScale(catScale.domain()[0]))/2;
+            var xPos = this.selectedTemplate === "group" ? (d3.mouse(el)[0] + 30) : d3.mouse(el)[0] ;
 
             this.sparklineMarker.attr("transform", function () {
                 return "translate(" + (xPos) + ",0)";
             });
 
-            var catScale = d3.scale.ordinal()
-                                 .rangeRoundBands([0, 120])
-                                 .domain(data.map(function (d) { return d.period; }));
-            
-
-            var leftEdges = catScale.domain().map(function (d, i) { return catScale.rangeBand() * i });
+            var leftEdges = catScale.domain().map(d => (catScale(d) + padding));
 
             var j;
-            for (j = 0; xPos > leftEdges[j] + (catScale.rangeBand() / 2); j++) { }
+            for (j = 0; xPos > leftEdges[j]; j++) { }
 
             var hoverXValue = catScale.domain()[j];
             var hoverVal;
@@ -584,7 +635,8 @@ module powerbi.extensibility.visual {
                 value: val.toString(),
                 header: vtype
             });
-           
+           console.log(retData);
+
             return vtype;
         }
 
@@ -594,11 +646,9 @@ module powerbi.extensibility.visual {
             let objectEnumeration: VisualObjectInstance[] = [];
           
             switch (objectName) {
-                case 'Actual':
-                   objectEnumeration.push({ objectName: objectName, properties: { actualHeader: this.actualHeader},selector: null});
-                    break;
-
-                case 'Target':
+                case 'displayTemplate':
+                    objectEnumeration.push({ objectName: objectName, properties: { selectedTemplate: this.selectedTemplate }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { actualHeader: this.actualHeader }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { targetHeader: this.targetHeader }, selector: null });
                     break;
 
