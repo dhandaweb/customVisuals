@@ -9633,8 +9633,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
-                name: 'multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
+            plugins.multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E = {
+                name: 'multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E',
                 displayName: 'MultipleSparkline',
                 class: 'Visual',
                 version: '1.0.0',

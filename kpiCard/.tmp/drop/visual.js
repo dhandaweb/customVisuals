@@ -8936,10 +8936,12 @@ var powerbi;
                             "RedGreen": ["#ff4701", "#00ad00"],
                             "GreenRed": ["#00ad00", "#ff4701"]
                         };
+                        this.showTargetLine = false;
                         this.lineStroke = 20;
                         this.intensity = true;
                         this.intensityScale = "10,40 60,80";
                         this.intensityColor = { solid: { color: "#4682b4" } };
+                        this.targetLineColor = { solid: { color: "#ff4701" } };
                         this.conditionalBullet = true;
                         this.conditionalBulletColorScale = "5,10,100";
                         this.conditionalBulletColorOptions = {
@@ -8970,6 +8972,10 @@ var powerbi;
                                 var sparkObj = options.dataViews[0].metadata.objects["Sparkline"];
                                 if (sparkObj["transparency"] !== undefined)
                                     this.lineStroke = sparkObj["transparency"];
+                                if (sparkObj["showTargetLine"] !== undefined)
+                                    this.showTargetLine = sparkObj["showTargetLine"];
+                                if (sparkObj["targetLineColor"] !== undefined)
+                                    this.targetLineColor = sparkObj["targetLineColor"];
                             }
                             if (options.dataViews[0].metadata.objects["Trend"]) {
                                 var trendObj = options.dataViews[0].metadata.objects["Trend"];
@@ -9091,8 +9097,11 @@ var powerbi;
                             var sparklineContainer = tbody.append("tr").append("td");
                             this.drawTitle(titleContainer);
                             this.drawBullet(data, bulletContainer, options.viewport.width);
-                            this.drawSparkline(data, sparklineContainer, options.viewport.width - 10, 100);
-                            this.drawBisectorToolTip(data, options.viewport.width - 10, 100);
+                            var height = options.viewport.height - 140;
+                            if (height < 70)
+                                height = 70;
+                            this.drawSparkline(data, sparklineContainer, options.viewport.width - 10, height);
+                            this.drawBisectorToolTip(data, options.viewport.width - 10, height);
                             this.drawPrior(priorContainer);
                             this.drawGrowth(growthContainer);
                             this.showTrendIndicator(titleContainer);
@@ -9166,11 +9175,10 @@ var powerbi;
                                 .attr("height", height);
                             var sparklineSelectionG = this.sparklineSelection.append("g");
                             if (this.selectedTemplate === "group") {
-                                xScale.rangePoints([0, width - 35]);
+                                xScale.rangePoints([0, width - 55]);
                                 yScale.range([height - 30, 0]);
-                                sparklineSelectionG.attr("transform", "translate(30,10)");
-                                //.tickFormat(this.iValueFormatter)
-                                var yaxis = d3.svg.axis().scale(yScale).orient("left").ticks(3);
+                                sparklineSelectionG.attr("transform", "translate(50,10)");
+                                var yaxis = d3.svg.axis().scale(yScale).orient("left").ticks(3).tickFormat(this.iValueFormatter.format);
                                 var xaxis = d3.svg.axis().scale(xScale).orient("bottom").ticks(3);
                                 sparklineSelectionG
                                     .append("g")
@@ -9200,6 +9208,18 @@ var powerbi;
                                     return xScale(d.period) + ',' + yScale(d.actual);
                                 }).join('L');
                             });
+                            if (this.showTargetLine === true) {
+                                sparklineSelectionG.append("path")
+                                    .attr("class", "line")
+                                    .attr("style", "stroke: red; fill: none;stroke-dasharray: 3")
+                                    .style("stroke-width", this.lineStroke / 10)
+                                    .style("stroke", this.targetLineColor.solid.color)
+                                    .attr("d", function (d) {
+                                    return "M" + data.map(function (d) {
+                                        return xScale(d.period) + ',' + yScale(d.target);
+                                    }).join('L');
+                                });
+                            }
                         }
                     };
                     Visual.prototype.drawActual = function (container) {
@@ -9385,6 +9405,9 @@ var powerbi;
                                 break;
                             case 'Sparkline':
                                 objectEnumeration.push({ objectName: objectName, properties: { transparency: this.lineStroke }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { showTargetLine: this.showTargetLine }, selector: null });
+                                if (this.showTargetLine)
+                                    objectEnumeration.push({ objectName: objectName, properties: { targetLineColor: this.targetLineColor }, selector: null });
                                 break;
                             case 'Trend':
                                 objectEnumeration.push({ objectName: objectName, properties: { show: this.trendIndicator }, selector: null });
@@ -9418,8 +9441,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.kpiCardCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
-                name: 'kpiCardCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
+            plugins.kpiCardCCFC224D9885417F9AAF5BB8D45B007E = {
+                name: 'kpiCardCCFC224D9885417F9AAF5BB8D45B007E',
                 displayName: 'Kpi Card',
                 class: 'Visual',
                 version: '1.0.0',

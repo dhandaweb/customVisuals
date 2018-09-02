@@ -57,12 +57,12 @@ module powerbi.extensibility.visual {
             "RedGreen": ["#ff4701", "#00ad00"],
             "GreenRed": ["#00ad00", "#ff4701"]
         };
-
+        private showTargetLine: any = false;
         private lineStroke: any= 20;
         private intensity: any = true;
         private intensityScale: any = "10,40 60,80";
         private intensityColor: any = { solid: { color: "#4682b4" } };
-
+        private targetLineColor: any = { solid: { color: "#ff4701" } };
         private conditionalBullet: any = true;
         private conditionalBulletColorScale: any = "5,10,100";
         
@@ -98,9 +98,6 @@ module powerbi.extensibility.visual {
         public  TooltipEnabledDataPoint: any;
 
       
-   
-       
-
        constructor(options: VisualConstructorOptions) {
            
            this.element = d3.select(options.element);
@@ -124,7 +121,10 @@ module powerbi.extensibility.visual {
                if (options.dataViews[0].metadata.objects["Sparkline"]) {
                    var sparkObj = options.dataViews[0].metadata.objects["Sparkline"];
                    if (sparkObj["transparency"] !== undefined) this.lineStroke = sparkObj["transparency"];
-
+                   if (sparkObj["showTargetLine"] !== undefined) this.showTargetLine = sparkObj["showTargetLine"];
+                   if (sparkObj["targetLineColor"] !== undefined) this.targetLineColor = sparkObj["targetLineColor"];
+                   
+                   
                }
                if (options.dataViews[0].metadata.objects["Trend"]) {
                    var trendObj = options.dataViews[0].metadata.objects["Trend"];
@@ -187,7 +187,7 @@ module powerbi.extensibility.visual {
         
            if (this.hasActual) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.actualIndex].format });
            else if (this.hasTarget) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.targetIndex].format });
-           
+          
             var data = [];
             options.dataViews[0].table.rows.forEach((d: any,i) => {
                        d.identity = options.dataViews[0].table.identity[i];
@@ -270,8 +270,10 @@ module powerbi.extensibility.visual {
                 this.drawTitle(titleContainer);
                 this.drawBullet(data, bulletContainer, options.viewport.width);
 
-                this.drawSparkline(data, sparklineContainer, options.viewport.width- 10, 100);
-                this.drawBisectorToolTip(data, options.viewport.width - 10, 100);
+                var height = options.viewport.height - 140;
+                if (height < 70) height = 70;
+                this.drawSparkline(data, sparklineContainer, options.viewport.width - 10, height);
+                this.drawBisectorToolTip(data, options.viewport.width - 10, height);
                 this.drawPrior(priorContainer);
                 this.drawGrowth(growthContainer);
              
@@ -366,19 +368,19 @@ module powerbi.extensibility.visual {
 
                if (this.selectedTemplate === "group") {
 
-                   xScale.rangePoints([0, width-35]);
+                   xScale.rangePoints([0, width-55]);
                    yScale.range([height-30, 0])
 
-                   sparklineSelectionG.attr("transform", "translate(30,10)");
-                   //.tickFormat(this.iValueFormatter)
-                   var yaxis = d3.svg.axis().scale(yScale).orient("left").ticks(3);
+                   sparklineSelectionG.attr("transform", "translate(50,10)");
+                 
+                   var yaxis = d3.svg.axis().scale(yScale).orient("left").ticks(3).tickFormat(this.iValueFormatter.format);
                    var xaxis = d3.svg.axis().scale(xScale).orient("bottom").ticks(3);
 
                    sparklineSelectionG
                        .append("g")
                        .attr("transform", "translate(0,0)")
                        .attr("class", "kpiAxis")
-                       .call(yaxis);
+                       .call(yaxis)
 
                    sparklineSelectionG
                        .append("g")
@@ -405,6 +407,20 @@ module powerbi.extensibility.visual {
                            return xScale(d.period) + ',' + yScale(d.actual);
                        }).join('L');
                    });
+
+               if (this.showTargetLine === true) {
+                   sparklineSelectionG.append("path")
+                       .attr("class", "line")
+                       .attr("style", "stroke: red; fill: none;stroke-dasharray: 3")
+                       .style("stroke-width", this.lineStroke / 10)
+                       .style("stroke",this.targetLineColor.solid.color)
+                       .attr("d", function (d: any) {
+                           return "M" + data.map((d) => {
+                               return xScale(d.period) + ',' + yScale(d.target);
+                           }).join('L');
+                       });
+               }
+
            }
         }
 
@@ -657,6 +673,9 @@ module powerbi.extensibility.visual {
 
                 case 'Sparkline':
                     objectEnumeration.push({ objectName: objectName, properties: { transparency: this.lineStroke }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { showTargetLine: this.showTargetLine }, selector: null });
+                    if (this.showTargetLine)objectEnumeration.push({ objectName: objectName, properties: { targetLineColor: this.targetLineColor }, selector: null });
+                    
                     break;
                 case 'Trend':
                     objectEnumeration.push({ objectName: objectName, properties: { show: this.trendIndicator }, selector: null });

@@ -116,6 +116,20 @@
                 "transparency": {
                     "displayName": "Line Width",
                     "type": { "text": true }
+                },
+                "showTargetLine": {
+                    "displayName": "Show Target Line",
+                    "type": { "bool": true }
+                },
+                "targetLineColor": {
+                    "displayName": "Target Line color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
                 }
             }
         },
