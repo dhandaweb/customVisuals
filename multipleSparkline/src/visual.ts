@@ -893,7 +893,7 @@ module powerbi.extensibility.visual {
                     objectEnumeration.push({ objectName: objectName, properties: { showPerChange: this.showPerChange }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { percentageChangeHeader: this.percentageChangeHeader }, selector: null });
                     //objectEnumeration.push({ objectName: objectName, properties: { showTotalChange: this.showTotalChange }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { totalChangeHeader: this.totalChangeHeader }, selector: null });
+                   // objectEnumeration.push({ objectName: objectName, properties: { totalChangeHeader: this.totalChangeHeader }, selector: null });
                     break;
 
                 case 'Target':

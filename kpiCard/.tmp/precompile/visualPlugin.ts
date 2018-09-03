@@ -1,6 +1,6 @@
 module powerbi.visuals.plugins {
-    export var kpiCardCCFC224D9885417F9AAF5BB8D45B007E = {
-        name: 'kpiCardCCFC224D9885417F9AAF5BB8D45B007E',
+    export var kpiCardCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
+        name: 'kpiCardCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
         displayName: 'Kpi Card',
         class: 'Visual',
         version: '1.0.0',

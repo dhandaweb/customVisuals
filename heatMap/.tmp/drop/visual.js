@@ -8659,8 +8659,8 @@ var powerbi;
     (function (extensibility) {
         var visual;
         (function (visual) {
-            var kpiCardCCFC224D9885417F9AAF5BB8D45B007E;
-            (function (kpiCardCCFC224D9885417F9AAF5BB8D45B007E) {
+            var heatMapCCFC224D9885417F9AAF5BB8D45B007E;
+            (function (heatMapCCFC224D9885417F9AAF5BB8D45B007E) {
                 "use strict";
                 var DataViewObjectsParser = powerbi.extensibility.utils.dataview.DataViewObjectsParser;
                 var VisualSettings = (function (_super) {
@@ -8676,7 +8676,7 @@ var powerbi;
                     }
                     return VisualSettings;
                 }(DataViewObjectsParser));
-                kpiCardCCFC224D9885417F9AAF5BB8D45B007E.VisualSettings = VisualSettings;
+                heatMapCCFC224D9885417F9AAF5BB8D45B007E.VisualSettings = VisualSettings;
                 var dataPointSettings = (function () {
                     function dataPointSettings() {
                         // Default color
@@ -8694,8 +8694,8 @@ var powerbi;
                     }
                     return dataPointSettings;
                 }());
-                kpiCardCCFC224D9885417F9AAF5BB8D45B007E.dataPointSettings = dataPointSettings;
-            })(kpiCardCCFC224D9885417F9AAF5BB8D45B007E = visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E || (visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E = {}));
+                heatMapCCFC224D9885417F9AAF5BB8D45B007E.dataPointSettings = dataPointSettings;
+            })(heatMapCCFC224D9885417F9AAF5BB8D45B007E = visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E || (visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E = {}));
         })(visual = extensibility.visual || (extensibility.visual = {}));
     })(extensibility = powerbi.extensibility || (powerbi.extensibility = {}));
 })(powerbi || (powerbi = {}));
@@ -8705,14 +8705,14 @@ var powerbi;
     (function (extensibility) {
         var visual;
         (function (visual) {
-            var kpiCardCCFC224D9885417F9AAF5BB8D45B007E;
-            (function (kpiCardCCFC224D9885417F9AAF5BB8D45B007E) {
+            var heatMapCCFC224D9885417F9AAF5BB8D45B007E;
+            (function (heatMapCCFC224D9885417F9AAF5BB8D45B007E) {
                 var DefaultHandleTouchDelay = 1000;
                 function createTooltipServiceWrapper(tooltipService, rootElement, handleTouchDelay) {
                     if (handleTouchDelay === void 0) { handleTouchDelay = DefaultHandleTouchDelay; }
                     return new TooltipServiceWrapper(tooltipService, rootElement, handleTouchDelay);
                 }
-                kpiCardCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper = createTooltipServiceWrapper;
+                heatMapCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper = createTooltipServiceWrapper;
                 var TooltipServiceWrapper = (function () {
                     function TooltipServiceWrapper(tooltipService, rootElement, handleTouchDelay) {
                         this.visualHostTooltipService = tooltipService;
@@ -8883,7 +8883,7 @@ var powerbi;
                     };
                     return TooltipServiceWrapper;
                 }());
-            })(kpiCardCCFC224D9885417F9AAF5BB8D45B007E = visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E || (visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E = {}));
+            })(heatMapCCFC224D9885417F9AAF5BB8D45B007E = visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E || (visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E = {}));
         })(visual = extensibility.visual || (extensibility.visual = {}));
     })(extensibility = powerbi.extensibility || (powerbi.extensibility = {}));
 })(powerbi || (powerbi = {}));
@@ -8918,479 +8918,160 @@ var powerbi;
     (function (extensibility) {
         var visual;
         (function (visual) {
-            var kpiCardCCFC224D9885417F9AAF5BB8D45B007E;
-            (function (kpiCardCCFC224D9885417F9AAF5BB8D45B007E) {
+            var heatMapCCFC224D9885417F9AAF5BB8D45B007E;
+            (function (heatMapCCFC224D9885417F9AAF5BB8D45B007E) {
                 "use strict";
                 var Visual = (function () {
                     function Visual(options) {
-                        this.selectedTemplate = "linear";
-                        this.showActual = false;
-                        this.actualHeader = "";
-                        this.showTarget = true;
-                        this.targetHeader = "";
-                        this.bulletScaleMinZero = true;
-                        this.trendIndicator = true;
-                        this.flipTrendDirection = false;
-                        this.trendColor = "RedGreen";
-                        this.trendColorOptions = {
-                            "RedGreen": ["#ff4701", "#00ad00"],
-                            "GreenRed": ["#00ad00", "#ff4701"]
-                        };
-                        this.showTargetLine = false;
-                        this.lineStroke = 20;
-                        this.intensity = true;
-                        this.intensityScale = "10,40 60,80";
-                        this.intensityColor = { solid: { color: "#4682b4" } };
-                        this.targetLineColor = { solid: { color: "#ff4701" } };
-                        this.conditionalBullet = true;
-                        this.conditionalBulletColorScale = "5,10,100";
-                        this.conditionalBulletColorOptions = {
-                            "RedGreen": ["#ff4701", "#00ad00"],
-                            "GreenRed": ["#00ad00", "#ff4701"]
-                        };
-                        this.conditionalBulletColor = "GreenRed";
-                        this.singleBulletColor = { solid: { color: "#4682b4" } };
+                        this.hasXaxis = false;
+                        this.hasYaxis = false;
+                        this.hasValue = false;
                         this.element = d3.select(options.element);
                         this.host = options.host;
-                        this.tooltipServiceWrapper = kpiCardCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
+                        this.tooltipServiceWrapper = heatMapCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
                         this.selectionManager = options.host.createSelectionManager();
                     }
                     Visual.prototype.update = function (options) {
                         var _this = this;
                         this.columns = options.dataViews[0].metadata.columns;
                         if (options.dataViews[0].metadata.objects) {
-                            if (options.dataViews[0].metadata.objects["displayTemplate"]) {
-                                var displayTemplateObj = options.dataViews[0].metadata.objects["displayTemplate"];
-                                if (displayTemplateObj["actualHeader"] !== undefined)
-                                    this.actualHeader = displayTemplateObj["actualHeader"];
-                                if (displayTemplateObj["targetHeader"] !== undefined)
-                                    this.targetHeader = displayTemplateObj["targetHeader"];
-                                if (displayTemplateObj["selectedTemplate"] !== undefined)
-                                    this.selectedTemplate = displayTemplateObj["selectedTemplate"];
-                            }
-                            if (options.dataViews[0].metadata.objects["Sparkline"]) {
-                                var sparkObj = options.dataViews[0].metadata.objects["Sparkline"];
-                                if (sparkObj["transparency"] !== undefined)
-                                    this.lineStroke = sparkObj["transparency"];
-                                if (sparkObj["showTargetLine"] !== undefined)
-                                    this.showTargetLine = sparkObj["showTargetLine"];
-                                if (sparkObj["targetLineColor"] !== undefined)
-                                    this.targetLineColor = sparkObj["targetLineColor"];
-                            }
-                            if (options.dataViews[0].metadata.objects["Trend"]) {
-                                var trendObj = options.dataViews[0].metadata.objects["Trend"];
-                                if (trendObj["show"] !== undefined)
-                                    this.trendIndicator = trendObj["show"];
-                                if (trendObj["flipTrendDirection"] !== undefined)
-                                    this.flipTrendDirection = trendObj["flipTrendDirection"];
-                                if (trendObj["trendColor"] !== undefined)
-                                    this.trendColor = trendObj["trendColor"];
-                            }
-                            if (options.dataViews[0].metadata.objects["Bullet"]) {
-                                var bulletObj = options.dataViews[0].metadata.objects["Bullet"];
-                                if (bulletObj["conditionalBullet"] !== undefined)
-                                    this.conditionalBullet = bulletObj["conditionalBullet"];
-                                if (bulletObj["conditionalBulletColor"] !== undefined)
-                                    this.conditionalBulletColor = bulletObj["conditionalBulletColor"];
-                                if (bulletObj["conditionalBulletColor"] !== undefined)
-                                    this.conditionalBulletColor = bulletObj["conditionalBulletColor"];
-                                if (bulletObj["conditionalBulletColorScale"] !== undefined)
-                                    this.conditionalBulletColorScale = bulletObj["conditionalBulletColorScale"];
-                                if (bulletObj["bulletScaleMinZero"] !== undefined)
-                                    this.bulletScaleMinZero = bulletObj["bulletScaleMinZero"];
+                            if (options.dataViews[0].metadata.objects["Actual"]) {
+                                var actObj = options.dataViews[0].metadata.objects["Actual"];
+                                //if (actObj.showActual !== undefined) this.showActual = actObj["showActual"];
                             }
                         }
-                        this.hasTarget = false;
-                        this.hasActual = false;
-                        this.hasPeriod = false;
-                        this.columns.forEach(function (d, i) {
-                            if (d.roles["target"]) {
-                                _this.hasTarget = true;
-                                _this.targetIndex = i;
+                        console.log(this.columns);
+                        this.columns.map(function (d, i) {
+                            if (d.roles["xAxis"]) {
+                                _this.hasXaxis = true;
+                                _this.xAxisIndex = i;
                             }
-                            if (d.roles["actual"]) {
-                                _this.hasActual = true;
-                                _this.actualIndex = i;
+                            if (d.roles["yAxis"]) {
+                                _this.hasYaxis = true;
+                                _this.yAxisIndex = i;
                             }
-                            if (d.roles["period"]) {
-                                _this.hasPeriod = true;
-                                _this.periodIndex = i;
+                            if (d.roles["values"]) {
+                                _this.hasValue = true;
+                                _this.valueIndex = i;
                             }
                         });
-                        this.element.style("overflow", "auto");
-                        this.element.select('.kpiCard').remove();
-                        var container = this.element
-                            .append("div")
-                            .attr("class", "kpiCard")
-                            .attr("style", "width:100%;text-align:left;border-spacing:0");
-                        if (this.hasActual === false || this.hasTarget === false || this.hasPeriod === false) {
-                            container
-                                .append("html")
-                                .attr("style", "")
-                                .html("Data is missing to draw the visual");
-                            return;
-                        }
                         this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ value: 1001 });
-                        if (this.hasActual)
-                            this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.actualIndex].format });
-                        else if (this.hasTarget)
-                            this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.targetIndex].format });
-                        var data = [];
-                        options.dataViews[0].table.rows.forEach(function (d, i) {
+                        if (this.hasValue)
+                            this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.valueIndex].format });
+                        var data = [], identityData;
+                        console.log(options.dataViews[0].table.rows);
+                        console.log(this.xAxisIndex, this.yAxisIndex, this.valueIndex);
+                        options.dataViews[0].table.rows.map(function (d, i) {
                             d.identity = options.dataViews[0].table.identity[i];
-                            d.actual = d[_this.actualIndex];
-                            d.target = d[_this.targetIndex];
-                            d.period = d[_this.periodIndex];
+                            d.xValue = d[_this.xAxisIndex];
+                            d.yValue = d[_this.yAxisIndex];
+                            d.value = d[_this.valueIndex];
                             data.push(d);
                         });
-                        var trend = data[data.length - 1].actual > data[data.length - 2].actual ? 180 : 0;
-                        var actHeader = this.actualHeader.length === 0 ? this.columns[this.actualIndex].displayName : this.actualHeader;
-                        var targetHeader = this.targetHeader.length === 0 ? this.columns[this.targetIndex].displayName : this.targetHeader;
-                        var act = data[data.length - 1].actual;
-                        var prior = data[data.length - 2].actual;
-                        var target = data[data.length - 1].target;
-                        var actSecondLast = data[data.length - 2].actual;
-                        this.chartData = {
-                            actual: { display: actHeader, value: act },
-                            prior: { display: "Prior", value: prior },
-                            target: { display: targetHeader, value: target },
-                            growth: { display: "Growth", value: act - actSecondLast / act },
-                            needed: { display: "Needed", value: target - act },
-                            trend: { display: "", value: trend }
+                        this.element.style("overflow", "hidden");
+                        this.element.select('.heatMap').remove();
+                        var chartContainer = this.element
+                            .append("div")
+                            .attr("class", "heatMap")
+                            .attr("style", "width:100%;");
+                        //console.log(options);
+                        var dimension = this.getDimensions(options.viewport);
+                        //console.log(dimension);
+                        var chartSvg = chartContainer
+                            .append("svg")
+                            .attr("height", dimension.height)
+                            .attr("width", dimension.width);
+                        var xScale = this.setXScale(data, dimension);
+                        var yScale = this.setYScale(data, dimension);
+                        this.drawXScale(xScale, chartSvg, dimension);
+                        this.drawYScale(yScale, chartSvg, dimension);
+                        this.drawHeatRect(chartSvg, xScale, yScale, data, dimension);
+                    };
+                    Visual.prototype.getDimensions = function (vp) {
+                        return {
+                            width: vp.width,
+                            height: vp.height,
+                            xOffset: 150,
+                            yOffset: 50,
+                            chartWidth: vp.width - 150,
+                            chartHeight: vp.height - 50,
                         };
-                        var tbody = container
-                            .append("table")
-                            .attr("style", "width:100%;table-layout: fixed;")
-                            .append("tbody");
-                        if (this.selectedTemplate === "linear") {
-                            var topRow = tbody.append("tr");
-                            var titleContainer = topRow.append("td").attr("colspan", "2");
-                            var bulletContainer = topRow.append("td").attr("colspan", "3");
-                            var secondRow = tbody.append("tr");
-                            secondRow.append("td").html("Actual").attr("class", "kpiTitle");
-                            secondRow.append("td").html("Trend").attr("class", "kpiTitle");
-                            secondRow.append("td").html("Target").attr("class", "kpiTitle kpiCenter");
-                            secondRow.append("td").html("Growth").attr("class", "kpiTitle kpiCenter");
-                            secondRow.append("td").html("Needed").attr("class", "kpiTitle kpiCenter");
-                            var thirdRow = tbody.append("tr");
-                            var actualContainer = thirdRow.append("td");
-                            var sparklineContainer = thirdRow.append("td");
-                            var targetContainer = thirdRow.append("td").style("text-align", "center");
-                            var growthContainer = thirdRow.append("td").style("text-align", "center");
-                            var neededContainer = thirdRow.append("td").style("text-align", "center");
-                            this.drawTitle(titleContainer);
-                            this.drawBullet(data, bulletContainer, options.viewport.width / 2);
-                            this.drawActual(actualContainer);
-                            this.drawSparkline(data, sparklineContainer, options.viewport.width / 5, 30);
-                            this.drawBisectorToolTip(data, options.viewport.width / 5, 30);
-                            this.drawTarget(targetContainer);
-                            this.drawGrowth(growthContainer);
-                            this.drawNeeded(neededContainer);
-                            this.showTrendIndicator(titleContainer);
-                        }
-                        else {
-                            var titleContainer = tbody.append("tr").append("td").attr("colspan", "6");
-                            var bulletContainer = tbody.append("tr").append("td").attr("colspan", "6");
-                            var thirdRow = tbody.append("tr");
-                            var priorContainer = tbody.append("td").attr("colspan", "3");
-                            var growthContainer = tbody.append("td").attr("colspan", "3");
-                            var sparklineContainer = tbody.append("tr").append("td");
-                            this.drawTitle(titleContainer);
-                            this.drawBullet(data, bulletContainer, options.viewport.width);
-                            var height = options.viewport.height - 140;
-                            if (height < 70)
-                                height = 70;
-                            this.drawSparkline(data, sparklineContainer, options.viewport.width - 10, height);
-                            this.drawBisectorToolTip(data, options.viewport.width - 10, height);
-                            this.drawPrior(priorContainer);
-                            this.drawGrowth(growthContainer);
-                            this.showTrendIndicator(titleContainer);
-                        }
                     };
-                    Visual.prototype.drawTitle = function (container) {
-                        var val = container.append("span").text(this.chartData.actual.display).attr("style", "font-size:18px;");
-                        if (this.selectedTemplate === "group") {
-                            val.style("display", "block");
-                            container.append("span").text("vs " + this.chartData.target.display).style("font-size", "14px");
-                        }
+                    Visual.prototype.setXScale = function (data, dimension) {
+                        var xDomain = data.map(function (d) { return d.xValue; });
+                        var scale = d3.scale.ordinal().rangeRoundBands([0, dimension.chartWidth]).domain(xDomain);
+                        return scale;
                     };
-                    Visual.prototype.drawBullet = function (data, container, bulletwidth) {
-                        var _this = this;
-                        if (this.hasTarget) {
-                            var targetMax = d3.max(data.map(function (d) { return d.target; }));
-                            var actualMax = d3.max(data.map(function (d) { return d.actual; }));
-                            var backgroundBarLen = d3.max([targetMax, actualMax]) * 1.15;
-                            var width = bulletwidth - 5;
-                            var min = 0;
-                            if (this.bulletScaleMinZero === false)
-                                min = d3.min(data.map(function (d) { return d.actual; }));
-                            var barScale = d3.scale.linear().range([0, width]).domain([min, backgroundBarLen]);
-                            var bulletG = container
-                                .append("svg")
-                                .attr("width", width)
-                                .attr("height", 24);
-                            var bullet = bulletG.append("g").attr("transform", "translate(0,2)")
-                                .attr("class", "bullet");
-                            bullet.append("rect")
-                                .attr("width", width)
-                                .attr("height", 20)
-                                .attr("style", "fill:#d0cece;");
-                            if (this.conditionalBullet === false) {
-                                bullet.append("rect")
-                                    .attr("width", function (d) { return barScale(_this.chartData.actual.value); })
-                                    .attr("height", 20)
-                                    .style("fill", this.singleBulletColor.solid.color);
-                            }
-                            else {
-                                bullet.append("rect")
-                                    .attr("width", function (d) { return barScale(_this.chartData.actual.value); })
-                                    .attr("height", 20)
-                                    .style("fill", function (d) {
-                                    if ((_this.chartData.actual.value - _this.chartData.target.value) > 0)
-                                        return _this.conditionalBulletColorOptions[_this.conditionalBulletColor][0];
-                                    else
-                                        return _this.conditionalBulletColorOptions[_this.conditionalBulletColor][1];
-                                });
-                            }
-                            bulletG.append("rect")
-                                .attr("width", 1)
-                                .attr("x", function (d) { return barScale(_this.chartData.target.value); })
-                                .attr("height", 24)
-                                .attr("style", "fill:#000;");
-                        }
+                    Visual.prototype.setYScale = function (data, dimension) {
+                        var yDomain = data.map(function (d) { return d.yValue; });
+                        var scale = d3.scale.ordinal().rangeRoundBands([0, dimension.chartHeight]).domain(yDomain);
+                        return scale;
                     };
-                    Visual.prototype.drawSparkline = function (data, sparklineContainer, width, height) {
-                        if (this.hasActual) {
-                            var xDomain = [];
-                            var yDomain = [];
-                            data.map(function (d) {
-                                xDomain.push(d.period);
-                                yDomain.push(d.actual);
-                            });
-                            var xScale = d3.scale.ordinal().rangePoints([0, width]).domain(xDomain);
-                            var yScale = d3.scale.linear().range([height, 0]).domain([d3.min(yDomain), d3.max(yDomain)]);
-                            this.sparklineSelection = sparklineContainer
-                                .append("svg")
-                                .attr("width", width)
-                                .attr("height", height);
-                            var sparklineSelectionG = this.sparklineSelection.append("g");
-                            if (this.selectedTemplate === "group") {
-                                xScale.rangePoints([0, width - 55]);
-                                yScale.range([height - 30, 0]);
-                                sparklineSelectionG.attr("transform", "translate(50,10)");
-                                var yaxis = d3.svg.axis().scale(yScale).orient("left").ticks(3).tickFormat(this.iValueFormatter.format);
-                                var xaxis = d3.svg.axis().scale(xScale).orient("bottom").ticks(3);
-                                sparklineSelectionG
-                                    .append("g")
-                                    .attr("transform", "translate(0,0)")
-                                    .attr("class", "kpiAxis")
-                                    .call(yaxis);
-                                sparklineSelectionG
-                                    .append("g")
-                                    .attr("transform", "translate(" + 0 + "," + (height - 30) + ")")
-                                    .attr("class", "kpiAxis")
-                                    .call(xaxis)
-                                    .selectAll("text").each(function (d, i) {
-                                    if (i === 0 || i === xScale.domain().length - 1) {
-                                        d3.select(this).attr("text-anchor", i === 0 ? "start" : "end");
-                                    }
-                                    else {
-                                        d3.select(this).text("");
-                                    }
-                                });
-                            }
-                            sparklineSelectionG.append("path")
-                                .attr("class", "line")
-                                .attr("style", "stroke: steelblue; fill: none;")
-                                .style("stroke-width", this.lineStroke / 10)
-                                .attr("d", function (d) {
-                                return "M" + data.map(function (d) {
-                                    return xScale(d.period) + ',' + yScale(d.actual);
-                                }).join('L');
-                            });
-                            if (this.showTargetLine === true) {
-                                sparklineSelectionG.append("path")
-                                    .attr("class", "line")
-                                    .attr("style", "stroke: red; fill: none;stroke-dasharray: 3")
-                                    .style("stroke-width", this.lineStroke / 10)
-                                    .style("stroke", this.targetLineColor.solid.color)
-                                    .attr("d", function (d) {
-                                    return "M" + data.map(function (d) {
-                                        return xScale(d.period) + ',' + yScale(d.target);
-                                    }).join('L');
-                                });
-                            }
-                        }
-                    };
-                    Visual.prototype.drawActual = function (container) {
-                        var _this = this;
-                        var actual = container
-                            .append("span")
-                            .text(function (d) { return _this.iValueFormatter.format(_this.chartData.actual.value); });
-                        this.tooltipServiceWrapper.addTooltip(actual, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data, 'Actual'); }, function (tooltipEvent) { return null; });
-                    };
-                    Visual.prototype.drawPrior = function (container) {
-                        container
-                            .append("span")
-                            .attr("style", "display:block;font-size:14px")
-                            .text(this.iValueFormatter.format(this.chartData.prior.value));
-                        container
-                            .append("span")
-                            .style("font-size", "16px")
-                            .text("Prior");
-                    };
-                    Visual.prototype.drawGrowth = function (container) {
-                        var val = container
-                            .append("span")
-                            .text(this.chartData.growth.value.toFixed(2));
-                        if (this.selectedTemplate === "group") {
-                            val.attr("style", "display:block;font-size:14px");
-                            container.style("text-align", "right")
-                                .append("span")
-                                .style("font-size", "16px")
-                                .text("Growth");
-                        }
-                    };
-                    Visual.prototype.drawNeeded = function (container) {
-                        var _this = this;
-                        var needed = container
-                            .append("span")
-                            .text(function (d) { return _this.iValueFormatter.format(_this.chartData.needed.value); });
-                        this.tooltipServiceWrapper.addTooltip(needed, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data, 'Needed'); }, function (tooltipEvent) { return null; });
-                    };
-                    Visual.prototype.showTrendIndicator = function (container) {
-                        var _this = this;
-                        var color = this.trendColorOptions[this.trendColor];
-                        if (this.trendIndicator === true) {
-                            var trendIndicator = container
-                                .append("svg")
-                                .attr("width", 18)
-                                .attr("height", 18);
-                            if (this.selectedTemplate === "group")
-                                trendIndicator.attr("style", "position: absolute;top: 0;right: 0;");
-                            var triangleDirection = this.flipTrendDirection == false ? 'triangle-down' : 'triangle-up';
-                            var triangle = d3.svg.symbol().type(triangleDirection).size(50);
-                            trendIndicator
-                                .append("path")
-                                .attr('d', triangle)
-                                .attr('transform', function (d) {
-                                return "translate(10,12), rotate(" + _this.chartData.trend.value + ")";
-                            })
-                                .style("fill", function (d) { return _this.chartData.trend === 0 ? color[0] : color[1]; });
-                        }
-                    };
-                    Visual.prototype.drawTarget = function (container) {
-                        var _this = this;
-                        var target = container
-                            .append("span")
-                            .text(function (d) { return _this.iValueFormatter.format(_this.chartData.target.value); });
-                        this.tooltipServiceWrapper.addTooltip(target, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data, 'Target'); }, function (tooltipEvent) { return null; });
-                    };
-                    //#region Tooltip
-                    Visual.prototype.drawBisectorToolTip = function (data, width, height) {
-                        var _this = this;
-                        var self = this;
-                        var ht = this.selectedTemplate === "group" ? height - 30 : height;
-                        var ss = this.sparklineSelection
-                            .append("rect")
-                            .style("fill", "transparent")
-                            .on("mouseover", function (d) {
-                            _this.sparklineMarker.style("display", null);
-                        })
-                            .on("mouseout", function (d) {
-                            _this.sparklineMarker.style("display", "none");
-                        })
-                            .on("mousemove", function (d) {
-                            self.mouseMove(data, this, width);
-                        });
-                        if (this.selectedTemplate === "group") {
-                            ss.attr("width", width - 35)
-                                .attr("height", ht)
-                                .attr("transform", "translate(30,10)");
-                        }
-                        else {
-                            ss.attr("width", width)
-                                .attr("height", ht);
-                        }
-                        this.sparklineMarker = this.sparklineSelection
+                    Visual.prototype.drawXScale = function (xScale, chartSvg, dimension) {
+                        var xaxis = d3.svg.axis().scale(xScale).orient("top");
+                        chartSvg
                             .append("g")
-                            .attr("display", "none")
-                            .attr("class", "bisector");
-                        this.sparklineMarkerLine = this.sparklineMarker.append('line')
-                            .attr('x1', 0)
-                            .attr('y1', 0)
-                            .attr('x2', 0)
-                            .attr('y2', ht)
-                            .attr('class', 'verticalLine')
-                            .attr("cursor", "pointer");
-                        this.sparklineCaptionName = this.sparklineMarker
-                            .append("text")
-                            .attr("dy", 15)
-                            .attr("style", "cursor:pointer; text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;");
-                        this.sparklineCaptionValue = this.sparklineMarker
-                            .append("text")
-                            .attr("dy", 28)
-                            .attr("style", "cursor:pointer; text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;");
+                            .attr("transform", "translate(" + dimension.xOffset + "," + dimension.yOffset + ")")
+                            .attr("class", "axis")
+                            .call(xaxis);
                     };
-                    Visual.prototype.mouseMove = function (data, el, width) {
-                        var _this = this;
-                        var catScale = d3.scale.ordinal()
-                            .rangePoints([0, width])
-                            .domain(data.map(function (d) { return d.period; }));
-                        this.sparklineMarker.attr("style", "display:inherit");
-                        var padding = (catScale(catScale.domain()[1]) - catScale(catScale.domain()[0])) / 2;
-                        var xPos = this.selectedTemplate === "group" ? (d3.mouse(el)[0] + 30) : d3.mouse(el)[0];
-                        this.sparklineMarker.attr("transform", function () {
-                            return "translate(" + (xPos) + ",0)";
-                        });
-                        var leftEdges = catScale.domain().map(function (d) { return (catScale(d) + padding); });
-                        var j;
-                        for (j = 0; xPos > leftEdges[j]; j++) { }
-                        var hoverXValue = catScale.domain()[j];
-                        var hoverVal;
-                        data.map(function (d) {
-                            if (d.period === hoverXValue) {
-                                hoverVal = _this.iValueFormatter.format(d.actual);
-                            }
-                        });
-                        this.sparklineCaptionName.text(hoverXValue);
-                        this.sparklineCaptionValue.text(hoverVal);
-                        if (xPos > 60) {
-                            this.sparklineCaptionName.attr("x", -2)
-                                .attr("text-anchor", "end");
-                            this.sparklineCaptionValue.attr("x", -2)
-                                .attr("text-anchor", "end");
-                        }
-                        else {
-                            this.sparklineCaptionName.attr("x", 2)
-                                .attr("text-anchor", "start");
-                            this.sparklineCaptionValue.attr("x", 2)
-                                .attr("text-anchor", "start");
-                        }
-                        this.sparklineMarkerLine.attr("stroke", "#000000");
+                    Visual.prototype.drawYScale = function (yScale, chartSvg, dimension) {
+                        var yaxis = d3.svg.axis().scale(yScale).orient("left");
+                        chartSvg
+                            .append("g")
+                            .attr("transform", "translate(" + dimension.xOffset + "," + dimension.yOffset + ")")
+                            .attr("class", "axis")
+                            .call(yaxis);
                     };
-                    //#endregion
+                    Visual.prototype.drawHeatRect = function (chartSvg, xScale, yScale, data, dimension) {
+                        var heatG = chartSvg
+                            .append("g")
+                            .attr("transform", "translate(" + dimension.xOffset + "," + dimension.yOffset + ")");
+                        heatG.selectAll(".rects")
+                            .data(data)
+                            .enter()
+                            .append("rect")
+                            .attr("x", function (d) { return xScale(d.xValue); })
+                            .attr("y", function (d) { return yScale(d.yValue); })
+                            .attr("height", function (d) { return yScale.rangeBand() - 1; })
+                            .attr("width", function (d) { return xScale.rangeBand() - 1; });
+                    };
                     Visual.parseSettings = function (dataView) {
-                        return kpiCardCCFC224D9885417F9AAF5BB8D45B007E.VisualSettings.parse(dataView);
+                        return heatMapCCFC224D9885417F9AAF5BB8D45B007E.VisualSettings.parse(dataView);
                     };
                     Visual.prototype.getTooltipData = function (data, vtype) {
                         var retData = [];
                         var val = '';
                         switch (vtype) {
-                            case 'Needed':
-                                val = this.chartData.needed.value;
+                            case 'Current':
+                                val = data.values[data.values.length - 1].yValue;
                                 break;
                             case 'Actual':
-                                val = this.chartData.actual.value;
+                                val = data.actual;
                                 break;
                             case 'Target':
-                                val = this.chartData.target.value;
+                                val = data.target;
+                                break;
+                            case 'Change':
+                                val = data.change;
+                                break;
+                            case 'perChange':
+                                val = data.perChange;
+                                break;
+                            case 'Prior':
+                                val = data.values[data.values.length - 2].yValue;
+                                break;
+                            case 'Variance':
+                                val = data.variance;
+                                break;
+                            case 'VariancePer':
+                                val = data.variancePer;
                                 break;
                         }
                         retData.push({
-                            displayName: vtype,
+                            displayName: data.key,
                             value: val.toString(),
-                            header: vtype
+                            header: data.key
                         });
                         return retData;
                     };
@@ -9398,30 +9079,8 @@ var powerbi;
                         var objectName = options.objectName;
                         var objectEnumeration = [];
                         switch (objectName) {
-                            case 'displayTemplate':
-                                objectEnumeration.push({ objectName: objectName, properties: { selectedTemplate: this.selectedTemplate }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { actualHeader: this.actualHeader }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { targetHeader: this.targetHeader }, selector: null });
-                                break;
-                            case 'Sparkline':
-                                objectEnumeration.push({ objectName: objectName, properties: { transparency: this.lineStroke }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { showTargetLine: this.showTargetLine }, selector: null });
-                                if (this.showTargetLine)
-                                    objectEnumeration.push({ objectName: objectName, properties: { targetLineColor: this.targetLineColor }, selector: null });
-                                break;
-                            case 'Trend':
-                                objectEnumeration.push({ objectName: objectName, properties: { show: this.trendIndicator }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { flipTrendDirection: this.flipTrendDirection }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { trendColor: this.trendColor }, selector: null });
-                                break;
-                            case 'Bullet':
-                                objectEnumeration.push({ objectName: objectName, properties: { conditionalBullet: this.conditionalBullet }, selector: null });
-                                if (this.conditionalBullet)
-                                    objectEnumeration.push({ objectName: objectName, properties: { conditionalBulletColor: this.conditionalBulletColor }, selector: null });
-                                // if (this.conditionalBullet) objectEnumeration.push({ objectName: objectName, properties: { conditionalBulletColorScale: this.conditionalBulletColorScale }, selector: null });
-                                if (!this.conditionalBullet)
-                                    objectEnumeration.push({ objectName: objectName, properties: { singleBulletColor: this.singleBulletColor }, selector: null });
-                                // objectEnumeration.push({ objectName: objectName, properties: { bulletScaleMinZero: this.bulletScaleMinZero }, selector: null });
+                            case 'Actual':
+                                // objectEnumeration.push({ objectName: objectName, properties: { showActual: this.showActual}, selector: null });
                                 break;
                         }
                         ;
@@ -9430,8 +9089,8 @@ var powerbi;
                     };
                     return Visual;
                 }());
-                kpiCardCCFC224D9885417F9AAF5BB8D45B007E.Visual = Visual;
-            })(kpiCardCCFC224D9885417F9AAF5BB8D45B007E = visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E || (visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E = {}));
+                heatMapCCFC224D9885417F9AAF5BB8D45B007E.Visual = Visual;
+            })(heatMapCCFC224D9885417F9AAF5BB8D45B007E = visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E || (visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E = {}));
         })(visual = extensibility.visual || (extensibility.visual = {}));
     })(extensibility = powerbi.extensibility || (powerbi.extensibility = {}));
 })(powerbi || (powerbi = {}));
@@ -9441,13 +9100,13 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.kpiCardCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
-                name: 'kpiCardCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
-                displayName: 'Kpi Card',
+            plugins.heatMapCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
+                name: 'heatMapCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
+                displayName: 'Heat Map',
                 class: 'Visual',
                 version: '1.0.0',
                 apiVersion: '1.11.0',
-                create: function (options) { return new powerbi.extensibility.visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E.Visual(options); },
+                create: function (options) { return new powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E.Visual(options); },
                 custom: true
             };
         })(plugins = visuals.plugins || (visuals.plugins = {}));

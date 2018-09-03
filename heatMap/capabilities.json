@@ -1,8 +1,8 @@
 {
     "dataRoles": [
         {
-            "displayName": "Actual",
-            "name": "actual",
+            "displayName": "Values",
+            "name": "values",
             "kind": "Measure",
             "requiredTypes": [
                 {
@@ -18,51 +18,16 @@
                 }
             ]
         },
+      
         {
-            "displayName": "Target",
-            "name": "target",
-            "kind": "Measure",
-            "requiredTypes": [
-                {
-                    "integer": true
-                },
-                {
-                    "numeric": true
-                }
-            ],
-            "preferredTypes": [
-                {
-                    "numeric": true
-                }
-            ]
-        },
-        {
-            "displayName": "Additional",
-            "name": "additional",
-            "kind": "Measure",
-            "requiredTypes": [
-                {
-                    "integer": true
-                },
-                {
-                    "numeric": true
-                }
-            ],
-            "preferredTypes": [
-                {
-                    "numeric": true
-                }
-            ]
-        },
-        {
-            "displayName": "Period",
-            "name": "period",
+            "displayName": "X Axis",
+            "name": "xAxis",
             "kind": "Grouping"
 
         },
         {
-            "displayName": "Group",
-            "name": "group",
+            "displayName": "Y Axis",
+            "name": "yAxis",
             "kind": "Grouping"
         }
     ],
@@ -73,45 +38,33 @@
                     "select": [
                         {
                             "for": {
-                                "in": "group"
+                                "in": "xAxis"
                             }
                         },
                         {
                             "for": {
-                                "in": "period"
+                                "in": "yAxis"
                             }
                         },
                         {
                             "for": {
-                                "in": "actual"
-                            }
-                        },
-                        {
-                            "for": {
-                                "in": "target"
-                            }
-                        },
-                        {
-                            "for": {
-                                "in": "additional"
+                                "in": "values"
                             }
                         }
+                        
                     ]
                 }
             },
             "conditions": [
                 {
-                    "actual": {
+                    "values": {
                         "max": 1
                     },
-                    "target": {
-                        "max": 1
-                    },
-                    "period": {
+                    "xAXis": {
                         "min": 0,
                         "max": 1
                     },
-                    "group": {
+                    "yAXis": {
                         "min": 0,
                         "max": 1
                     }
