@@ -73,161 +73,45 @@
         }
     ],
     "objects": {
-        "Actual": {
-            "displayName": "Actual",
+        "Heat": {
+            "displayName": "Heat",
             "properties": {
-                "showActual": {
-                    "displayName": "Show actual",
-                    "type": { "bool": true }
-                },
-                "actualHeader": {
-                    "displayName": "Actual header",
-                    "type": { "text": true }
-                },
-                "showChange": {
-                    "displayName": "Show change",
-                    "type": { "bool": true }
-                },
-                "changeHeader": {
-                    "displayName": "Change header",
-                    "type": { "text": true }
-                },
-                "showPerChange": {
-                    "displayName": "Show % change",
-                    "type": { "bool": true }
-                },
-                "percentageChangeHeader": {
-                    "displayName": "Percentage change header",
-                    "type": { "text": true }
-                },
-                "showTotalChange": {
-                    "displayName": "Show % change",
-                    "type": { "bool": true }
-                },
-                "totalChangeHeader": {
-                    "displayName": "Total change",
-                    "type": { "text": true }
-                }
-            }
-        },
-        "Target": {
-            "displayName": "Target",
-            "properties": {
-                "showTarget": {
-                    "displayName": "Show target",
-                    "type": { "bool": true }
-                },
-                "targetHeader": {
-                    "displayName": "Target header",
-                    "type": { "text": true }
-                },
-                "showVariance": {
-                    "displayName": "Show variance",
-                    "type": { "bool": true }
-                },
-                "varianceHeader": {
-                    "displayName": "Variance header",
-                    "type": { "text": true }
-                },
-                "showVariancePer": {
-                    "displayName": "Show % variance",
-                    "type": { "bool": true }
-                },
-                "variancePerHeader": {
-                    "displayName": "Variance % header",
-                    "type": { "text": true }
-                }
-            }
-        },
-        "Trend": {
-            "displayName": "Trend",
-            "properties": {
-                "show": {
-                    "displayName": "Trend",
-                    "type": { "bool": true }
-                },
-                "flipTrendDirection": {
-                    "displayName": "Flip trend direction",
-                    "type": { "bool": true }
-                },
-                "trendColor": {
-                    "displayName": "Trend color scheme",
+                "heatScale": {
+                    "displayName": "Heat Scale",
                     "type": {
                         "enumeration": [
                             {
-                                "value": "RedGreen",
-                                "displayName": "Red Green"
+                                "value": "default",
+                                "displayName": "Default"
                             },
                             {
-                                "value": "GreenRed",
-                                "displayName": "Green Red"
-                            }
-                        ]
-                    }
-                }
-            }
-        },
-        "Intensity": {
-            "displayName": "Intensity",
-            "properties": {
-                "show": {
-                    "displayName": "Intensity",
-                    "type": { "bool": true }
-                },
-                "intensityScale": {
-                    "displayName": "Intensity scale",
-                    "type": { "text": true }
-                },
-                "intensityColor": {
-                    "displayName": "Intensity color",
-                    "type": {
-                        "fill": {
-                            "solid": {
-                                "color": true
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "Bullet": {
-            "displayName": "Bullet",
-            "properties": {
-                "bulletScaleMinZero": {
-                    "displayName": "Bullet scale min zero",
-                    "type": { "bool": true }
-                },
-                "conditionalBullet": {
-                    "displayName": "Conditional bullet",
-                    "type": { "bool": true }
-                },
-                "conditionalBulletColor": {
-                    "displayName": "Conditional bullet color",
-                    "type": {
-                        "enumeration": [
-                            {
-                                "value": "RedGreen",
-                                "displayName": "Red Green"
+                                "value": "rows",
+                                "displayName": "Rows"
                             },
                             {
-                                "value": "GreenRed",
-                                "displayName": "Green Red"
+                                "value": "columns",
+                                "displayName": "Columns"
                             }
                         ]
                     }
                 },
-                "conditionalBulletColorScale": {
-                    "displayName": "Conditional bullet bolor scale",
+                "heatRange": {
+                    "displayName": "Heat Range",
                     "type": { "text": true }
                 },
-                "singleBulletColor": {
-                    "displayName": "Single Bullet Color",
+                "heatColorType": {
+                    "displayName": "Heat Color Type",
                     "type": {
-                        "fill": {
-                            "solid": {
-                                "color": true
+                        "enumeration": [
+                            {
+                                "value": "linear",
+                                "displayName": "Linear"
+                            },
+                            {
+                                "value": "bin",
+                                "displayName": "Bin"
                             }
-                        }
+                        ]
                     }
                 }
             }

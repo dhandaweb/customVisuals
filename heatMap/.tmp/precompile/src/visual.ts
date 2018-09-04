@@ -37,6 +37,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
         private updateCount: number;
         private settings: VisualSettings;
         private textNode: Text;
+        private colorScale: any;
 
         private columns: any;
         private dimension:any
@@ -48,7 +49,9 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
         private yAxisIndex: any;
         private valueIndex: any;
 
-
+        private heatScale: any = "default";
+        private heatRange: any = 10;
+        private heatColorType: any = "linear";
 
         private iValueFormatter:any;
         private element: d3.Selection<SVGElement>;
@@ -81,13 +84,15 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
             
 
            if (options.dataViews[0].metadata.objects) {
-               if (options.dataViews[0].metadata.objects["Actual"]) {
-                   var actObj = options.dataViews[0].metadata.objects["Actual"];
-                   //if (actObj.showActual !== undefined) this.showActual = actObj["showActual"];
+               if (options.dataViews[0].metadata.objects["Heat"]) {
+                   var scale = options.dataViews[0].metadata.objects["Heat"];
+                   if (scale.heatScale !== undefined) this.heatScale = scale["heatScale"];
+                   if (scale.heatRange !== undefined) this.heatRange = scale["heatRange"];
+                   if (scale.heatColorType !== undefined) this.heatColorType = scale["heatColorType"];
                }
               
             }
-            console.log(this.columns);
+            
            this.columns.map((d,i) => {
                if (d.roles["xAxis"]) {
                    this.hasXaxis = true;
@@ -108,8 +113,8 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
             if (this.hasValue) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.valueIndex].format });
           
            var data = [], identityData;
-            console.log(options.dataViews[0].table.rows);
-            console.log(this.xAxisIndex, this.yAxisIndex, this.valueIndex)
+            //console.log(options.dataViews[0].table.rows);
+            //console.log(this.xAxisIndex, this.yAxisIndex, this.valueIndex)
             options.dataViews[0].table.rows.map((d: any, i) => {
                 d.identity = options.dataViews[0].table.identity[i];
                 d.xValue = d[this.xAxisIndex];
@@ -141,6 +146,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
 
             this.drawXScale(xScale, chartSvg, dimension);
             this.drawYScale(yScale, chartSvg, dimension);
+            var colorScale = this.setHeatScale(data);
             this.drawHeatRect(chartSvg, xScale, yScale, data, dimension);
         }
         private getDimensions(vp) {
@@ -160,6 +166,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
             var scale = d3.scale.ordinal().rangeRoundBands([0, dimension.chartWidth]).domain(xDomain);
             return scale;
         }
+
         private setYScale(data, dimension) {
             var yDomain = data.map(d => d.yValue);
             
@@ -190,20 +197,116 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
 
         }
 
+        private setHeatScale(data) {
+            var colors = ["#ffffd9", "#edf8b1", "#c7e9b4", "#7fcdbb", "#41b6c4", "#1d91c0", "#225ea8", "#253494", "#081d58"];
+            var col = colors.slice(0, 10);
+            var colorScale, heatDomain, min, max, upper, lower;
+            var colorRange = col.slice(0, Math.ceil(this.heatRange / 2)).concat(col.splice(-Math.floor(this.heatRange / 2)));
+
+            if ((this.heatRange % 2) !== 0) {
+                upper = colors.slice(0, 10);
+                lower = colors.slice(0, 10);
+                var sl = Math.floor(this.heatRange / 2);
+                colorRange = upper.slice(0, sl).concat(["#b3b3b3"]).concat(lower.slice(-sl));
+            }
+           
+            if (this.heatScale === "default") {
+
+                min = d3.min(data.map(d => d.value));
+                max = d3.max(data.map(d => d.value));
+
+                if (this.heatColorType === "linear") heatDomain = [min, max];
+                else heatDomain = data.map(d => d.value).sort();
+             
+                this.colorScale = d3.scale.quantile()
+                                        .domain(heatDomain)
+                                        .range(colorRange);
+
+            };
+
+            if (this.heatScale === "rows") {
+
+                this.colorScale = {};
+
+                var nestedData = d3.nest()
+                                    .key((d) => d[this.xAxisIndex])
+                                    .entries(data);
+              
+                nestedData.map(d => {
+                    heatDomain = d.values.map(function (d) { return d.value; });
+
+                    min = d3.min(heatDomain);
+                    max = d3.max(heatDomain);
+
+                    if (this.heatColorType === "linear") heatDomain = [min, max];
+                    else heatDomain = data.map(d => d.value).sort();
+
+                    this.colorScale[d.key] = d3.scale.quantile()
+                                                    .domain(heatDomain)
+                                                    .range(colorRange);
+
+                });
+
+            };
+
+            if (this.heatScale === "columns") {
+
+                this.colorScale = {};
+
+                var nestedData = d3.nest()
+                    .key((d) => d[this.yAxisIndex])
+                    .entries(data);
+
+                nestedData.map(d => {
+                    heatDomain = d.values.map(function (d) { return d.value; });
+
+                    min = d3.min(heatDomain);
+                    max = d3.max(heatDomain);
+
+                    if (this.heatColorType === "linear") heatDomain = [min, max];
+                    else heatDomain = data.map(d => d.value).sort();
+
+                    this.colorScale[d.key] = d3.scale.quantile()
+                                                    .domain(heatDomain)
+                                                    .range(colorRange);
+
+                });
+
+            };
+
+            return colorScale;
+
+        }
+
         private drawHeatRect(chartSvg, xScale, yScale, data, dimension) {
 
             var heatG = chartSvg
                 .append("g")
                 .attr("transform", "translate(" + dimension.xOffset + "," + dimension.yOffset + ")");
 
-            heatG.selectAll(".rects")
+            var rects =  heatG.selectAll(".rects")
                 .data(data)
                 .enter()
                 .append("rect")
                 .attr("x", d => xScale(d.xValue))
                 .attr("y", d => yScale(d.yValue))
-                .attr("height", d => yScale.rangeBand()-1)
-                .attr("width", d => xScale.rangeBand()-1);
+                .attr("height", d => yScale.rangeBand() - 1)
+                .attr("width", d => xScale.rangeBand() - 1);
+
+            console.log(this.colorScale);
+
+            if (this.heatScale === "default") {
+                rects.attr("fill", d => d.value !== null ? this.colorScale(d.value) : "#ffffff");
+            }
+            else if (this.heatScale === "rows") {
+                rects.attr("fill", d => d.value !== null ? this.colorScale[d.xValue](d.value) : "#ffffff");
+            }
+            else if (this.heatScale === "columns") {
+                rects.attr("fill", d => d.value !== null ? this.colorScale[d.yValue](d.value) : "#ffffff");
+            };
+
+
+            rects.attr("fill", d => this.colorScale(d.value));
 
 
         }
@@ -257,9 +360,11 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
             let objectEnumeration: VisualObjectInstance[] = [];
           
             switch (objectName) {
-                case 'Actual':
-                   // objectEnumeration.push({ objectName: objectName, properties: { showActual: this.showActual}, selector: null });
-                 
+                case 'Heat':
+                    objectEnumeration.push({ objectName: objectName, properties: { heatScale: this.heatScale }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { heatRange: this.heatRange }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { heatColorType: this.heatColorType }, selector: null });
+               
                     break;
                
                     

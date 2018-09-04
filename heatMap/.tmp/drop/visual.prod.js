@@ -8926,6 +8926,9 @@ var powerbi;
                         this.hasXaxis = false;
                         this.hasYaxis = false;
                         this.hasValue = false;
+                        this.heatScale = "default";
+                        this.heatRange = 10;
+                        this.heatColorType = "linear";
                         this.element = d3.select(options.element);
                         this.host = options.host;
                         this.tooltipServiceWrapper = heatMapCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
@@ -8935,12 +8938,16 @@ var powerbi;
                         var _this = this;
                         this.columns = options.dataViews[0].metadata.columns;
                         if (options.dataViews[0].metadata.objects) {
-                            if (options.dataViews[0].metadata.objects["Actual"]) {
-                                var actObj = options.dataViews[0].metadata.objects["Actual"];
-                                //if (actObj.showActual !== undefined) this.showActual = actObj["showActual"];
+                            if (options.dataViews[0].metadata.objects["Heat"]) {
+                                var scale = options.dataViews[0].metadata.objects["Heat"];
+                                if (scale.heatScale !== undefined)
+                                    this.heatScale = scale["heatScale"];
+                                if (scale.heatRange !== undefined)
+                                    this.heatRange = scale["heatRange"];
+                                if (scale.heatColorType !== undefined)
+                                    this.heatColorType = scale["heatColorType"];
                             }
                         }
-                        console.log(this.columns);
                         this.columns.map(function (d, i) {
                             if (d.roles["xAxis"]) {
                                 _this.hasXaxis = true;
@@ -8959,8 +8966,8 @@ var powerbi;
                         if (this.hasValue)
                             this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.valueIndex].format });
                         var data = [], identityData;
-                        console.log(options.dataViews[0].table.rows);
-                        console.log(this.xAxisIndex, this.yAxisIndex, this.valueIndex);
+                        //console.log(options.dataViews[0].table.rows);
+                        //console.log(this.xAxisIndex, this.yAxisIndex, this.valueIndex)
                         options.dataViews[0].table.rows.map(function (d, i) {
                             d.identity = options.dataViews[0].table.identity[i];
                             d.xValue = d[_this.xAxisIndex];
@@ -8985,6 +8992,7 @@ var powerbi;
                         var yScale = this.setYScale(data, dimension);
                         this.drawXScale(xScale, chartSvg, dimension);
                         this.drawYScale(yScale, chartSvg, dimension);
+                        var colorScale = this.setHeatScale(data);
                         this.drawHeatRect(chartSvg, xScale, yScale, data, dimension);
                     };
                     Visual.prototype.getDimensions = function (vp) {
@@ -9023,11 +9031,76 @@ var powerbi;
                             .attr("class", "axis")
                             .call(yaxis);
                     };
+                    Visual.prototype.setHeatScale = function (data) {
+                        var _this = this;
+                        var colors = ["#ffffd9", "#edf8b1", "#c7e9b4", "#7fcdbb", "#41b6c4", "#1d91c0", "#225ea8", "#253494", "#081d58"];
+                        var col = colors.slice(0, 10);
+                        var colorScale, heatDomain, min, max, upper, lower;
+                        var colorRange = col.slice(0, Math.ceil(this.heatRange / 2)).concat(col.splice(-Math.floor(this.heatRange / 2)));
+                        if ((this.heatRange % 2) !== 0) {
+                            upper = colors.slice(0, 10);
+                            lower = colors.slice(0, 10);
+                            var sl = Math.floor(this.heatRange / 2);
+                            colorRange = upper.slice(0, sl).concat(["#b3b3b3"]).concat(lower.slice(-sl));
+                        }
+                        if (this.heatScale === "default") {
+                            min = d3.min(data.map(function (d) { return d.value; }));
+                            max = d3.max(data.map(function (d) { return d.value; }));
+                            if (this.heatColorType === "linear")
+                                heatDomain = [min, max];
+                            else
+                                heatDomain = data.map(function (d) { return d.value; }).sort();
+                            this.colorScale = d3.scale.quantile()
+                                .domain(heatDomain)
+                                .range(colorRange);
+                        }
+                        ;
+                        if (this.heatScale === "rows") {
+                            this.colorScale = {};
+                            var nestedData = d3.nest()
+                                .key(function (d) { return d[_this.xAxisIndex]; })
+                                .entries(data);
+                            nestedData.map(function (d) {
+                                heatDomain = d.values.map(function (d) { return d.value; });
+                                min = d3.min(heatDomain);
+                                max = d3.max(heatDomain);
+                                if (_this.heatColorType === "linear")
+                                    heatDomain = [min, max];
+                                else
+                                    heatDomain = data.map(function (d) { return d.value; }).sort();
+                                _this.colorScale[d.key] = d3.scale.quantile()
+                                    .domain(heatDomain)
+                                    .range(colorRange);
+                            });
+                        }
+                        ;
+                        if (this.heatScale === "columns") {
+                            this.colorScale = {};
+                            var nestedData = d3.nest()
+                                .key(function (d) { return d[_this.yAxisIndex]; })
+                                .entries(data);
+                            nestedData.map(function (d) {
+                                heatDomain = d.values.map(function (d) { return d.value; });
+                                min = d3.min(heatDomain);
+                                max = d3.max(heatDomain);
+                                if (_this.heatColorType === "linear")
+                                    heatDomain = [min, max];
+                                else
+                                    heatDomain = data.map(function (d) { return d.value; }).sort();
+                                _this.colorScale[d.key] = d3.scale.quantile()
+                                    .domain(heatDomain)
+                                    .range(colorRange);
+                            });
+                        }
+                        ;
+                        return colorScale;
+                    };
                     Visual.prototype.drawHeatRect = function (chartSvg, xScale, yScale, data, dimension) {
+                        var _this = this;
                         var heatG = chartSvg
                             .append("g")
                             .attr("transform", "translate(" + dimension.xOffset + "," + dimension.yOffset + ")");
-                        heatG.selectAll(".rects")
+                        var rects = heatG.selectAll(".rects")
                             .data(data)
                             .enter()
                             .append("rect")
@@ -9035,6 +9108,18 @@ var powerbi;
                             .attr("y", function (d) { return yScale(d.yValue); })
                             .attr("height", function (d) { return yScale.rangeBand() - 1; })
                             .attr("width", function (d) { return xScale.rangeBand() - 1; });
+                        console.log(this.colorScale);
+                        if (this.heatScale === "default") {
+                            rects.attr("fill", function (d) { return d.value !== null ? _this.colorScale(d.value) : "#ffffff"; });
+                        }
+                        else if (this.heatScale === "rows") {
+                            rects.attr("fill", function (d) { return d.value !== null ? _this.colorScale[d.xValue](d.value) : "#ffffff"; });
+                        }
+                        else if (this.heatScale === "columns") {
+                            rects.attr("fill", function (d) { return d.value !== null ? _this.colorScale[d.yValue](d.value) : "#ffffff"; });
+                        }
+                        ;
+                        rects.attr("fill", function (d) { return _this.colorScale(d.value); });
                     };
                     Visual.parseSettings = function (dataView) {
                         return heatMapCCFC224D9885417F9AAF5BB8D45B007E.VisualSettings.parse(dataView);
@@ -9079,8 +9164,10 @@ var powerbi;
                         var objectName = options.objectName;
                         var objectEnumeration = [];
                         switch (objectName) {
-                            case 'Actual':
-                                // objectEnumeration.push({ objectName: objectName, properties: { showActual: this.showActual}, selector: null });
+                            case 'Heat':
+                                objectEnumeration.push({ objectName: objectName, properties: { heatScale: this.heatScale }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { heatRange: this.heatRange }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { heatColorType: this.heatColorType }, selector: null });
                                 break;
                         }
                         ;
