@@ -18,7 +18,7 @@
                 }
             ]
         },
-      
+
         {
             "displayName": "X Axis",
             "name": "xAxis",
@@ -51,7 +51,7 @@
                                 "in": "values"
                             }
                         }
-                        
+
                     ]
                 }
             },
@@ -76,6 +76,41 @@
         "Heat": {
             "displayName": "Heat",
             "properties": {
+                "heatColor": {
+                    "displayName": "Heat Color",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "Heat",
+                                "displayName": "Heat"
+                            },
+                            {
+                                "value": "BlueRed",
+                                "displayName": "Blue Red"
+                            },
+                            {
+                                "value": "GreenOrange",
+                                "displayName": "Green Orange"
+                            },
+                            {
+                                "value": "RedBlue",
+                                "displayName": "Red Blue"
+                            },
+                            {
+                                "value": "OrangeGreen",
+                                "displayName": "Orange Green"
+                            },
+                            {
+                                "value": "YlOrBr",
+                                "displayName": "Yellow Orange Blue"
+                            },
+                            {
+                                "value": "YlOrRd",
+                                "displayName": "Yellow Orange Red"
+                            }
+                        ]
+                    }
+                },
                 "heatScale": {
                     "displayName": "Heat Scale",
                     "type": {
@@ -118,3 +153,4 @@
         }
     }
 } 
+
