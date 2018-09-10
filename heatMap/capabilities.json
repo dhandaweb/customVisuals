@@ -150,6 +150,32 @@
                     }
                 }
             }
+        },
+        "Legend": {
+            "displayName": "Legend",
+            "properties": {
+               
+                "legendPosition": {
+                    "displayName": "Legend Position",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "right",
+                                "displayName": "Right"
+                            },
+                            {
+                                "value": "top",
+                                "displayName": "Top"
+                            },
+                            {
+                                "value": "bottom",
+                                "displayName": "Bottom"
+                            }
+                        ]
+                    }
+                }
+               
+            }
         }
     }
 } 

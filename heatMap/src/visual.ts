@@ -38,6 +38,7 @@ module powerbi.extensibility.visual {
         private settings: VisualSettings;
         private textNode: Text;
         private colorScale: any;
+        private colorRange: any;
 
         private columns: any;
         private dimension:any
@@ -52,6 +53,8 @@ module powerbi.extensibility.visual {
         private heatScale: any = "default";
         private heatRange: any = 10;
         private heatColorType: any = "linear";
+
+        private legendPosition: any = "right";
 
         private iValueFormatter:any;
         private element: d3.Selection<SVGElement>;
@@ -102,9 +105,12 @@ module powerbi.extensibility.visual {
                    if (heat.heatColorType !== undefined) this.heatColorType = heat["heatColorType"];
                    if (heat.heatColor !== undefined) this.heatColor = heat["heatColor"];
                }
-              
+               if (options.dataViews[0].metadata.objects["Legend"]) {
+                   var legend = options.dataViews[0].metadata.objects["Legend"];
+                   if (legend.legendPosition !== undefined) this.legendPosition = legend["legendPosition"];
+               }
+               
             }
-
             
 
            this.columns.map((d,i) => {
@@ -144,16 +150,18 @@ module powerbi.extensibility.visual {
                 .append("div")
                 .attr("class", "heatMap")
                 .attr("style", "width:100%;");
-                          
-            //console.log(options);
 
             var dimension = this.getDimensions(options.viewport,data);
 
-            //console.log(dimension);
-            var chartSvg = chartContainer
-                .append("svg")
-                .attr("height", dimension.height)
-                .attr("width", dimension.width);
+            var chart = chartContainer
+                            .append("svg")
+                            .attr("height", dimension.height)
+                             .attr("width", dimension.width);
+
+            var chartSvg = chart.append("g");
+            var chartLegend = chart.append("g");
+         
+           
 
             var xScale = this.setXScale(data, dimension);
             var yScale = this.setYScale(data, dimension);
@@ -162,8 +170,13 @@ module powerbi.extensibility.visual {
             this.drawYScale(yScale, chartSvg, dimension);
             var colorScale = this.setHeatScale(data);
             this.drawHeatRect(chartSvg, xScale, yScale, data, dimension);
+            this.drawLegend(chartLegend, chartSvg, dimension, data);
         }
         private getDimensions(vp,data) {
+            let xlegendOffset = 0;
+            let ylegendOffset = 0;
+            if (this.legendPosition == "right") xlegendOffset = 80;
+            if (this.legendPosition == "top" || this.legendPosition === "bottom") ylegendOffset = 50;
 
             let xdata = data.map(d => d.xValue);
             let ydata = data.map(d => d.yValue);
@@ -174,22 +187,19 @@ module powerbi.extensibility.visual {
             let xT:any = this.axisLabelArray(xDomain.slice(0), vp.width, this.element, "Vertical");
             let yT: any = this.axisLabelArray(yDomain.slice(0), vp.height, this.element, "Horizontal");
             
-            console.log(xT);
-            console.log(yT);
-
             let xOffset = yT.Space + 15;
             let yOffset = xT.Space + 15;
-            let chartWidth = vp.width - xOffset;
-            let chartHeight = vp.height - yOffset;
+            let chartWidth = vp.width - xOffset - xlegendOffset;
+            let chartHeight = vp.height - yOffset - ylegendOffset;
 
             yScale.rangeRoundBands([0, chartHeight]);
-
-            console.log((chartHeight / yDomain.length) , yScale.rangeBand())
+         
             let xFilter = (xT.Rotate === true) ? Math.round((xDomain.length / chartWidth * 100) / 2) : 1;
             let yFilter = ((chartHeight / yDomain.length) < 15) ? Math.round((yDomain.length / chartHeight * 100) / 4) : 1;
            
             let xTickval = xDomain.filter((d, i) => (i % xFilter === 0));
             let yTickval = yDomain.filter((d, i) => (i % yFilter === 0));
+
            
             return {
                 width: vp.width,
@@ -338,7 +348,8 @@ module powerbi.extensibility.visual {
                 });
 
             };
-
+            this.colorRange = colorRange;
+            
             return colorScale;
 
         }
@@ -373,6 +384,40 @@ module powerbi.extensibility.visual {
 
 
         }
+
+        private drawLegend(chartLegend, chartSvg, dimension, data) {
+
+            if (this.legendPosition == "right") {
+                chartLegend.attr("transform", "translate(" + (dimension.chartWidth + dimension.xOffset) + ",0)");
+            }
+            if (this.legendPosition == "top") {
+                chartSvg.attr("transform", "translate(0,50)");
+            }
+            if (this.legendPosition == "bottom") {
+                chartLegend.attr("transform", "translate(0," + (dimension.chartHeight + dimension.yOffset) + ")");
+            }
+            let legendData = [];
+            let min = d3.min(data.map(d => d.value));
+
+            if (this.legendPosition === 'right') legendData = this.colorScale.quantiles().slice(0).reverse().concat([min]);
+            else legendData = [min].concat(this.colorScale.quantiles());
+            let rectHeight = 15;
+           
+            var legendG = chartLegend.selectAll(".legend")
+                .data(legendData)
+                .enter()
+                .append("rect")
+                .attr("x", 15)
+                .attr("y", function (d, i) { return i * rectHeight; })
+                .attr("id", function (d) { return d })
+                .attr("width", 15)
+                .attr("height", rectHeight)
+                .attr("cursor", "pointer")
+                .style("fill", (d, i) => {
+                    return this.colorRange[legendData.length - (i + 1)];
+                });
+
+        };
 
         private static parseSettings(dataView: DataView): VisualSettings {
             return VisualSettings.parse(dataView) as VisualSettings;
@@ -586,8 +631,11 @@ module powerbi.extensibility.visual {
                     objectEnumeration.push({ objectName: objectName, properties: { heatColorType: this.heatColorType }, selector: null });
                    
                     break;
-               
-                    
+                case 'Legend':
+                    objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });
+                 
+                    break;
+                     
             };
            
 

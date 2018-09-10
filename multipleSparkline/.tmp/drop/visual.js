@@ -8956,6 +8956,11 @@ var powerbi;
                         };
                         this.conditionalBulletColor = "GreenRed";
                         this.singleBulletColor = { solid: { color: "#4682b4" } };
+                        this.aboveThresholdColor = { solid: { color: "#00ad00" } };
+                        this.belowThreshold1Color = { solid: { color: "#fff701" } };
+                        this.belowThreshold2Color = { solid: { color: "#ffbd01" } };
+                        this.belowThreshold3Color = { solid: { color: "#ff7601" } };
+                        this.belowThreshold4Color = { solid: { color: "#ff4701" } };
                         this.element = d3.select(options.element);
                         this.host = options.host;
                         this.tooltipServiceWrapper = multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
@@ -9033,6 +9038,19 @@ var powerbi;
                                     this.intensityScale = intensityObj["intensityScale"];
                                 if (intensityObj["intensityColor"] !== undefined)
                                     this.intensityColor = intensityObj["intensityColor"];
+                            }
+                            if (options.dataViews[0].metadata.objects["Threshold"]) {
+                                var thresholdObj = options.dataViews[0].metadata.objects["Threshold"];
+                                if (thresholdObj["aboveThresholdColor"] !== undefined)
+                                    this.aboveThresholdColor = thresholdObj["aboveThresholdColor"];
+                                if (thresholdObj["belowThreshold1Color"] !== undefined)
+                                    this.belowThreshold1Color = thresholdObj["belowThreshold1Color"];
+                                if (thresholdObj["belowThreshold2Color"] !== undefined)
+                                    this.belowThreshold2Color = thresholdObj["belowThreshold2Color"];
+                                if (thresholdObj["belowThreshold3Color"] !== undefined)
+                                    this.belowThreshold3Color = thresholdObj["belowThreshold3Color"];
+                                if (thresholdObj["belowThreshold4Color"] !== undefined)
+                                    this.belowThreshold4Color = thresholdObj["belowThreshold4Color"];
                             }
                         }
                         this.hasTarget = false;
@@ -9144,10 +9162,6 @@ var powerbi;
                             .style("background", function (d, i) { return i % 2 === 0 ? "#fff" : "#ececec"; });
                         rows.on("click", function (d, i) {
                             d.isFiltered = !d.isFiltered;
-                            //rows.each(e => {
-                            //    if (e.key === d.key) d.isFiltered = !d.isFiltered;
-                            //    else e.isFiltered = false;
-                            //});
                             d.values.forEach(function (d) {
                                 var categoryColumn = {
                                     source: options.dataViews[0].table.columns[_this.groupIndex],
@@ -9377,21 +9391,40 @@ var powerbi;
                                 .attr("height", 20)
                                 .attr("class", "bullet");
                             bullet.append("rect").attr("width", 120).attr("height", 20).attr("style", "fill:#d0cece;");
+                            var bulletRect = bullet.append("rect")
+                                .attr("width", function (d) { return barScale(d.actual); })
+                                .attr("height", 20);
                             if (this.conditionalBullet === false) {
-                                bullet.append("rect")
-                                    .attr("width", function (d) { return barScale(d.actual); })
-                                    .attr("height", 20)
-                                    .style("fill", this.singleBulletColor.solid.color);
+                                bulletRect.style("fill", this.singleBulletColor.solid.color);
                             }
                             else {
-                                bullet.append("rect")
-                                    .attr("width", function (d) { return barScale(d.actual); })
-                                    .attr("height", 20)
+                                bulletRect
                                     .style("fill", function (d) {
                                     if (d.variance > 0)
                                         return _this.conditionalBulletColorOptions[_this.conditionalBulletColor][0];
                                     else
                                         return _this.conditionalBulletColorOptions[_this.conditionalBulletColor][1];
+                                });
+                            }
+                            var thresholdData = this.columns.filter(function (d, i) {
+                                d.Index = i;
+                                return d.roles["threshold"] == true;
+                            });
+                            if (thresholdData.length > 0) {
+                                bulletRect
+                                    .style("fill", function (d) {
+                                    var item = d.values[d.values.length - 1];
+                                    var fill = "#fff";
+                                    thresholdData.forEach(function (t, i) {
+                                        if (d.target >= item[t.Index])
+                                            fill = _this.aboveThresholdColor.solid.color;
+                                        else {
+                                            var y = 'belowThreshold' + (i + 1) + 'Color';
+                                            if (d.target < item[t.Index])
+                                                fill = _this[y].solid.color;
+                                        }
+                                    });
+                                    return fill;
                                 });
                             }
                             bullet.append("rect")
@@ -9615,6 +9648,30 @@ var powerbi;
                                     objectEnumeration.push({ objectName: objectName, properties: { singleBulletColor: this.singleBulletColor }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { bulletScaleMinZero: this.bulletScaleMinZero }, selector: null });
                                 break;
+                            case 'Threshold':
+                                var thresholdData = this.columns.filter(function (d, i) {
+                                    d.Index = i;
+                                    return d.roles["threshold"] == true;
+                                });
+                                // console.log();
+                                if (thresholdData.length > 0) {
+                                    objectEnumeration.push({ objectName: objectName, properties: { 'aboveThresholdColor': this.aboveThresholdColor }, selector: null });
+                                    if (thresholdData.length > 0)
+                                        objectEnumeration.push({ objectName: objectName, properties: { 'belowThreshold1Color': this.belowThreshold1Color }, selector: null });
+                                    if (thresholdData.length > 1)
+                                        objectEnumeration.push({ objectName: objectName, properties: { 'belowThreshold2Color': this.belowThreshold2Color }, selector: null });
+                                    if (thresholdData.length > 2)
+                                        objectEnumeration.push({ objectName: objectName, properties: { 'belowThreshold3Color': this.belowThreshold3Color }, selector: null });
+                                    if (thresholdData.length > 3)
+                                        objectEnumeration.push({ objectName: objectName, properties: { 'belowThreshold4Color': this.belowThreshold4Color }, selector: null });
+                                    //thresholdData.forEach((d, i) => {
+                                    //    let t = 'belowThreshold' + (i+1) + 'Color';
+                                    //    console.log(t);
+                                    //    console.log(this[t]);
+                                    //    objectEnumeration.push({ objectName: objectName, properties: { t: this[t] }, selector: null });
+                                    //});
+                                }
+                                break;
                         }
                         ;
                         return objectEnumeration;
@@ -9633,8 +9690,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E = {
-                name: 'multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E',
+            plugins.multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
+                name: 'multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
                 displayName: 'MultipleSparkline',
                 class: 'Visual',
                 version: '1.0.0',

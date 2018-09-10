@@ -79,6 +79,12 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
         private conditionalBulletColor: any = "GreenRed";
         private singleBulletColor: any = { solid: { color: "#4682b4" } };
 
+        private aboveThresholdColor: any = { solid: { color: "#00ad00" } };
+        private belowThreshold1Color: any = { solid: { color: "#fff701" } };
+        private belowThreshold2Color: any = { solid: { color: "#ffbd01" } };
+        private belowThreshold3Color: any = { solid: { color: "#ff7601" } };
+        private belowThreshold4Color: any = { solid: { color: "#ff4701" } };
+
         private actualIndex: number;
         private hasActual: any;
         private targetIndex: number;
@@ -174,6 +180,16 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                    if (intensityObj["show"] !== undefined) this.intensity = intensityObj["show"];
                    if (intensityObj["intensityScale"] !== undefined) this.intensityScale = intensityObj["intensityScale"];
                    if (intensityObj["intensityColor"] !== undefined) this.intensityColor = intensityObj["intensityColor"];
+                   
+               }
+               if (options.dataViews[0].metadata.objects["Threshold"]) {
+                   var thresholdObj = options.dataViews[0].metadata.objects["Threshold"];
+
+                   if (thresholdObj["aboveThresholdColor"] !== undefined) this.aboveThresholdColor = thresholdObj["aboveThresholdColor"];
+                   if (thresholdObj["belowThreshold1Color"] !== undefined) this.belowThreshold1Color = thresholdObj["belowThreshold1Color"];
+                   if (thresholdObj["belowThreshold2Color"] !== undefined) this.belowThreshold2Color = thresholdObj["belowThreshold2Color"];
+                   if (thresholdObj["belowThreshold3Color"] !== undefined) this.belowThreshold3Color = thresholdObj["belowThreshold3Color"];
+                   if (thresholdObj["belowThreshold4Color"] !== undefined) this.belowThreshold4Color = thresholdObj["belowThreshold4Color"];
                    
                }
             }
@@ -306,11 +322,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
 
            rows.on("click", (d, i) => {
                d.isFiltered = !d.isFiltered;
-               //rows.each(e => {
-               //    if (e.key === d.key) d.isFiltered = !d.isFiltered;
-               //    else e.isFiltered = false;
-               //});
-
+             
                d.values.forEach(d => {
 
                    const categoryColumn: DataViewCategoryColumn = {
@@ -598,12 +610,16 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                     return retVal / 10;
 
                     
-                });
+                    });
+
+
+
         }
         }
 
         public drawBullet(data: any, rows: any, thead: any) {
-           if (this.hasTarget) {
+
+            if (this.hasTarget) {
                thead.append("th")
                    .append("span")
                    .html("Bullet");
@@ -626,29 +642,50 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
 
                bullet.append("rect").attr("width", 120).attr("height", 20).attr("style", "fill:#d0cece;")
 
+                var bulletRect = bullet.append("rect")
+                    .attr("width", (d) => barScale(d.actual))
+                    .attr("height", 20);
+
                if (this.conditionalBullet === false) {
-                   bullet.append("rect")
-                       .attr("width", (d) => barScale(d.actual))
-                       .attr("height", 20)
-                       .style("fill", this.singleBulletColor.solid.color);
+                   bulletRect.style("fill", this.singleBulletColor.solid.color);
                }
                else {
-                   bullet.append("rect")
-                       .attr("width", (d) => barScale(d.actual))
-                       .attr("height", 20)
+                   bulletRect
                        .style("fill", d => {
-                           
                            if (d.variance > 0) return this.conditionalBulletColorOptions[this.conditionalBulletColor][0];
                            else return this.conditionalBulletColorOptions[this.conditionalBulletColor][1];
-                            
                        });
                }
+
+                var thresholdData = this.columns.filter((d, i) => {
+                    d.Index = i;
+                    return d.roles["threshold"] == true
+                });
+
+                if (thresholdData.length > 0) {
+                    bulletRect
+                        .style("fill", d => {
+                            let item = d.values[d.values.length - 1];
+                            var fill = "#fff";
+                            thresholdData.forEach((t, i) => {
+                                if (d.target >= item[t.Index]) fill = this.aboveThresholdColor.solid.color;
+                                else {
+                                    let y = 'belowThreshold' + (i+1) + 'Color';
+                                    if (d.target < item[t.Index]) fill = this[y].solid.color;
+                                }
+                            })
+
+                            return fill;
+
+                        });
+                }
 
                bullet.append("rect")
                    .attr("width", 2)
                    .attr("x",(d) => barScale(d.target))
                    .attr("height", 20)
-                   .attr("style", "fill:#000;");
+                    .attr("style", "fill:#000;");
+
            }
 
         }
@@ -731,6 +768,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
             });
            
        }
+
 
         //#region Tooltip
        public drawBisectorToolTip() {
@@ -926,7 +964,33 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
 
                     
                     break;
-                    
+                case 'Threshold':
+
+                    var thresholdData = this.columns.filter((d, i) => {
+                        d.Index = i;
+                        return d.roles["threshold"] == true;
+                    });
+
+                   // console.log();
+
+                    if (thresholdData.length > 0) {
+                        objectEnumeration.push({ objectName: objectName, properties: { 'aboveThresholdColor': this.aboveThresholdColor }, selector: null });
+                        if (thresholdData.length > 0) objectEnumeration.push({ objectName: objectName, properties: { 'belowThreshold1Color': this.belowThreshold1Color }, selector: null });
+                        if (thresholdData.length > 1) objectEnumeration.push({ objectName: objectName, properties: { 'belowThreshold2Color': this.belowThreshold2Color }, selector: null });
+                        if (thresholdData.length > 2) objectEnumeration.push({ objectName: objectName, properties: { 'belowThreshold3Color': this.belowThreshold3Color }, selector: null });
+                        if (thresholdData.length > 3) objectEnumeration.push({ objectName: objectName, properties: { 'belowThreshold4Color': this.belowThreshold4Color }, selector: null });
+
+                        //thresholdData.forEach((d, i) => {
+                        //    let t = 'belowThreshold' + (i+1) + 'Color';
+                        //    console.log(t);
+                        //    console.log(this[t]);
+                        //    objectEnumeration.push({ objectName: objectName, properties: { t: this[t] }, selector: null });
+                        //});
+                    }
+
+                    break;
+
+                     
             };
            
 

@@ -1,12 +1,10 @@
 {
   "ExpandedNodes": [
     "",
-    "\\kpiCard",
-    "\\kpiCard\\src",
-    "\\kpiCard\\style",
-    "\\multipleSparkline\\.api\\v1.11.0",
+    "\\heatMap\\style",
+    "\\multipleSparkline",
     "\\multipleSparkline\\src"
   ],
-  "SelectedNode": "\\kpiCard\\style\\visual.less",
+  "SelectedNode": "\\multipleSparkline\\src\\visual.ts",
   "PreviewInSolutionExplorer": false
 }

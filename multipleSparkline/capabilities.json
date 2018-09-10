@@ -55,6 +55,24 @@
             ]
         },
         {
+            "displayName": "Threshold",
+            "name": "threshold",
+            "kind": "Measure",
+            "requiredTypes": [
+                {
+                    "integer": true
+                },
+                {
+                    "numeric": true
+                }
+            ],
+            "preferredTypes": [
+                {
+                    "numeric": true
+                }
+            ]
+        },
+        {
             "displayName": "Period",
             "name": "period",
             "kind": "Grouping"
@@ -94,6 +112,11 @@
                         {
                             "for": {
                                 "in": "additional"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "threshold"
                             }
                         }
                     ]
@@ -269,6 +292,61 @@
                 },
                 "singleBulletColor": {
                     "displayName": "Single Bullet Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        "Threshold": {
+            "displayName": "Threshold",
+            "properties": {
+                "aboveThresholdColor": {
+                    "displayName": "Above Threshold Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "belowThreshold1Color": {
+                    "displayName": "Below Threshold 1 color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "belowThreshold2Color": {
+                    "displayName": "Below Threshold 2 color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "belowThreshold3Color": {
+                    "displayName": "Below Threshold 3 color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "belowThreshold4Color": {
+                    "displayName": "Below Threshold 4 color",
                     "type": {
                         "fill": {
                             "solid": {
