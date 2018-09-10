@@ -301,7 +301,7 @@
                     }
                 }
             }
-        }
+        },
         "Threshold": {
             "displayName": "Threshold",
             "properties": {
