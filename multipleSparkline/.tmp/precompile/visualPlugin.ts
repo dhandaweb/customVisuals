@@ -1,6 +1,6 @@
 module powerbi.visuals.plugins {
-    export var multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
-        name: 'multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
+    export var multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E = {
+        name: 'multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E',
         displayName: 'MultipleSparkline',
         class: 'Visual',
         version: '1.0.0',

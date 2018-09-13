@@ -65,7 +65,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
         };
 
         private intensity: any = true;
-        private intensityScale: any = "10,40 60,80";
+        private intensityScale: any = "1,4 6,8";
         private intensityColor: any = { solid: { color: "#4682b4" } };
 
         private conditionalBullet: any = true;
@@ -273,7 +273,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
 
                }
                else percentage = 0;
-
+            
                data.push({
                    key: d.key,
                    actual: actual,
@@ -286,7 +286,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                    variance: actual - target,
                    variancePer: (VP).toFixed(2),
                    values: d.values,
-                   percentage: percentage,
+                   percentage: Math.abs(percentage),
                    identity: d.values[0].identity
                });
               
@@ -571,8 +571,8 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
         public showIntensityCircle(rows: any, thead: any) {
         
             if(this.intensity === true) {
-            var rangeArr = [10, 40, 60, 80];
-            var threshold = 10;
+            var rangeArr = [1, 4, 6, 8];
+            var threshold = 1;
 
             if (this.intensityScale.length > 0) {
                 var rangeArrr = this.intensityScale.split(",");
@@ -583,7 +583,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
             var colorRange = (d3.range(1, 10, (10 / (rangeArr.length - 1)))).concat([10]);
 
             var colorIntensityScale = d3.scale.threshold()
-                .domain((rangeArr))
+                .domain(rangeArr)
                 .range(colorRange);
 
             thead.append("th")
@@ -601,14 +601,14 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                 .attr("r", 5)
                 .attr("fill", this.intensityColor.solid.color)
                 .style("opacity", function (d) {
-                    
-                    var retVal, change = d.percentage * 100;
 
-                    if (Math.abs(change/100) > threshold) retVal = colorIntensityScale(Math.abs(d.percentage));
+                 
+                    var retVal, change = d.percentage * 100;
+                   
+                    if (Math.abs(d.perChange) > threshold) retVal = colorIntensityScale(Math.abs(d.perChange));
                     else retVal = 0;
 
                     return retVal / 10;
-
                     
                     });
 
@@ -971,7 +971,6 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                         return d.roles["threshold"] == true;
                     });
 
-                   // console.log();
 
                     if (thresholdData.length > 0) {
                         objectEnumeration.push({ objectName: objectName, properties: { 'aboveThresholdColor': this.aboveThresholdColor }, selector: null });

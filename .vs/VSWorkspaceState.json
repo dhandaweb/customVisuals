@@ -1,7 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\heatMap\\style",
+    "\\heatMap",
+    "\\heatMap\\src",
     "\\multipleSparkline",
     "\\multipleSparkline\\src"
   ],

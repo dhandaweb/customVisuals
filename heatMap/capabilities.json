@@ -134,6 +134,10 @@
                     "displayName": "Heat Range",
                     "type": { "text": true }
                 },
+                "middleBinValue": {
+                    "displayName": "Middle Bin Value",
+                    "type": { "numeric": true }
+                },
                 "heatColorType": {
                     "displayName": "Heat Color Type",
                     "type": {
@@ -148,13 +152,54 @@
                             }
                         ]
                     }
+                },
+                "rectRadius": {
+                    "displayName": "Heat Unit Radius",
+                    "type": { "numeric": true }
                 }
+            }
+        },
+        "Axis": {
+            "displayName": "Axis",
+            "properties": {
+                "showXAxis": {
+                    "displayName": "Show X Axis",
+                    "type": { "bool": true }
+                },
+                "xAxisLabel": {
+                    "displayName": "X Axis Label",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "all",
+                                "displayName": "All"
+                            },
+                            {
+                                "value": "firstLast",
+                                "displayName": "First Last"
+                            },
+                            {
+                                "value": "firstMiddleLast",
+                                "displayName": "First Middle Last"
+                            }
+                        ]
+                    }
+                },
+                "showYAxis": {
+                    "displayName": "Show Y Axis",
+                    "type": { "bool": true }
+                },
+                "showLabel": {
+                    "displayName": "Show Label",
+                    "type": { "bool": true }
+                }
+
             }
         },
         "Legend": {
             "displayName": "Legend",
             "properties": {
-               
+
                 "legendPosition": {
                     "displayName": "Legend Position",
                     "type": {
@@ -174,7 +219,7 @@
                         ]
                     }
                 }
-               
+
             }
         }
     }
