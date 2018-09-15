@@ -8945,6 +8945,7 @@ var powerbi;
                         this.showYAxis = true;
                         this.showLabel = false;
                         this.rectRadius = 0;
+                        this.fontSize = 14;
                         this.element = d3.select(options.element);
                         this.host = options.host;
                         this.tooltipServiceWrapper = heatMapCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
@@ -8953,6 +8954,46 @@ var powerbi;
                     Visual.prototype.update = function (options) {
                         var _this = this;
                         this.columns = options.dataViews[0].metadata.columns;
+                        this.setProperties(options);
+                        this.setIndex(options);
+                        var data = [], identityData;
+                        options.dataViews[0].table.rows.map(function (d, i) {
+                            d.identity = options.dataViews[0].table.identity[i];
+                            d.xValue = _this.xAxisIndex == -1 ? (_this.valueIndex == -1 ? null : _this.columns[_this.valueIndex].displayName) : d[_this.xAxisIndex];
+                            d.yValue = _this.yAxisIndex == -1 ? (_this.valueIndex == -1 ? null : _this.columns[_this.valueIndex].displayName) : d[_this.yAxisIndex];
+                            d.value = _this.valueIndex == -1 ? null : d[_this.valueIndex];
+                            data.push(d);
+                        });
+                        this.element.style("overflow", "hidden");
+                        this.element.select('.heatMap').remove();
+                        var chartContainer = this.element
+                            .append("div")
+                            .attr("class", "heatMap")
+                            .attr("style", "width:100%;");
+                        var dimension = this.getDimensions(options.viewport, data);
+                        var chart = chartContainer
+                            .append("svg")
+                            .attr("height", dimension.height)
+                            .attr("width", dimension.width)
+                            .on("click", function (d, i) {
+                            _this.selectionManager.clear();
+                            _this.heatRects.style("opacity", function (d) {
+                                d.isFiltered = false;
+                                return 1;
+                            });
+                        });
+                        var chartSvg = chart.append("g");
+                        var chartLegend = chart.append("g");
+                        var xScale = this.setXScale(data, dimension);
+                        var yScale = this.setYScale(data, dimension);
+                        this.drawXScale(xScale, chartSvg, dimension);
+                        this.drawYScale(yScale, chartSvg, dimension);
+                        var colorScale = this.setHeatScale(data);
+                        this.drawHeatRect(chartSvg, xScale, yScale, data, dimension);
+                        this.drawLegend(chartLegend, chartSvg, dimension, data);
+                        this.setFontSize(chartSvg);
+                    };
+                    Visual.prototype.setProperties = function (options) {
                         if (options.dataViews[0].metadata.objects) {
                             if (options.dataViews[0].metadata.objects["Heat"]) {
                                 var heat = options.dataViews[0].metadata.objects["Heat"];
@@ -8983,8 +9024,16 @@ var powerbi;
                                     this.showYAxis = axis["showYAxis"];
                                 if (axis.showLabel !== undefined)
                                     this.showLabel = axis["showLabel"];
+                                if (axis.fontSize !== undefined)
+                                    this.fontSize = axis["fontSize"];
                             }
                         }
+                    };
+                    Visual.prototype.setIndex = function (options) {
+                        var _this = this;
+                        this.xAxisIndex = -1;
+                        this.yAxisIndex = -1;
+                        this.valueIndex = -1;
                         this.columns.map(function (d, i) {
                             if (d.roles["xAxis"]) {
                                 _this.hasXaxis = true;
@@ -9002,43 +9051,6 @@ var powerbi;
                         this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ value: 1001 });
                         if (this.hasValue)
                             this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.valueIndex].format });
-                        var data = [], identityData;
-                        //console.log(options.dataViews[0].table.rows);
-                        //console.log(this.xAxisIndex, this.yAxisIndex, this.valueIndex)
-                        options.dataViews[0].table.rows.map(function (d, i) {
-                            d.identity = options.dataViews[0].table.identity[i];
-                            d.xValue = d[_this.xAxisIndex];
-                            d.yValue = d[_this.yAxisIndex];
-                            d.value = d[_this.valueIndex];
-                            data.push(d);
-                        });
-                        this.element.style("overflow", "hidden");
-                        this.element.select('.heatMap').remove();
-                        var chartContainer = this.element
-                            .append("div")
-                            .attr("class", "heatMap")
-                            .attr("style", "width:100%;");
-                        var dimension = this.getDimensions(options.viewport, data);
-                        var chart = chartContainer
-                            .append("svg")
-                            .attr("height", dimension.height)
-                            .attr("width", dimension.width)
-                            .on("click", function (d, i) {
-                            _this.selectionManager.clear();
-                            _this.heatRects.style("opacity", function (d) {
-                                d.isFiltered = false;
-                                return 1;
-                            });
-                        });
-                        var chartSvg = chart.append("g");
-                        var chartLegend = chart.append("g");
-                        var xScale = this.setXScale(data, dimension);
-                        var yScale = this.setYScale(data, dimension);
-                        this.drawXScale(xScale, chartSvg, dimension);
-                        this.drawYScale(yScale, chartSvg, dimension);
-                        var colorScale = this.setHeatScale(data);
-                        this.drawHeatRect(chartSvg, xScale, yScale, data, dimension);
-                        this.drawLegend(chartLegend, chartSvg, dimension, data);
                     };
                     Visual.prototype.getDimensions = function (vp, data) {
                         var xlegendOffset = 0;
@@ -9378,7 +9390,7 @@ var powerbi;
                     };
                     ;
                     Visual.prototype.getTextWidth = function (container, text) {
-                        var dummytext = container.append("text").text(text).attr("font-size", 16);
+                        var dummytext = container.append("text").text(text).attr("font-size", this.fontSize);
                         var bbox = { width: 10, height: 10 };
                         if (dummytext.node() !== null)
                             bbox = dummytext.node().getBBox();
@@ -9498,6 +9510,9 @@ var powerbi;
                             text.selectAll("tspan").attr("text-anchor", textAnchor).attr("dx", text.attr('dx'));
                         }
                     };
+                    Visual.prototype.setFontSize = function (chartSvg) {
+                        chartSvg.selectAll("text").style("font-size", this.fontSize + "px");
+                    };
                     Visual.prototype.enumerateObjectInstances = function (options) {
                         var objectName = options.objectName;
                         var objectEnumeration = [];
@@ -9518,6 +9533,7 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { xAxisLabel: this.xAxisLabel }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { showYAxis: this.showYAxis }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.fontSize }, selector: null });
                                 break;
                         }
                         ;

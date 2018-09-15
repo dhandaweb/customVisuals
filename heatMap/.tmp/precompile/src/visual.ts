@@ -84,6 +84,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
         private showYAxis: any = true;
         private showLabel: any = false;
         private rectRadius: any = 0;
+        private fontSize: any = 14;
         
        constructor(options: VisualConstructorOptions) {
            
@@ -94,65 +95,21 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
         }
 
         public update(options: VisualUpdateOptions) {
+
            this.columns = options.dataViews[0].metadata.columns;
-            
+           this.setProperties(options);
+           this.setIndex(options);
 
-           if (options.dataViews[0].metadata.objects) {
-               if (options.dataViews[0].metadata.objects["Heat"]) {
-                   var heat = options.dataViews[0].metadata.objects["Heat"];
-                   if (heat.heatScale !== undefined) this.heatScale = heat["heatScale"];
-                   if (heat.heatRange !== undefined) this.heatRange = heat["heatRange"];
-                   if (heat.heatColorType !== undefined) this.heatColorType = heat["heatColorType"];
-                   if (heat.heatColor !== undefined) this.heatColor = heat["heatColor"];
-                   if (heat.rectRadius !== undefined) this.rectRadius = heat["rectRadius"];
-                  
-                   this.middleBinValue = heat["middleBinValue"];
-                   
-               }
-               if (options.dataViews[0].metadata.objects["Legend"]) {
-                   var legend = options.dataViews[0].metadata.objects["Legend"];
-                   if (legend.legendPosition !== undefined) this.legendPosition = legend["legendPosition"];
-               }
-               if (options.dataViews[0].metadata.objects["Axis"]) {
-                   var axis = options.dataViews[0].metadata.objects["Axis"];
-                   if (axis.showXAxis !== undefined) this.showXAxis = axis["showXAxis"];
-                   if (axis.xAxisLabel !== undefined) this.xAxisLabel = axis["xAxisLabel"];
-                   if (axis.showYAxis !== undefined) this.showYAxis = axis["showYAxis"];
-                   if (axis.showLabel !== undefined) this.showLabel = axis["showLabel"];
-               }
-               
-            }
-
-           this.columns.map((d,i) => {
-               if (d.roles["xAxis"]) {
-                   this.hasXaxis = true;
-                   this.xAxisIndex = i;
-               }
-               if (d.roles["yAxis"]) {
-                   this.hasYaxis = true;
-                   this.yAxisIndex = i;
-               }
-               if (d.roles["values"]) {
-                   this.hasValue = true;
-                   this.valueIndex = i;
-               }
-           });
-        
-           this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ value:1001 });
-        
-            if (this.hasValue) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.valueIndex].format });
-          
            var data = [], identityData;
-            //console.log(options.dataViews[0].table.rows);
-            //console.log(this.xAxisIndex, this.yAxisIndex, this.valueIndex)
-            options.dataViews[0].table.rows.map((d: any, i) => {
+           
+           options.dataViews[0].table.rows.map((d: any, i) => {
                 d.identity = options.dataViews[0].table.identity[i];
-                d.xValue = d[this.xAxisIndex];
-                d.yValue = d[this.yAxisIndex];
-                d.value = d[this.valueIndex];
-               data.push(d);
+                d.xValue = this.xAxisIndex == -1 ? (this.valueIndex == -1 ? null : this.columns[this.valueIndex].displayName) : d[this.xAxisIndex];
+                d.yValue = this.yAxisIndex == -1 ? (this.valueIndex == -1 ? null : this.columns[this.valueIndex].displayName) : d[this.yAxisIndex];
+                d.value = this.valueIndex == -1 ? null : d[this.valueIndex];
+                data.push(d);
            });
-
+          
            this.element.style("overflow", "hidden");
            this.element.select('.heatMap').remove();
 
@@ -173,7 +130,6 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                                     d.isFiltered = false;
                                     return 1;
                                 });
-                                
                             });
 
             var chartSvg = chart.append("g")
@@ -186,7 +142,63 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
             var colorScale = this.setHeatScale(data);
             this.drawHeatRect(chartSvg, xScale, yScale, data, dimension);
             this.drawLegend(chartLegend, chartSvg, dimension, data);
+            this.setFontSize(chartSvg);
         }
+        private setProperties(options) {
+
+            if (options.dataViews[0].metadata.objects) {
+                if (options.dataViews[0].metadata.objects["Heat"]) {
+                    var heat = options.dataViews[0].metadata.objects["Heat"];
+                    if (heat.heatScale !== undefined) this.heatScale = heat["heatScale"];
+                    if (heat.heatRange !== undefined) this.heatRange = heat["heatRange"];
+                    if (heat.heatColorType !== undefined) this.heatColorType = heat["heatColorType"];
+                    if (heat.heatColor !== undefined) this.heatColor = heat["heatColor"];
+                    if (heat.rectRadius !== undefined) this.rectRadius = heat["rectRadius"];
+                    this.middleBinValue = heat["middleBinValue"];
+                }
+                if (options.dataViews[0].metadata.objects["Legend"]) {
+                    var legend = options.dataViews[0].metadata.objects["Legend"];
+                    if (legend.legendPosition !== undefined) this.legendPosition = legend["legendPosition"];
+                }
+                if (options.dataViews[0].metadata.objects["Axis"]) {
+                    var axis = options.dataViews[0].metadata.objects["Axis"];
+                    if (axis.showXAxis !== undefined) this.showXAxis = axis["showXAxis"];
+                    if (axis.xAxisLabel !== undefined) this.xAxisLabel = axis["xAxisLabel"];
+                    if (axis.showYAxis !== undefined) this.showYAxis = axis["showYAxis"];
+                    if (axis.showLabel !== undefined) this.showLabel = axis["showLabel"];
+                    if (axis.fontSize !== undefined) this.fontSize = axis["fontSize"];
+                }
+            }
+        }
+
+        private setIndex(options) {
+
+            this.xAxisIndex = -1;
+            this.yAxisIndex = -1;
+            this.valueIndex = -1;
+
+            this.columns.map((d, i) => {
+                if (d.roles["xAxis"]) {
+                    this.hasXaxis = true;
+                    this.xAxisIndex = i;
+                }
+                if (d.roles["yAxis"]) {
+                    this.hasYaxis = true;
+                    this.yAxisIndex = i;
+                }
+                if (d.roles["values"]) {
+                    this.hasValue = true;
+                    this.valueIndex = i;
+                }
+            });
+
+            this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ value: 1001 });
+
+            if (this.hasValue) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.valueIndex].format });
+
+
+        }
+
         private getDimensions(vp,data) {
             let xlegendOffset = 0;
             let ylegendOffset = 0;
@@ -596,7 +608,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
 
         private getTextWidth(container, text) {
             
-            var dummytext = container.append("text").text(text).attr("font-size", 16);
+            var dummytext = container.append("text").text(text).attr("font-size", this.fontSize);
             var bbox = { width: 10, height: 10 };
             if (dummytext.node() !== null) bbox = dummytext.node().getBBox();
             dummytext.remove();
@@ -759,6 +771,11 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
 
         }
 
+        private setFontSize(chartSvg){
+
+            chartSvg.selectAll("text").style("font-size", this.fontSize + "px");
+        }
+
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {
 
             let objectName = options.objectName;
@@ -783,7 +800,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                     objectEnumeration.push({ objectName: objectName, properties: { xAxisLabel: this.xAxisLabel }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { showYAxis: this.showYAxis }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
-                  
+                    objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.fontSize }, selector: null });
                     break;
                     
             };

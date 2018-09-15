@@ -155,7 +155,11 @@
                 },
                 "rectRadius": {
                     "displayName": "Heat Unit Radius",
-                    "type": { "numeric": true }
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
                 }
             }
         },
@@ -192,6 +196,15 @@
                 "showLabel": {
                     "displayName": "Show Label",
                     "type": { "bool": true }
+                },
+                "fontSize": {
+                    "displayName": "Text Size",
+                    "displayNameKey": "Visual_TextSize",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
                 }
 
             }
