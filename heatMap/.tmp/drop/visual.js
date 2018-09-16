@@ -9013,6 +9013,8 @@ var powerbi;
                                 var legend = options.dataViews[0].metadata.objects["Legend"];
                                 if (legend.legendPosition !== undefined)
                                     this.legendPosition = legend["legendPosition"];
+                                this.minLegendText = legend["minLegendText"];
+                                this.maxLegendText = legend["maxLegendText"];
                             }
                             if (options.dataViews[0].metadata.objects["Axis"]) {
                                 var axis = options.dataViews[0].metadata.objects["Axis"];
@@ -9345,11 +9347,21 @@ var powerbi;
                             .style("fill", function (d, i) {
                             return _this.colorRange[legendData.length - (i + 1)];
                         });
+                        this.tooltipServiceWrapper.addTooltip(legendG, function (tooltipEvent) { return _this.getLegendTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
                         var legendText = chartLegend.selectAll(".legendText")
                             .data(legendData)
                             .enter()
                             .append("text")
-                            .text(function (d, i) { return (i == 0 || i == legendData.length - 1) ? _this.iValueFormatter.format(d) : ""; });
+                            .text(function (d, i) {
+                            if (i == 0) {
+                                return (_this.minLegendText !== undefined && _this.minLegendText.length > 0) ? _this.minLegendText : _this.iValueFormatter.format(d);
+                            }
+                            if (i == legendData.length - 1) {
+                                return (_this.maxLegendText !== undefined && _this.maxLegendText.length > 0) ? _this.maxLegendText : _this.iValueFormatter.format(d);
+                            }
+                            else
+                                return "";
+                        });
                         if (this.legendPosition == "right") {
                             legendG.attr("x", 15)
                                 .attr("y", function (d, i) { return i * rectHeight; });
@@ -9378,6 +9390,15 @@ var powerbi;
                             displayName: data.yValue,
                             value: data.xValue,
                             header: data.value.toString()
+                        });
+                        return retData;
+                    };
+                    Visual.prototype.getLegendTooltipData = function (data) {
+                        var retData = [];
+                        retData.push({
+                            displayName: '≥ ' + data.toString(),
+                            value: "",
+                            header: ""
                         });
                         return retData;
                     };
@@ -9527,6 +9548,8 @@ var powerbi;
                                 break;
                             case 'Legend':
                                 objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { minLegendText: this.minLegendText }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { maxLegendText: this.maxLegendText }, selector: null });
                                 break;
                             case 'Axis':
                                 objectEnumeration.push({ objectName: objectName, properties: { showXAxis: this.showXAxis }, selector: null });

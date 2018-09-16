@@ -1,4 +1,4 @@
-
+﻿
 /*
  *  Power BI Visual CLI
  *
@@ -85,7 +85,9 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
         private showLabel: any = false;
         private rectRadius: any = 0;
         private fontSize: any = 14;
-        
+        private minLegendText: any;
+        private maxLegendText: any;
+
        constructor(options: VisualConstructorOptions) {
            
            this.element = d3.select(options.element);
@@ -159,6 +161,8 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                 if (options.dataViews[0].metadata.objects["Legend"]) {
                     var legend = options.dataViews[0].metadata.objects["Legend"];
                     if (legend.legendPosition !== undefined) this.legendPosition = legend["legendPosition"];
+                    this.minLegendText = legend["minLegendText"];
+                    this.maxLegendText = legend["maxLegendText"];
                 }
                 if (options.dataViews[0].metadata.objects["Axis"]) {
                     var axis = options.dataViews[0].metadata.objects["Axis"];
@@ -519,10 +523,10 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
             }
             if (this.legendPosition == "top") {
                 chartSvg.attr("transform", "translate(0,50)");
-               chartLegend.attr("transform", "translate(" + (dimension.xOffset + 20)+ ",10)");
+                chartLegend.attr("transform", "translate(" + (dimension.xOffset + 20) + ",10)");
             }
             if (this.legendPosition == "bottom") {
-                chartLegend.attr("transform", "translate(" + (dimension.xOffset + 20)+ "," + (dimension.chartHeight + dimension.yOffset) + ")");
+                chartLegend.attr("transform", "translate(" + (dimension.xOffset + 20) + "," + (dimension.chartHeight + dimension.yOffset) + ")");
             }
             let legendData = [];
             let min = d3.min(data.map(d => d.value));
@@ -548,11 +552,24 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                     return this.colorRange[legendData.length - (i + 1)];
                 });
 
-           var legendText =  chartLegend.selectAll(".legendText")
+            this.tooltipServiceWrapper.addTooltip(legendG,
+                (tooltipEvent: TooltipEventArgs<any>) => this.getLegendTooltipData(tooltipEvent.data),
+                (tooltipEvent: TooltipEventArgs<any>) => null
+            );
+
+            var legendText = chartLegend.selectAll(".legendText")
                 .data(legendData)
                 .enter()
                 .append("text")
-               .text((d, i) => (i == 0 || i == legendData.length - 1) ? this.iValueFormatter.format(d) : "")
+                .text((d, i) => {
+                    if (i == 0) {
+                        return (this.minLegendText !== undefined && this.minLegendText.length > 0)? this.minLegendText : this.iValueFormatter.format(d);
+                    }
+                    if (i == legendData.length - 1) {
+                        return (this.maxLegendText !== undefined && this.maxLegendText.length > 0)  ? this.maxLegendText : this.iValueFormatter.format(d);
+                    }
+                    else return "";
+               })
            
 
             if (this.legendPosition == "right") {
@@ -592,6 +609,18 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                 header: data.value.toString()
             });
            
+            return retData;
+        }
+
+        private getLegendTooltipData(data: any): VisualTooltipDataItem[] {
+            var retData = [];
+           
+            retData.push({
+                displayName: '≥ ' + data.toString(),
+                value: "",
+                header: ""
+            });
+
             return retData;
         }
 
@@ -793,7 +822,9 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                     break;
                 case 'Legend':
                     objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });
-                 
+                    objectEnumeration.push({ objectName: objectName, properties: { minLegendText: this.minLegendText }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { maxLegendText: this.maxLegendText }, selector: null });
+                    
                     break;
                 case 'Axis':
                     objectEnumeration.push({ objectName: objectName, properties: { showXAxis: this.showXAxis }, selector: null });

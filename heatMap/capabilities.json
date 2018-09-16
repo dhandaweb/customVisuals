@@ -212,7 +212,6 @@
         "Legend": {
             "displayName": "Legend",
             "properties": {
-
                 "legendPosition": {
                     "displayName": "Legend Position",
                     "type": {
@@ -231,8 +230,15 @@
                             }
                         ]
                     }
+                },
+                "minLegendText": {
+                    "displayName": "Min Legend Text",
+                    "type": { "text": true }
+                },
+                "maxLegendText": {
+                    "displayName": "Max Legend Text",
+                    "type": { "text": true }
                 }
-
             }
         }
     }
