@@ -102,7 +102,7 @@
                             },
                             {
                                 "value": "YlOrBr",
-                                "displayName": "Yellow Orange Blue"
+                                "displayName": "Yellow Orange Brown"
                             },
                             {
                                 "value": "YlOrRd",
@@ -216,6 +216,7 @@
                     "displayName": "Legend Position",
                     "type": {
                         "enumeration": [
+                            
                             {
                                 "value": "right",
                                 "displayName": "Right"

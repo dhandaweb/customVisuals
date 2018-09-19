@@ -57,7 +57,9 @@ module powerbi.extensibility.visual {
 
         private legendPosition: any = "right";
         private middleBinValue: any;
-        private iValueFormatter:any;
+        private iValueFormatter: any;
+        private xAxisFormatter: any;
+        private yAxisFormatter: any;
         private element: d3.Selection<SVGElement>;
         private container: d3.Selection<SVGElement>;
 
@@ -98,20 +100,53 @@ module powerbi.extensibility.visual {
 
         public update(options: VisualUpdateOptions) {
 
-           this.columns = options.dataViews[0].metadata.columns;
+            this.columns = options.dataViews[0].metadata.columns;
+           
            this.setProperties(options);
            this.setIndex(options);
 
            var data = [], identityData;
+           var yFormat, xFormat;
            
            options.dataViews[0].table.rows.map((d: any, i) => {
                 d.identity = options.dataViews[0].table.identity[i];
-                d.xValue = this.xAxisIndex == -1 ? (this.valueIndex == -1 ? null : this.columns[this.valueIndex].displayName) : d[this.xAxisIndex];
-                d.yValue = this.yAxisIndex == -1 ? (this.valueIndex == -1 ? null : this.columns[this.valueIndex].displayName) : d[this.yAxisIndex];
+                d.xValue = null;
+                d.yValue = null;
+
+               if (this.xAxisIndex == -1) {
+                   if (this.valueIndex !== -1) {
+                       d.xValue = this.columns[this.valueIndex].displayName
+                   }
+               }
+               else {
+                   d.xValue = d[this.xAxisIndex];
+                 
+                   if (this.xAxisFormatter != undefined) {
+                       xFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.xAxisFormatter });
+                       d.xValue = xFormat.format(d[this.xAxisIndex]);
+                       
+                   }
+                  
+               }
+             
+               if (this.yAxisIndex == -1) {
+                   if (this.valueIndex !== -1) {
+                       d.yValue = this.columns[this.valueIndex].displayName;
+                   }
+               }
+               else {
+                   d.yValue = d[this.yAxisIndex];
+
+                   if (this.yAxisFormatter != undefined) {
+                       yFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.yAxisFormatter });
+                       d.yValue = yFormat.format(d[this.yAxisIndex]);
+                   }
+               }
+                 
                 d.value = this.valueIndex == -1 ? null : d[this.valueIndex];
                 data.push(d);
            });
-          
+           
            this.element.style("overflow", "hidden");
            this.element.select('.heatMap').remove();
 
@@ -133,7 +168,7 @@ module powerbi.extensibility.visual {
                                     return 1;
                                 });
                             });
-
+           
             var chartSvg = chart.append("g")
             var chartLegend = chart.append("g")
             var xScale = this.setXScale(data, dimension);
@@ -141,12 +176,16 @@ module powerbi.extensibility.visual {
 
             this.drawXScale(xScale, chartSvg, dimension);
             this.drawYScale(yScale, chartSvg, dimension);
-            var colorScale = this.setHeatScale(data);
+         
+            this.setHeatScale(data);
+           
             this.drawHeatRect(chartSvg, xScale, yScale, data, dimension);
+          
             this.drawLegend(chartLegend, chartSvg, dimension, data);
             this.setFontSize(chartSvg);
         }
         private setProperties(options) {
+            this.middleBinValue = undefined;
 
             if (options.dataViews[0].metadata.objects) {
                 if (options.dataViews[0].metadata.objects["Heat"]) {
@@ -156,13 +195,13 @@ module powerbi.extensibility.visual {
                     if (heat.heatColorType !== undefined) this.heatColorType = heat["heatColorType"];
                     if (heat.heatColor !== undefined) this.heatColor = heat["heatColor"];
                     if (heat.rectRadius !== undefined) this.rectRadius = heat["rectRadius"];
-                    this.middleBinValue = heat["middleBinValue"];
+                    if (heat.middleBinValue !== undefined) this.middleBinValue = heat["middleBinValue"];
                 }
                 if (options.dataViews[0].metadata.objects["Legend"]) {
                     var legend = options.dataViews[0].metadata.objects["Legend"];
                     if (legend.legendPosition !== undefined) this.legendPosition = legend["legendPosition"];
-                    this.minLegendText = legend["minLegendText"];
-                    this.maxLegendText = legend["maxLegendText"];
+                    if (legend.minLegendText !== undefined) this.minLegendText = legend["minLegendText"];
+                    if (legend.maxLegendText !== undefined) this.maxLegendText = legend["maxLegendText"];
                 }
                 if (options.dataViews[0].metadata.objects["Axis"]) {
                     var axis = options.dataViews[0].metadata.objects["Axis"];
@@ -180,22 +219,24 @@ module powerbi.extensibility.visual {
             this.xAxisIndex = -1;
             this.yAxisIndex = -1;
             this.valueIndex = -1;
-
+           
             this.columns.map((d, i) => {
                 if (d.roles["xAxis"]) {
                     this.hasXaxis = true;
                     this.xAxisIndex = i;
+                    this.xAxisFormatter = d.format;
                 }
                 if (d.roles["yAxis"]) {
                     this.hasYaxis = true;
                     this.yAxisIndex = i;
+                    this.yAxisFormatter = d.format;
                 }
                 if (d.roles["values"]) {
                     this.hasValue = true;
                     this.valueIndex = i;
                 }
             });
-
+            
             this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ value: 1001 });
 
             if (this.hasValue) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.valueIndex].format });
@@ -218,7 +259,7 @@ module powerbi.extensibility.visual {
             let xT:any = this.axisLabelArray(xDomain.slice(0), vp.width, this.element, "Vertical");
             let yT:any = this.axisLabelArray(yDomain.slice(0), vp.height, this.element, "Horizontal");
             
-            let xOffset = this.showYAxis ? yT.Space + 15 : 0;
+            let xOffset = this.showYAxis ? yT.Space + 22 : 0;
             let yOffset = this.showXAxis ? xT.Space + 15 : 0;
 
             if (this.xAxisLabel === "firstLast" || this.xAxisLabel === "firstMiddleLast") yOffset = 25;
@@ -255,13 +296,13 @@ module powerbi.extensibility.visual {
         private setXScale(data, dimension) {
             var xDomain = data.map(d => d.xValue);
             
-            var scale = d3.scale.ordinal().rangeRoundBands([0, dimension.chartWidth]).domain(xDomain);
+            var scale = d3.scale.ordinal().rangeBands([0, dimension.chartWidth]).domain(xDomain);
             return scale;
         }
 
         private setYScale(data, dimension) {
             var yDomain = data.map(d => d.yValue);
-            var scale = d3.scale.ordinal().rangeRoundBands([0, dimension.chartHeight]).domain(yDomain);
+            var scale = d3.scale.ordinal().rangeBands([0, dimension.chartHeight]).domain(yDomain);
             return scale;
         }
 
@@ -323,7 +364,7 @@ module powerbi.extensibility.visual {
             var col = colors.slice(0, 10);
             var colorScale, heatDomain, min, max, upper, lower;
             var colorRange = col.slice(0, Math.ceil(this.heatRange / 2)).concat(col.splice(-Math.floor(this.heatRange / 2)));
-
+           
             if ((this.heatRange % 2) !== 0 && this.middleBinValue !== undefined) {
                 upper = colors.slice(0, 10);
                 lower = colors.slice(0, 10);
@@ -352,7 +393,7 @@ module powerbi.extensibility.visual {
                 this.colorScale = {};
 
                 var nestedData = d3.nest()
-                                    .key((d) => d[this.xAxisIndex])
+                                    .key((d:any) => d.xValue)
                                     .entries(data);
               
                 nestedData.map(d => {
@@ -379,7 +420,7 @@ module powerbi.extensibility.visual {
                 this.colorScale = {};
 
                 var nestedData = d3.nest()
-                    .key((d) => d[this.yAxisIndex])
+                    .key((d: any) => d.yValue)
                     .entries(data);
 
                 nestedData.map(d => {
@@ -422,7 +463,7 @@ module powerbi.extensibility.visual {
                 .attr("y", d => yScale(d.yValue))
                 .attr("height", d => yScale.rangeBand() - 1)
                 .attr("width", d => xScale.rangeBand() - 1);
-
+          
             if (this.heatScale === "default") {
                 rects.attr("fill", d => d.value !== null ? this.colorScale(d.value) : "#ffffff");
             }
@@ -432,9 +473,6 @@ module powerbi.extensibility.visual {
             else if (this.heatScale === "columns") {
                 rects.attr("fill", d => d.value !== null ? this.colorScale[d.yValue](d.value) : "#ffffff");
             };
-
-
-            rects.attr("fill", d => this.colorScale(d.value));
 
             rects.on("click", (d, i) => {
                 d.isFiltered = !d.isFiltered;
@@ -496,7 +534,7 @@ module powerbi.extensibility.visual {
                 (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
                 (tooltipEvent: TooltipEventArgs<any>) => null
             );
-           
+          
            
         }
 
@@ -517,7 +555,7 @@ module powerbi.extensibility.visual {
         }
 
         private drawLegend(chartLegend, chartSvg, dimension, data) {
-
+            
             if (this.legendPosition == "right") {
                 chartLegend.attr("transform", "translate(" + (dimension.chartWidth + dimension.xOffset + 20) + "," + (dimension.yOffset + 15) + ")");
             }
@@ -528,60 +566,91 @@ module powerbi.extensibility.visual {
             if (this.legendPosition == "bottom") {
                 chartLegend.attr("transform", "translate(" + (dimension.xOffset + 20) + "," + (dimension.chartHeight + dimension.yOffset) + ")");
             }
-            let legendData = [];
-            let min = d3.min(data.map(d => d.value));
 
-            if (this.legendPosition === 'right') legendData = this.colorScale.quantiles().slice(0).reverse().concat([min]);
-            else legendData = [min].concat(this.colorScale.quantiles());
-
+            var legendText, legendG;
             let rectHeight = 15;
             let rectWidth = 15;
 
             if (dimension.chartHeight < 200) rectHeight = dimension.chartHeight / 20;
             if (dimension.chartWidth < 200) rectWidth = dimension.chartWidth / 20;
-
-            var legendG = chartLegend.selectAll(".legend")
-                .data(legendData)
-                .enter()
-                .append("rect")
-                .attr("id", function (d) { return d })
-                .attr("width", rectWidth)
-                .attr("height", rectHeight)
-                .attr("cursor", "pointer")
-                .style("fill", (d, i) => {
-                    return this.colorRange[legendData.length - (i + 1)];
-                });
-
-            this.tooltipServiceWrapper.addTooltip(legendG,
-                (tooltipEvent: TooltipEventArgs<any>) => this.getLegendTooltipData(tooltipEvent.data),
-                (tooltipEvent: TooltipEventArgs<any>) => null
-            );
-
-            var legendText = chartLegend.selectAll(".legendText")
-                .data(legendData)
-                .enter()
-                .append("text")
-                .text((d, i) => {
-                    if (i == 0) {
-                        return (this.minLegendText !== undefined && this.minLegendText.length > 0)? this.minLegendText : this.iValueFormatter.format(d);
-                    }
-                    if (i == legendData.length - 1) {
-                        return (this.maxLegendText !== undefined && this.maxLegendText.length > 0)  ? this.maxLegendText : this.iValueFormatter.format(d);
-                    }
-                    else return "";
-               })
            
+            if (this.heatScale !== "default") {
+             
+                legendG = chartLegend.selectAll(".legend")
+                    .data(this.colorRange)
+                    .enter()
+                    .append("rect")
+                    .attr("id", function (d) { return d })
+                    .attr("width", rectWidth)
+                    .attr("height", rectHeight)
+                    .attr("cursor", "pointer")
+                    .style("fill", (d, i) => d);
+
+                legendText = chartLegend.selectAll(".legendText")
+                    .data(this.colorRange)
+                    .enter()
+                    .append("text")
+                    .text((d, i) => {
+                        if (i == 0) {
+                            return (this.minLegendText !== undefined && this.minLegendText.length > 0) ? this.minLegendText : "";
+                        }
+                        if (i == this.colorRange.length - 1) {
+                            return (this.maxLegendText !== undefined && this.maxLegendText.length > 0) ? this.maxLegendText : "";
+                        }
+                        else return "";
+                    });
+
+            }
+            else {
+
+                let legendData = [];
+                let min = d3.min(data.map(d => d.value));
+
+                if (this.legendPosition === 'right') legendData = this.colorScale.quantiles().slice(0).reverse().concat([min]);
+                else legendData = [min].concat(this.colorScale.quantiles());
+
+                legendG = chartLegend.selectAll(".legend")
+                    .data(legendData)
+                    .enter()
+                    .append("rect")
+                    .attr("id", function (d) { return d })
+                    .attr("width", rectWidth)
+                    .attr("height", rectHeight)
+                    .attr("cursor", "pointer")
+                    .style("fill", (d, i) => {
+                        return this.colorRange[legendData.length - (i + 1)];
+                    });
+
+                this.tooltipServiceWrapper.addTooltip(legendG,
+                    (tooltipEvent: TooltipEventArgs<any>) => this.getLegendTooltipData(tooltipEvent.data),
+                    (tooltipEvent: TooltipEventArgs<any>) => null
+                );
+
+                legendText = chartLegend.selectAll(".legendText")
+                    .data(legendData)
+                    .enter()
+                    .append("text")
+                    .text((d, i) => {
+                        if (i == 0) {
+                            return (this.minLegendText !== undefined && this.minLegendText.length > 0) ? this.minLegendText : this.iValueFormatter.format(d);
+                        }
+                        if (i == legendData.length - 1) {
+                            return (this.maxLegendText !== undefined && this.maxLegendText.length > 0) ? this.maxLegendText : this.iValueFormatter.format(d);
+                        }
+                        else return "";
+                    });
+            }
 
             if (this.legendPosition == "right") {
                 legendG.attr("x", 15)
                     .attr("y", function (d, i) { return i * rectHeight; });
 
                 legendText
-                    .attr("x", 15)
+                    .attr("x", 20)
                     .attr("text-anchor", "middle")
                     .attr("dy", (d, i) => i == 0 ? -5 : 32)
                     .attr("y", function (d, i) { return i * rectHeight; });
-                
+
             }
             else {
                 legendG.attr("y", 15)
@@ -593,7 +662,6 @@ module powerbi.extensibility.visual {
 
                 legendText.attr("text-anchor", (d, i) => i == 0 ? "end" : "start");
             }
-
         };
 
         private static parseSettings(dataView: DataView): VisualSettings {
@@ -606,7 +674,7 @@ module powerbi.extensibility.visual {
             retData.push({
                 displayName: data.yValue,
                 value: data.xValue,
-                header: data.value.toString()
+                header: this.iValueFormatter.format(data.value)
             });
            
             return retData;
@@ -616,7 +684,7 @@ module powerbi.extensibility.visual {
             var retData = [];
            
             retData.push({
-                displayName: '≥ ' + data.toString(),
+                displayName: '≥ ' + this.iValueFormatter.format(data),
                 value: "",
                 header: ""
             });
@@ -802,7 +870,7 @@ module powerbi.extensibility.visual {
 
         private setFontSize(chartSvg){
 
-            chartSvg.selectAll("text").style("font-size", this.fontSize + "px");
+            chartSvg.selectAll("text").attr("font-size", this.fontSize + "px");
         }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {

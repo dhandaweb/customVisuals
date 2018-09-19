@@ -8957,10 +8957,35 @@ var powerbi;
                         this.setProperties(options);
                         this.setIndex(options);
                         var data = [], identityData;
+                        var yFormat, xFormat;
                         options.dataViews[0].table.rows.map(function (d, i) {
                             d.identity = options.dataViews[0].table.identity[i];
-                            d.xValue = _this.xAxisIndex == -1 ? (_this.valueIndex == -1 ? null : _this.columns[_this.valueIndex].displayName) : d[_this.xAxisIndex];
-                            d.yValue = _this.yAxisIndex == -1 ? (_this.valueIndex == -1 ? null : _this.columns[_this.valueIndex].displayName) : d[_this.yAxisIndex];
+                            d.xValue = null;
+                            d.yValue = null;
+                            if (_this.xAxisIndex == -1) {
+                                if (_this.valueIndex !== -1) {
+                                    d.xValue = _this.columns[_this.valueIndex].displayName;
+                                }
+                            }
+                            else {
+                                d.xValue = d[_this.xAxisIndex];
+                                if (_this.xAxisFormatter != undefined) {
+                                    xFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: _this.xAxisFormatter });
+                                    d.xValue = xFormat.format(d[_this.xAxisIndex]);
+                                }
+                            }
+                            if (_this.yAxisIndex == -1) {
+                                if (_this.valueIndex !== -1) {
+                                    d.yValue = _this.columns[_this.valueIndex].displayName;
+                                }
+                            }
+                            else {
+                                d.yValue = d[_this.yAxisIndex];
+                                if (_this.yAxisFormatter != undefined) {
+                                    yFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: _this.yAxisFormatter });
+                                    d.yValue = yFormat.format(d[_this.yAxisIndex]);
+                                }
+                            }
                             d.value = _this.valueIndex == -1 ? null : d[_this.valueIndex];
                             data.push(d);
                         });
@@ -8988,12 +9013,13 @@ var powerbi;
                         var yScale = this.setYScale(data, dimension);
                         this.drawXScale(xScale, chartSvg, dimension);
                         this.drawYScale(yScale, chartSvg, dimension);
-                        var colorScale = this.setHeatScale(data);
+                        this.setHeatScale(data);
                         this.drawHeatRect(chartSvg, xScale, yScale, data, dimension);
                         this.drawLegend(chartLegend, chartSvg, dimension, data);
                         this.setFontSize(chartSvg);
                     };
                     Visual.prototype.setProperties = function (options) {
+                        this.middleBinValue = undefined;
                         if (options.dataViews[0].metadata.objects) {
                             if (options.dataViews[0].metadata.objects["Heat"]) {
                                 var heat = options.dataViews[0].metadata.objects["Heat"];
@@ -9007,14 +9033,17 @@ var powerbi;
                                     this.heatColor = heat["heatColor"];
                                 if (heat.rectRadius !== undefined)
                                     this.rectRadius = heat["rectRadius"];
-                                this.middleBinValue = heat["middleBinValue"];
+                                if (heat.middleBinValue !== undefined)
+                                    this.middleBinValue = heat["middleBinValue"];
                             }
                             if (options.dataViews[0].metadata.objects["Legend"]) {
                                 var legend = options.dataViews[0].metadata.objects["Legend"];
                                 if (legend.legendPosition !== undefined)
                                     this.legendPosition = legend["legendPosition"];
-                                this.minLegendText = legend["minLegendText"];
-                                this.maxLegendText = legend["maxLegendText"];
+                                if (legend.minLegendText !== undefined)
+                                    this.minLegendText = legend["minLegendText"];
+                                if (legend.maxLegendText !== undefined)
+                                    this.maxLegendText = legend["maxLegendText"];
                             }
                             if (options.dataViews[0].metadata.objects["Axis"]) {
                                 var axis = options.dataViews[0].metadata.objects["Axis"];
@@ -9040,10 +9069,12 @@ var powerbi;
                             if (d.roles["xAxis"]) {
                                 _this.hasXaxis = true;
                                 _this.xAxisIndex = i;
+                                _this.xAxisFormatter = d.format;
                             }
                             if (d.roles["yAxis"]) {
                                 _this.hasYaxis = true;
                                 _this.yAxisIndex = i;
+                                _this.yAxisFormatter = d.format;
                             }
                             if (d.roles["values"]) {
                                 _this.hasValue = true;
@@ -9068,7 +9099,7 @@ var powerbi;
                         var yDomain = yScale.domain();
                         var xT = this.axisLabelArray(xDomain.slice(0), vp.width, this.element, "Vertical");
                         var yT = this.axisLabelArray(yDomain.slice(0), vp.height, this.element, "Horizontal");
-                        var xOffset = this.showYAxis ? yT.Space + 15 : 0;
+                        var xOffset = this.showYAxis ? yT.Space + 22 : 0;
                         var yOffset = this.showXAxis ? xT.Space + 15 : 0;
                         if (this.xAxisLabel === "firstLast" || this.xAxisLabel === "firstMiddleLast")
                             yOffset = 25;
@@ -9100,12 +9131,12 @@ var powerbi;
                     };
                     Visual.prototype.setXScale = function (data, dimension) {
                         var xDomain = data.map(function (d) { return d.xValue; });
-                        var scale = d3.scale.ordinal().rangeRoundBands([0, dimension.chartWidth]).domain(xDomain);
+                        var scale = d3.scale.ordinal().rangeBands([0, dimension.chartWidth]).domain(xDomain);
                         return scale;
                     };
                     Visual.prototype.setYScale = function (data, dimension) {
                         var yDomain = data.map(function (d) { return d.yValue; });
-                        var scale = d3.scale.ordinal().rangeRoundBands([0, dimension.chartHeight]).domain(yDomain);
+                        var scale = d3.scale.ordinal().rangeBands([0, dimension.chartHeight]).domain(yDomain);
                         return scale;
                     };
                     Visual.prototype.drawXScale = function (xScale, chartSvg, dimension) {
@@ -9188,7 +9219,7 @@ var powerbi;
                         if (this.heatScale === "rows") {
                             this.colorScale = {};
                             var nestedData = d3.nest()
-                                .key(function (d) { return d[_this.xAxisIndex]; })
+                                .key(function (d) { return d.xValue; })
                                 .entries(data);
                             nestedData.map(function (d) {
                                 heatDomain = d.values.map(function (d) { return d.value; });
@@ -9209,7 +9240,7 @@ var powerbi;
                         if (this.heatScale === "columns") {
                             this.colorScale = {};
                             var nestedData = d3.nest()
-                                .key(function (d) { return d[_this.yAxisIndex]; })
+                                .key(function (d) { return d.yValue; })
                                 .entries(data);
                             nestedData.map(function (d) {
                                 heatDomain = d.values.map(function (d) { return d.value; });
@@ -9255,7 +9286,6 @@ var powerbi;
                             rects.attr("fill", function (d) { return d.value !== null ? _this.colorScale[d.yValue](d.value) : "#ffffff"; });
                         }
                         ;
-                        rects.attr("fill", function (d) { return _this.colorScale(d.value); });
                         rects.on("click", function (d, i) {
                             d.isFiltered = !d.isFiltered;
                             var categoryColumn = {
@@ -9324,49 +9354,77 @@ var powerbi;
                         if (this.legendPosition == "bottom") {
                             chartLegend.attr("transform", "translate(" + (dimension.xOffset + 20) + "," + (dimension.chartHeight + dimension.yOffset) + ")");
                         }
-                        var legendData = [];
-                        var min = d3.min(data.map(function (d) { return d.value; }));
-                        if (this.legendPosition === 'right')
-                            legendData = this.colorScale.quantiles().slice(0).reverse().concat([min]);
-                        else
-                            legendData = [min].concat(this.colorScale.quantiles());
+                        var legendText, legendG;
                         var rectHeight = 15;
                         var rectWidth = 15;
                         if (dimension.chartHeight < 200)
                             rectHeight = dimension.chartHeight / 20;
                         if (dimension.chartWidth < 200)
                             rectWidth = dimension.chartWidth / 20;
-                        var legendG = chartLegend.selectAll(".legend")
-                            .data(legendData)
-                            .enter()
-                            .append("rect")
-                            .attr("id", function (d) { return d; })
-                            .attr("width", rectWidth)
-                            .attr("height", rectHeight)
-                            .attr("cursor", "pointer")
-                            .style("fill", function (d, i) {
-                            return _this.colorRange[legendData.length - (i + 1)];
-                        });
-                        this.tooltipServiceWrapper.addTooltip(legendG, function (tooltipEvent) { return _this.getLegendTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
-                        var legendText = chartLegend.selectAll(".legendText")
-                            .data(legendData)
-                            .enter()
-                            .append("text")
-                            .text(function (d, i) {
-                            if (i == 0) {
-                                return (_this.minLegendText !== undefined && _this.minLegendText.length > 0) ? _this.minLegendText : _this.iValueFormatter.format(d);
-                            }
-                            if (i == legendData.length - 1) {
-                                return (_this.maxLegendText !== undefined && _this.maxLegendText.length > 0) ? _this.maxLegendText : _this.iValueFormatter.format(d);
-                            }
+                        if (this.heatScale !== "default") {
+                            legendG = chartLegend.selectAll(".legend")
+                                .data(this.colorRange)
+                                .enter()
+                                .append("rect")
+                                .attr("id", function (d) { return d; })
+                                .attr("width", rectWidth)
+                                .attr("height", rectHeight)
+                                .attr("cursor", "pointer")
+                                .style("fill", function (d, i) { return d; });
+                            legendText = chartLegend.selectAll(".legendText")
+                                .data(this.colorRange)
+                                .enter()
+                                .append("text")
+                                .text(function (d, i) {
+                                if (i == 0) {
+                                    return (_this.minLegendText !== undefined && _this.minLegendText.length > 0) ? _this.minLegendText : "";
+                                }
+                                if (i == _this.colorRange.length - 1) {
+                                    return (_this.maxLegendText !== undefined && _this.maxLegendText.length > 0) ? _this.maxLegendText : "";
+                                }
+                                else
+                                    return "";
+                            });
+                        }
+                        else {
+                            var legendData_1 = [];
+                            var min = d3.min(data.map(function (d) { return d.value; }));
+                            if (this.legendPosition === 'right')
+                                legendData_1 = this.colorScale.quantiles().slice(0).reverse().concat([min]);
                             else
-                                return "";
-                        });
+                                legendData_1 = [min].concat(this.colorScale.quantiles());
+                            legendG = chartLegend.selectAll(".legend")
+                                .data(legendData_1)
+                                .enter()
+                                .append("rect")
+                                .attr("id", function (d) { return d; })
+                                .attr("width", rectWidth)
+                                .attr("height", rectHeight)
+                                .attr("cursor", "pointer")
+                                .style("fill", function (d, i) {
+                                return _this.colorRange[legendData_1.length - (i + 1)];
+                            });
+                            this.tooltipServiceWrapper.addTooltip(legendG, function (tooltipEvent) { return _this.getLegendTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
+                            legendText = chartLegend.selectAll(".legendText")
+                                .data(legendData_1)
+                                .enter()
+                                .append("text")
+                                .text(function (d, i) {
+                                if (i == 0) {
+                                    return (_this.minLegendText !== undefined && _this.minLegendText.length > 0) ? _this.minLegendText : _this.iValueFormatter.format(d);
+                                }
+                                if (i == legendData_1.length - 1) {
+                                    return (_this.maxLegendText !== undefined && _this.maxLegendText.length > 0) ? _this.maxLegendText : _this.iValueFormatter.format(d);
+                                }
+                                else
+                                    return "";
+                            });
+                        }
                         if (this.legendPosition == "right") {
                             legendG.attr("x", 15)
                                 .attr("y", function (d, i) { return i * rectHeight; });
                             legendText
-                                .attr("x", 15)
+                                .attr("x", 20)
                                 .attr("text-anchor", "middle")
                                 .attr("dy", function (d, i) { return i == 0 ? -5 : 32; })
                                 .attr("y", function (d, i) { return i * rectHeight; });
@@ -9389,14 +9447,14 @@ var powerbi;
                         retData.push({
                             displayName: data.yValue,
                             value: data.xValue,
-                            header: data.value.toString()
+                            header: this.iValueFormatter.format(data.value)
                         });
                         return retData;
                     };
                     Visual.prototype.getLegendTooltipData = function (data) {
                         var retData = [];
                         retData.push({
-                            displayName: '≥ ' + data.toString(),
+                            displayName: '≥ ' + this.iValueFormatter.format(data),
                             value: "",
                             header: ""
                         });
@@ -9532,7 +9590,7 @@ var powerbi;
                         }
                     };
                     Visual.prototype.setFontSize = function (chartSvg) {
-                        chartSvg.selectAll("text").style("font-size", this.fontSize + "px");
+                        chartSvg.selectAll("text").attr("font-size", this.fontSize + "px");
                     };
                     Visual.prototype.enumerateObjectInstances = function (options) {
                         var objectName = options.objectName;
@@ -9576,8 +9634,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.heatMapCCFC224D9885417F9AAF5BB8D45B007E = {
-                name: 'heatMapCCFC224D9885417F9AAF5BB8D45B007E',
+            plugins.heatMapCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
+                name: 'heatMapCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
                 displayName: 'Heat Map',
                 class: 'Visual',
                 version: '1.0.0',

@@ -883,25 +883,25 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
             var val = '';
             switch (vtype) {
                 case 'Current':
-                    val = data.values[data.values.length - 1].yValue;
+                    val = this.iValueFormatter.format(data.values[data.values.length - 1].yValue);
                     break;
                 case 'Actual':
-                    val = data.actual;
+                    val = this.iValueFormatter.format(data.actual);
                     break;
                 case 'Target':
-                    val = data.target;
+                    val = this.iValueFormatter.format(data.target);
                     break;
                 case 'Change':
-                    val = data.change;
+                    val = this.iValueFormatter.format(data.change);
                     break;
                 case 'perChange':
                     val = data.perChange;
                     break;
                 case 'Prior':
-                    val = data.values[data.values.length - 2].yValue;
+                    val = this.iValueFormatter.format(data.values[data.values.length - 2].yValue);
                     break;
                 case 'Variance':
-                    val = data.variance;
+                    val = this.iValueFormatter.format(data.variance);
                     break;
                 case 'VariancePer':
                     val = data.variancePer;
@@ -978,13 +978,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                         if (thresholdData.length > 1) objectEnumeration.push({ objectName: objectName, properties: { 'belowThreshold2Color': this.belowThreshold2Color }, selector: null });
                         if (thresholdData.length > 2) objectEnumeration.push({ objectName: objectName, properties: { 'belowThreshold3Color': this.belowThreshold3Color }, selector: null });
                         if (thresholdData.length > 3) objectEnumeration.push({ objectName: objectName, properties: { 'belowThreshold4Color': this.belowThreshold4Color }, selector: null });
-
-                        //thresholdData.forEach((d, i) => {
-                        //    let t = 'belowThreshold' + (i+1) + 'Color';
-                        //    console.log(t);
-                        //    console.log(this[t]);
-                        //    objectEnumeration.push({ objectName: objectName, properties: { t: this[t] }, selector: null });
-                        //});
+                        
                     }
 
                     break;
