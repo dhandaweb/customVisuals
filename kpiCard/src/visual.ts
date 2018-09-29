@@ -81,7 +81,8 @@ module powerbi.extensibility.visual {
       
         private hasPeriod: any;
         private periodIndex: number;
-       
+        private dateFormat: any;
+
         private iValueFormatter:any;
         private element: d3.Selection<SVGElement>;
         private container: d3.Selection<SVGElement>;
@@ -162,6 +163,7 @@ module powerbi.extensibility.visual {
                if (d.roles["period"]) {
                    this.hasPeriod = true;
                    this.periodIndex = i;
+                   this.dateFormat = d.format;
                }
            });
 
@@ -567,14 +569,14 @@ module powerbi.extensibility.visual {
 
             this.sparklineCaptionName = this.sparklineMarker
                                             .append("text")
-                                            .attr("dy", 15)
-                                            .attr("style", "cursor:pointer; text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;");
+                                            .attr("dy", 12)
+                .attr("style", "cursor:pointer; font-size:12px; text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;");
 
 
             this.sparklineCaptionValue = this.sparklineMarker
                 .append("text")
-                .attr("dy", 28)
-                .attr("style", "cursor:pointer; text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;");
+                .attr("dy", 25)
+                .attr("style", "cursor:pointer;font-size:12px; text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;");
             
         }
 
@@ -606,7 +608,12 @@ module powerbi.extensibility.visual {
                     hoverVal = this.iValueFormatter.format(d.actual);
                 }
             });
-          
+            if (this.dateFormat != undefined) {
+                let dateformat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.dateFormat });
+                hoverXValue = dateformat.format(hoverXValue);
+
+            }
+
             this.sparklineCaptionName.text(hoverXValue);
             this.sparklineCaptionValue.text(hoverVal);
 

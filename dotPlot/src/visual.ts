@@ -35,60 +35,52 @@ module powerbi.extensibility.visual {
       //  private tooltipServiceWrapper: ITooltipServiceWrapper;
 
         private selectionManager: ISelectionManager;
-        private updateCount: number;
+       
         private settings: VisualSettings;
-        private textNode: Text;
-        private colorScale: any;
-        private colorRange: any;
 
         private columns: any;
         private dimension:any
-        private hasXaxis:any = false;
-        private hasYaxis: any = false;
+
+        private hasAxis: any = false;
+        private hasColor: any = false;
         private hasValue: any = false;
 
-        private xAxisIndex: any;
-        private yAxisIndex: any;
-        private valueIndex: any;
-
-        private heatScale: any = "default";
-        private heatRange: any = 10;
-        private heatColorType: any = "linear";
-
         private legendPosition: any = "right";
-        private middleBinValue: any;
+
+        private axisFormat: any;
+        private colorFormat: any;
+
+        private colorScale: any;
         private iValueFormatter:any;
         private element: d3.Selection<SVGElement>;
         private container: d3.Selection<SVGElement>;
-
-        private heatRects: d3.Selection<SVGElement>;
 
         private tooltipServiceWrapper: ITooltipServiceWrapper;
         private TooltipEventArgs: any;
         public  TooltipEnabledDataPoint: any;
 
-        private NegativeTextColor: any;
-        private heatColorOptions: any = {
-            Heat: ["#9E0142", "#D53E4F", "#F46D43", "#FDAE61", "#FEE08B", "#E6F598", "#ABDDA4", "#66C2A5", "#3288BD", "#5E4FA2"],
-            BlueRed: ["#A11118", "#CD1720", "#EA4029", "#FD684E", "#F79277", "#B9E8C9", "#92DCC7", "#61C7C6", "#1FADC8", "#008FC4", "#0367A8"],
-            GreenOrange: ["#AA3911", "#D94912", "#F36620", "#FD9049", "#FDAF71", "#F8CFA1", "#B6EC84", "#92DE75", "#74CB6D", "#54AF5F", "#399250", "#1C6B37"],
-            YlOrRd: ["#ffffcc", "#ffeda0", "#fed976", "#feb24c", "#fd8d3c", "#fc4e2a", "#e31a1c", "#bd0026", "#800026", "#730022", "#61011D"],
-            YlOrBr: ["#ffffe5", "#fff7bc", "#fee391", "#fec44f", "#fe9929", "#ec7014", "#cc4c02", "#993404", "#662506", "#592005", "#4A1B04"],
-            RedBlue: ["#0367A8", "#008FC4", "#1FADC8", "#61C7C6", "#92DCC7", "#B9E8C9", "#FCB99C", "#F79277", "#FD684E", "#EA4029", "#CD1720", "#A11118"],
-            OrangeGreen: ["#54AF5F", "#74CB6D", "#92DE75", "#B6EC84", "#F8CFA1", "#FDAF71", "#FD9049", "#F36620", "#D94912", "#AA3911"]
+        private yAxisMinValue: boolean = false;;
+        private legendColor: any = 'Category1'
+        private colorOptions: any = {
+            Category1: ["#26C6DA", "#EC407A", "#9CCC65", "#FFCA28", "#EF5350", "#78909C", "#42A5F5", "#FFA726", "#26A69A", "#AB47BC", "#BDBDBD", "#5C6BC0", "#8D6E63", "#D4E157", "#29B6F6", "#66BB6A", "#FF7043", "#7E57C2", "#FFEE58", "#9CCC64"],
+            Category2: ["#C79A6B", "#737373", "#97C7C5", "#67B0E1", "#FEBC4A", "#A7D679", "#ED82B7", "#ADAEB5", "#C8B570", "#448EC9", "#F6B982", "#9DBE59", "#5BBE94", "#5884B3", "#CC6686", "#E68570"],
+            Category3: ["#ACD15F", "#F64747", "#F69647", "#2B9494", "#F6CD47", "#699DCF", "#B5253C", "#868686", "#4CA2B3", "#DBA13A", "#D2527F", "#4CB972", "#3598DB", "#F8CF47", "#FF2100", "#BBBBBB", "#AD7CCA", "#FDE3A7", "#5DB753", "#EE91AC"],
+            Category4: ["#F64747", "#ACD15F", "#F69647", "#3598DB", "#F8CF47", "#2B9494", "#BBBBBB", "#D03C7D", "#4CB972", "#B5253C", "#9CDAEE", "#868686", "#699DCF", "#FDE3A7", "#2B9494", "#FF2100", "#5DB753", "#EE91AC", "#AD7CCA", "#E08283"],
+            Category5: ["#3D94D1", "#B5253C", "#45A8A8", "#F64747", "#00AF64", "#F8CF47", "#AD7CCA", "#EE91AC", "#C79A6B", "#868686", "#9CDAEE", "#FFB300", "#B5253C", "#4CA2B3", "#ACD15F", "#FDE3A7", "#D03C7D", "#2B9494", "#BBBBBB", "#3598DB"],
+            Category6: ["#00A0B0", "#FE4365", "#7AB317", "#EDC951", "#CC333F", "#F69647", "#4DBCE9", "#EE91AC", "#99B2B7", "#4ECDC4", "#948C75", "#C7F464", "#FF6B6B", "#00CDAC", "#3598DB", "#FFB300", "#5DB753", "#868686", "#699DCF", "#CD8C52"],
+            Category7: ["#699DCF", "#C79A6B", "#E15759", "#45A8A8", "#59A14E", "#EDC951", "#B07AA1", "#F69647", "#EE91AC", "#99B2B7", "#ACD15F", "#F06D69", "#FFAE0B", "#8BC2CB", "#5785C1", "#CD8C52", "#A1CEA8", "#F8CF47", "#FF9DA7", "#9CDAEE"],
+            Category8: ["#699DCF", "#F69647", "#E15759", "#45A8A8", "#C79A6B", "#99B2B7", "#B07AA1", "#F8CF47", "#9CDAEE", "#5785C1", "#C3BC29", "#FF9DA7", "#2B9494", "#868686", "#ACD15F", "#4CB972", "#F69647", "#EE91AC", "#9C755F", "#D7CE9B"],
+            Category9: ["#C79A6B", "#699DCF", "#868686", "#FF9DA7", "#A1CEA8", "#F69647", "#F8CF47", "#45A8A8", "#F06D69", "#9CDAEE", "#53AD87", "#EE91AC", "#ACD15F", "#DBA13A", "#BAB0AC", "#A1CEA8", "#C3BC29", "#C7F464", "#EE91AC", "#FFC107"],
+            Category10: ["#699DCF", "#F69647", "#99B2B7", "#ACD15F", "#C79A6B", "#FF9DA7", "#45A8A8", "#F8CF47", "#E15759", "#BAB0AC", "#5785C1", "#CD8C52", "#A1CEA8", "#FFAE0B", "#EE91AC", "#9CDAEE", "#B07AA1", "#868686", "#53AD87", "#CD8C52"],
         }
-
-        private xAxisLabel: any = "all";
-        private heatColor: any = "Heat";
-        private showXAxis: any = true;
-        private showYAxis: any = true;
+    
+        private showAxis: any = true;
         private showLabel: any = false;
-        private rectRadius: any = 0;
+       
         private fontSize: any = 14;
-        private minLegendText: any;
-        private maxLegendText: any;
+        private legendFontSize: any=10;
 
-       constructor(options: VisualConstructorOptions) {
+        constructor(options: VisualConstructorOptions) {
            
            this.element = d3.select(options.element);
            this.host = options.host;
@@ -97,147 +89,180 @@ module powerbi.extensibility.visual {
         }
 
         public update(options: VisualUpdateOptions) {
-
-           this.columns = options.dataViews[0].metadata.columns;
-           this.setProperties(options);
-           this.setIndex(options);
-
-           var data = [], identityData;
            
-           options.dataViews[0].table.rows.map((d: any, i) => {
-                d.identity = options.dataViews[0].table.identity[i];
-                d.xValue = this.xAxisIndex == -1 ? (this.valueIndex == -1 ? null : this.columns[this.valueIndex].displayName) : d[this.xAxisIndex];
-                d.yValue = this.yAxisIndex == -1 ? (this.valueIndex == -1 ? null : this.columns[this.valueIndex].displayName) : d[this.yAxisIndex];
-                d.value = this.valueIndex == -1 ? null : d[this.valueIndex];
-                data.push(d);
-           });
+            this.setProperties(options);
+            var data = this.formatData(options.dataViews[0]);
           
            this.element.style("overflow", "hidden");
-           this.element.select('.heatMap').remove();
+           this.element.select('.dotPlot').remove();
 
             var chartContainer = this.element
-                .append("div")
-                .attr("class", "heatMap")
-                .attr("style", "width:100%;");
+                                        .append("div")
+                                        .attr("class", "dotPlot")
+                                        .attr("style", "width:100%;");
 
             var dimension = this.getDimensions(options.viewport,data);
-
+        
             var chart = chartContainer
                             .append("svg")
                             .attr("height", dimension.height)
                             .attr("width", dimension.width)
                             .on("click", (d, i) => {
                                 this.selectionManager.clear();
-                                this.heatRects.style("opacity" , (d:any) => {
-                                    d.isFiltered = false;
-                                    return 1;
-                                });
                             });
-
+           
             var chartSvg = chart.append("g")
             var chartLegend = chart.append("g")
             var xScale = this.setXScale(data, dimension);
             var yScale = this.setYScale(data, dimension);
-
+           
             this.drawXScale(xScale, chartSvg, dimension);
             this.drawYScale(yScale, chartSvg, dimension);
-            var colorScale = this.setHeatScale(data);
-            this.drawHeatRect(chartSvg, xScale, yScale, data, dimension);
+            this.drawCircles(xScale, yScale, chartSvg, data, dimension);
+
             this.drawLegend(chartLegend, chartSvg, dimension, data);
             this.setFontSize(chartSvg);
         }
+
+        public formatData(rawData) {
+            var metadata = rawData.metadata.columns;
+            this.colorScale = d3.scale.ordinal().range(this.colorOptions[this.legendColor]);
+
+            this.findAvailableMetadata(metadata);
+
+            var formattedData = [];
+
+            if (this.hasAxis && this.hasValue) {
+                var xAxis = rawData.categorical.categories[0].values;
+
+                if (this.axisFormat !== undefined) {
+                    var axisFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.axisFormat });
+                    xAxis = xAxis.map(d => { return axisFormat.format(d) });
+                }
+
+                var yAxis = [];
+                var valuesG = rawData.categorical.values;
+
+                if (this.hasColor) {
+                    
+                    var valuesMetadata = metadata.filter(d => d.roles["values"])[0].displayName;
+                    var filteredValues = valuesG.filter(d => d.source.displayName == valuesMetadata);
+
+                    if (this.colorFormat !== undefined) {
+                        var colorFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.colorFormat });
+                    }
+                    
+
+                    formattedData = filteredValues.map((d, i) => {
+                        var valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.source.format });
+                        return {
+                            key: this.colorFormat !== undefined ? colorFormat.format(d.source.groupName) : d.source.groupName,
+                            values: d.values.map((t, i) => {
+                                yAxis.push(t);
+                                return {
+                                    xValue: xAxis[i],
+                                    yValue: { value: t, caption: valFormat.format(t) },
+                                    legend: d.source.groupName,
+                                    color: this.colorScale(d.source.groupName)
+                                }
+                            })
+                        }
+                    })
+
+                }
+                else {
+                    
+                    formattedData = valuesG.map((d, i) => {
+                        var valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.source.format });
+                        return {
+                            key: d.source.displayName,
+                            values: d.values.map((t, i) => {
+                                yAxis.push(t);
+                                return {
+                                    xValue: xAxis[i],
+                                    yValue: { value: t, caption: valFormat.format(t) },
+                                    legend: d.source.displayName,
+                                    color: this.colorScale(d.source.displayName)
+                                }
+                            })
+                        }
+                    })
+
+                }
+            }
+
+            var legend = this.setLegendWidth(this.element, formattedData.map(d => d.key));
+
+            return { xAxis: xAxis, yAxis: yAxis, data: formattedData, legend: legend}
+        }
+
         private setProperties(options) {
 
             if (options.dataViews[0].metadata.objects) {
-                if (options.dataViews[0].metadata.objects["Heat"]) {
-                    var heat = options.dataViews[0].metadata.objects["Heat"];
-                    if (heat.heatScale !== undefined) this.heatScale = heat["heatScale"];
-                    if (heat.heatRange !== undefined) this.heatRange = heat["heatRange"];
-                    if (heat.heatColorType !== undefined) this.heatColorType = heat["heatColorType"];
-                    if (heat.heatColor !== undefined) this.heatColor = heat["heatColor"];
-                    if (heat.rectRadius !== undefined) this.rectRadius = heat["rectRadius"];
-                    this.middleBinValue = heat["middleBinValue"];
-                }
+               
                 if (options.dataViews[0].metadata.objects["Legend"]) {
                     var legend = options.dataViews[0].metadata.objects["Legend"];
                     if (legend.legendPosition !== undefined) this.legendPosition = legend["legendPosition"];
-                    this.minLegendText = legend["minLegendText"];
-                    this.maxLegendText = legend["maxLegendText"];
+                    if (legend.legendColor !== undefined) this.legendColor = legend["legendColor"];
+                    if (legend.fontSize !== undefined) this.legendFontSize = legend["fontSize"];
                 }
                 if (options.dataViews[0].metadata.objects["Axis"]) {
                     var axis = options.dataViews[0].metadata.objects["Axis"];
-                    if (axis.showXAxis !== undefined) this.showXAxis = axis["showXAxis"];
-                    if (axis.xAxisLabel !== undefined) this.xAxisLabel = axis["xAxisLabel"];
-                    if (axis.showYAxis !== undefined) this.showYAxis = axis["showYAxis"];
+                    if (axis.showAxis !== undefined) this.showAxis = axis["showAxis"];
                     if (axis.showLabel !== undefined) this.showLabel = axis["showLabel"];
                     if (axis.fontSize !== undefined) this.fontSize = axis["fontSize"];
+                    if (axis.yAxisMinValue !== undefined) this.yAxisMinValue = axis["yAxisMinValue"];
+                    
                 }
             }
         }
 
-        private setIndex(options) {
+        private findAvailableMetadata(metadata) {
+            this.hasValue = false;
+            this.hasColor = false;
+            this.hasAxis = false;
 
-            this.xAxisIndex = -1;
-            this.yAxisIndex = -1;
-            this.valueIndex = -1;
-
-            this.columns.map((d, i) => {
-                if (d.roles["xAxis"]) {
-                    this.hasXaxis = true;
-                    this.xAxisIndex = i;
+            metadata.map((d, i) => {
+                if (d.roles["axis"]) {
+                    this.hasAxis = true;
+                    this.axisFormat = d.format;
                 }
-                if (d.roles["yAxis"]) {
-                    this.hasYaxis = true;
-                    this.yAxisIndex = i;
+                if (d.roles["color"]) {
+                    this.hasColor = true;
+                    this.colorFormat = d.format;
                 }
                 if (d.roles["values"]) {
                     this.hasValue = true;
-                    this.valueIndex = i;
                 }
             });
 
-            this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ value: 1001 });
-
-            if (this.hasValue) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.valueIndex].format });
-
+            
 
         }
 
         private getDimensions(vp,data) {
             let xlegendOffset = 0;
             let ylegendOffset = 0;
-            if (this.legendPosition == "right") xlegendOffset = 80;
-            if (this.legendPosition == "top" || this.legendPosition === "bottom") ylegendOffset = 50;
-
-            let xdata = data.map(d => d.xValue);
-            let ydata = data.map(d => d.yValue);
-            let yScale = d3.scale.ordinal().domain(ydata);
+           
+            if (this.legendPosition == "right") ylegendOffset = d3.max(data.legend.map(d => d.width)) + (4 * this.legendFontSize);
+            if (this.legendPosition == "top" || this.legendPosition === "bottom") xlegendOffset = this.legendFontSize*3;
+           
+            let xdata = data.xAxis;
             let xDomain = d3.scale.ordinal().domain(xdata).domain();
-            let yDomain = yScale.domain();
            
             let xT:any = this.axisLabelArray(xDomain.slice(0), vp.width, this.element, "Vertical");
-            let yT:any = this.axisLabelArray(yDomain.slice(0), vp.height, this.element, "Horizontal");
             
-            let xOffset = this.showYAxis ? yT.Space + 15 : 0;
-            let yOffset = this.showXAxis ? xT.Space + 15 : 0;
+            let xOffset = xT.Space + 15;
+            let yOffset = 50;
 
-            if (this.xAxisLabel === "firstLast" || this.xAxisLabel === "firstMiddleLast") yOffset = 25;
-            if (this.xAxisLabel === "firstLast" || this.xAxisLabel === "firstMiddleLast") xT.Rotate = false;
+            let chartWidth = vp.width - yOffset - ylegendOffset;
 
-            let chartWidth = vp.width - xOffset - xlegendOffset;
-            let chartHeight = vp.height - yOffset - ylegendOffset;
+            let chartHeight = vp.height - xOffset - xlegendOffset;
 
-            yScale.rangeRoundBands([0, chartHeight]);
-         
             let xFilter = (xT.Rotate === true) ? Math.round((xDomain.length / chartWidth * 100) / 2) : 1;
-            let yFilter = ((chartHeight / yDomain.length) < 15) ? Math.round((yDomain.length / chartHeight * 100) / 4) : 1;
            
             let xTickval = xDomain.filter((d, i) => (i % xFilter === 0));
-            let yTickval = yDomain.filter((d, i) => (i % yFilter === 0));
 
-            if (this.xAxisLabel === "firstLast") xTickval = [xTickval[0], xDomain[xDomain.length - 1]];
-            if (this.xAxisLabel === "firstMiddleLast") xTickval = [xTickval[0], xTickval[Math.ceil(xTickval.length / 2)], xDomain[xDomain.length - 1]];
-           
             return {
                 width: vp.width,
                 height: vp.height,
@@ -246,354 +271,158 @@ module powerbi.extensibility.visual {
                 chartWidth: chartWidth,
                 chartHeight: chartHeight,
                 xRotate: xT.Rotate,
-                yRotate: yT.Rotate,
                 xTickval: xTickval,
-                yTickval: yTickval
             }
         }
 
         private setXScale(data, dimension) {
-            var xDomain = data.map(d => d.xValue);
             
-            var scale = d3.scale.ordinal().rangeRoundBands([0, dimension.chartWidth]).domain(xDomain);
+            var scale = d3.scale.ordinal().rangeBands([0, dimension.chartWidth]).domain(data.xAxis);
             return scale;
         }
 
         private setYScale(data, dimension) {
-            var yDomain = data.map(d => d.yValue);
-            var scale = d3.scale.ordinal().rangeRoundBands([0, dimension.chartHeight]).domain(yDomain);
+            var yDomain = data.yAxis;
+
+            var valueDomain = this.setValueDomain(d3.min(yDomain), d3.max(yDomain));
+
+            var scale = d3.scale.linear()
+                            .range([dimension.chartHeight, 0])
+                            .domain([valueDomain.Min, valueDomain.Max]);
+
             return scale;
         }
 
         private drawXScale(xScale, chartSvg, dimension) {
+
             var xaxis = d3.svg.axis()
                 .scale(xScale)
-                .orient("top")
+                .orient("bottom")
                 .tickValues(dimension.xTickval);
-            if (this.showXAxis === true) {
+
+           
                 var xAxisG = chartSvg
                     .append("g")
-                    .attr("transform", "translate(" + dimension.xOffset + "," + dimension.yOffset + ")")
+                    .attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight) + ")")
                     .attr("class", "axis")
                     .call(xaxis)
-
-                if (this.xAxisLabel === "firstLast" || this.xAxisLabel === "firstMiddleLast") {
-                    xAxisG.selectAll("text").style("text-anchor", function (d, i) {
-                        if (i == 0) return "start";
-                        if (i === dimension.xTickval.length - 1) return "end";
-                        else return "middle";
-                    });
-                }
+                
                 if (dimension.xRotate == true) {
                     xAxisG.attr("text-anchor", "start");
                     xAxisG.selectAll("text")
                         .style("text-anchor", "start")
                         .attr("dx", 6)
-                        .attr("dy", 10)
+                        .attr("dy", -1)
                         .attr("transform", function (d) {
-                            return "rotate(" + (290) + ")";
+                            return "rotate(" + (75) + ")";
                         });
                 }
-            }
+           
            
         }
 
         private drawYScale(yScale, chartSvg, dimension) {
             var self = this;
+
             var yaxis = d3.svg.axis()
                 .scale(yScale)
                 .orient("left")
-                .tickValues(dimension.yTickval);
-
-            if (this.showYAxis === true) {
+                .ticks(5);
+           
                 var yAxisG = chartSvg
                     .append("g")
-                    .attr("transform", "translate(" + dimension.xOffset + "," + dimension.yOffset + ")")
+                    .attr("transform", "translate(" + (dimension.yOffset) + "," + 0 + ")")
                     .attr("class", "axis")
                     .call(yaxis)
-            }
-            //yAxisG.selectAll(".tick text").each(function (d, i) {
-            //    d3.select(this).call(self.axisWrap, dimension.yOffet, "Horizontal", "Right");
-            //});
-        }
-
-        private setHeatScale(data) {
-            //var colors = ["#ffffd9", "#edf8b1", "#c7e9b4", "#7fcdbb", "#41b6c4", "#1d91c0", "#225ea8", "#253494", "#081d58"];
-            var colors = this.heatColorOptions[this.heatColor]
-            var col = colors.slice(0, 10);
-            var colorScale, heatDomain, min, max, upper, lower;
-            var colorRange = col.slice(0, Math.ceil(this.heatRange / 2)).concat(col.splice(-Math.floor(this.heatRange / 2)));
-
-            if ((this.heatRange % 2) !== 0 && this.middleBinValue !== undefined) {
-                upper = colors.slice(0, 10);
-                lower = colors.slice(0, 10);
-                var sl = Math.floor(this.heatRange / 2);
-                colorRange = upper.slice(0, sl).concat(["#b3b3b3"]).concat(lower.slice(-sl));
-            }
-           
-            if (this.heatScale === "default") {
-
-                min = d3.min(data.map(d => d.value));
-                max = d3.max(data.map(d => d.value));
-
-                if (this.heatColorType === "linear") heatDomain = [min, max];
-                else heatDomain = data.map(d => d.value).sort();
-
-                if (this.middleBinValue !== undefined) heatDomain = [d3.min([min, this.middleBinValue]), this.middleBinValue, d3.max([max, this.middleBinValue])];
-
-                this.colorScale = d3.scale.quantile()
-                                        .domain(heatDomain)
-                                        .range(colorRange);
-
-            };
-
-            if (this.heatScale === "rows") {
-
-                this.colorScale = {};
-
-                var nestedData = d3.nest()
-                                    .key((d) => d[this.xAxisIndex])
-                                    .entries(data);
-              
-                nestedData.map(d => {
-                    heatDomain = d.values.map(function (d) { return d.value; });
-
-                    min = d3.min(heatDomain);
-                    max = d3.max(heatDomain);
-
-                    if (this.heatColorType === "linear") heatDomain = [min, max];
-                    else heatDomain = data.map(d => d.value).sort();
-
-                    if (this.middleBinValue !== undefined) heatDomain = [min, this.middleBinValue, max];
-
-                    this.colorScale[d.key] = d3.scale.quantile()
-                                                    .domain(heatDomain)
-                                                    .range(colorRange);
-
-                });
-
-            };
-
-            if (this.heatScale === "columns") {
-
-                this.colorScale = {};
-
-                var nestedData = d3.nest()
-                    .key((d) => d[this.yAxisIndex])
-                    .entries(data);
-
-                nestedData.map(d => {
-                    heatDomain = d.values.map(function (d) { return d.value; });
-
-                    min = d3.min(heatDomain);
-                    max = d3.max(heatDomain);
-
-                    if (this.heatColorType === "linear") heatDomain = [min, max];
-                    else heatDomain = data.map(d => d.value).sort();
-
-                    if (this.middleBinValue !== undefined) heatDomain = [min, this.middleBinValue, max];
-
-                    this.colorScale[d.key] = d3.scale.quantile()
-                                                    .domain(heatDomain)
-                                                    .range(colorRange);
-
-                });
-
-            };
-            this.colorRange = colorRange;
             
-            return colorScale;
-
         }
 
-        private drawHeatRect(chartSvg, xScale, yScale, data, dimension) {
+        private drawCircles(xScale, yScale, chartSvg, data, dimension) {
 
-            var heatG = chartSvg
-                .append("g")
-                .attr("transform", "translate(" + dimension.xOffset + "," + dimension.yOffset + ")");
-
-            var rects = this.heatRects = heatG.selectAll(".rects")
-                .data(data)
-                .enter()
-                .append("rect")
-                .attr("rx", this.rectRadius)
-                .attr("ry", this.rectRadius)
-                .attr("x", d => xScale(d.xValue))
-                .attr("y", d => yScale(d.yValue))
-                .attr("height", d => yScale.rangeBand() - 1)
-                .attr("width", d => xScale.rangeBand() - 1);
-
-            if (this.heatScale === "default") {
-                rects.attr("fill", d => d.value !== null ? this.colorScale(d.value) : "#ffffff");
-            }
-            else if (this.heatScale === "rows") {
-                rects.attr("fill", d => d.value !== null ? this.colorScale[d.xValue](d.value) : "#ffffff");
-            }
-            else if (this.heatScale === "columns") {
-                rects.attr("fill", d => d.value !== null ? this.colorScale[d.yValue](d.value) : "#ffffff");
-            };
+            var circleData = data.data;
+            
+            var circleG = chartSvg.selectAll(".dots")
+                                .data(circleData)
+                                .enter()
+                                .append("g")
+                                .attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
 
 
-            rects.attr("fill", d => this.colorScale(d.value));
-
-            rects.on("click", (d, i) => {
-                d.isFiltered = !d.isFiltered;
-
-                const categoryColumn: DataViewCategoryColumn = {
-                    source: this.columns[this.xAxisIndex],
-                    values: null,
-                    identity: [d.identity]
-                };
-
-                var id = this.host.createSelectionIdBuilder()
-                    .withCategory(categoryColumn, 0)
-                    .createSelectionId();
-
-                this.selectionManager.select(id, true);
-
-                this.setFilterOpacity(rects);
-                (<Event>d3.event).stopPropagation();
-            });
-
-            if (this.showLabel === true) {
-                let heatLabels = heatG.selectAll(".heatText")
-                    .data(data)
-                    .enter()
-                    .append("text")
-                    .attr("x", d => xScale(d.xValue))
-                    .attr("y", d => yScale(d.yValue))
-                    .attr("dx", d => xScale.rangeBand()/2)
-                    .attr("dy", d => yScale.rangeBand()/2 + 6)
-                    .attr("text-anchor", "middle")
-                    .text(d => this.iValueFormatter.format(d.value))
-                    .on("click", (d, i) => {
-                        d.isFiltered = !d.isFiltered;
-
-                        const categoryColumn: DataViewCategoryColumn = {
-                            source: this.columns[this.xAxisIndex],
-                            values: null,
-                            identity: [d.identity]
-                        };
-
-                        var id = this.host.createSelectionIdBuilder()
-                            .withCategory(categoryColumn, 0)
-                            .createSelectionId();
-
-                        this.selectionManager.select(id, true);
-
-                        this.setFilterOpacity(rects);
-                        (<Event>d3.event).stopPropagation();
-                    });
-
-                this.tooltipServiceWrapper.addTooltip(heatLabels,
-                    (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
-                    (tooltipEvent: TooltipEventArgs<any>) => null
-                );
-            }
+            var circle = circleG.selectAll(".dots")
+                .data(d => d.values.filter(d => d.yValue.value !== null))
+                                    .enter()
+                                    .append("circle");
 
 
-            this.tooltipServiceWrapper.addTooltip(this.heatRects,
+            circle.attr("cx", d => xScale(d.xValue))
+                .attr("cy", d => yScale(d.yValue.value))
+                .attr("r", 10)
+                .attr("fill", d=> d.color);
+
+
+            this.tooltipServiceWrapper.addTooltip(circle,
                 (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
                 (tooltipEvent: TooltipEventArgs<any>) => null
             );
-           
-           
+
         }
 
-        public setFilterOpacity(rects) {
+        public setFilterOpacity(element) {
 
             var anyFilter = false;
-            rects.each(d => {
+            element.each(d => {
                 if (d.isFiltered === true) anyFilter = true;
             });
 
             if (anyFilter) {
-                rects.style("opacity", d => d.isFiltered ? 1 : 0.2);
+                element.style("opacity", d => d.isFiltered ? 1 : 0.2);
             }
             else {
-                rects.style("opacity", 1);
+                element.style("opacity", 1);
             }
 
         }
 
         private drawLegend(chartLegend, chartSvg, dimension, data) {
-
             if (this.legendPosition == "right") {
-                chartLegend.attr("transform", "translate(" + (dimension.chartWidth + dimension.xOffset + 20) + "," + (dimension.yOffset + 15) + ")");
+                chartLegend.attr("transform", "translate(" + (dimension.chartWidth + dimension.yOffset + (this.legendFontSize*2)) + "," + (5) + ")");
             }
             if (this.legendPosition == "top") {
-                chartSvg.attr("transform", "translate(0,50)");
-                chartLegend.attr("transform", "translate(" + (dimension.xOffset + 20) + ",10)");
+                chartSvg.attr("transform", "translate(0," + this.legendFontSize * 3 +")");
+                chartLegend.attr("transform", "translate(" + (dimension.yOffset) + "," + this.legendFontSize + ")");
             }
             if (this.legendPosition == "bottom") {
-                chartLegend.attr("transform", "translate(" + (dimension.xOffset + 20) + "," + (dimension.chartHeight + dimension.yOffset) + ")");
+                chartLegend.attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight + (this.legendFontSize * 3)) + ")");
             }
-            let legendData = [];
-            let min = d3.min(data.map(d => d.value));
-
-            if (this.legendPosition === 'right') legendData = this.colorScale.quantiles().slice(0).reverse().concat([min]);
-            else legendData = [min].concat(this.colorScale.quantiles());
-
-            let rectHeight = 15;
-            let rectWidth = 15;
-
-            if (dimension.chartHeight < 200) rectHeight = dimension.chartHeight / 20;
-            if (dimension.chartWidth < 200) rectWidth = dimension.chartWidth / 20;
-
-            var legendG = chartLegend.selectAll(".legend")
-                .data(legendData)
-                .enter()
-                .append("rect")
-                .attr("id", function (d) { return d })
-                .attr("width", rectWidth)
-                .attr("height", rectHeight)
-                .attr("cursor", "pointer")
-                .style("fill", (d, i) => {
-                    return this.colorRange[legendData.length - (i + 1)];
-                });
-
-            this.tooltipServiceWrapper.addTooltip(legendG,
-                (tooltipEvent: TooltipEventArgs<any>) => this.getLegendTooltipData(tooltipEvent.data),
-                (tooltipEvent: TooltipEventArgs<any>) => null
-            );
-
-            var legendText = chartLegend.selectAll(".legendText")
-                .data(legendData)
-                .enter()
-                .append("text")
-                .text((d, i) => {
-                    if (i == 0) {
-                        return (this.minLegendText !== undefined && this.minLegendText.length > 0)? this.minLegendText : this.iValueFormatter.format(d);
-                    }
-                    if (i == legendData.length - 1) {
-                        return (this.maxLegendText !== undefined && this.maxLegendText.length > 0)  ? this.maxLegendText : this.iValueFormatter.format(d);
-                    }
-                    else return "";
-               })
+            var fontSize = parseInt(this.legendFontSize);
            
+            var legengG  = chartLegend.selectAll(".legend")
+                                        .data(data.legend)
+                                        .enter()
+                                        .append("g");
 
-            if (this.legendPosition == "right") {
-                legendG.attr("x", 15)
-                    .attr("y", function (d, i) { return i * rectHeight; });
-
-                legendText
-                    .attr("x", 15)
-                    .attr("text-anchor", "middle")
-                    .attr("dy", (d, i) => i == 0 ? -5 : 32)
-                    .attr("y", function (d, i) { return i * rectHeight; });
-                
-            }
+            if (this.legendPosition == "right") legengG.attr("transform", (d, i) => "translate(0," + i * (fontSize + 5) + ")");
             else {
-                legendG.attr("y", 15)
-                    .attr("x", function (d, i) { return i * rectWidth; });
+                var wd = -data.legend[0].width;
+                legengG.attr("transform", (d, i) => {
+                    wd = wd + d.width;
 
-                legendText.attr("y", 27)
-                    .attr("dx", (d, i) => i == 0 ? -2 : 17)
-                    .attr("x", function (d, i) { return i * rectWidth; });
-
-                legendText.attr("text-anchor", (d, i) => i == 0 ? "end" : "start");
+                    return "translate(" + wd + ",0)";
+                });
             }
 
+            legengG.append("circle")
+                .attr("r", fontSize / 2)
+                .attr("cy", fontSize / 5)
+                .attr("fill", d => d.color);
+
+            legengG
+                .append("text")
+                .attr("x", fontSize)
+                .attr("y", fontSize / 2)
+                .text(d => d.text);
+
+            legengG.style("font-size", fontSize);
         };
 
         private static parseSettings(dataView: DataView): VisualSettings {
@@ -604,40 +433,17 @@ module powerbi.extensibility.visual {
             var retData = [];
            
             retData.push({
-                displayName: data.yValue,
+                displayName: data.yValue.caption,
                 value: data.xValue,
-                header: data.value.toString()
+                header: data.legend,
             });
            
             return retData;
         }
 
-        private getLegendTooltipData(data: any): VisualTooltipDataItem[] {
-            var retData = [];
-           
-            retData.push({
-                displayName: '≥ ' + data.toString(),
-                value: "",
-                header: ""
-            });
-
-            return retData;
-        }
-
-        private getLegendMaxLength(data) {
-
-            var dummySvg = d3.select('body').append("svg");
-           
-            var maxLegendLen = d3.max(data.map(d => { return this.getTextWidth(dummySvg, d); } )) + 40;
-
-            dummySvg.remove();
-
-            return maxLegendLen;
-        };
-
-        private getTextWidth(container, text) {
+        private getTextWidth(container, text, fontsize) {
             
-            var dummytext = container.append("text").text(text).attr("font-size", this.fontSize);
+            var dummytext = container.append("text").text(text).attr("font-size", fontsize);
             var bbox = { width: 10, height: 10 };
             if (dummytext.node() !== null) bbox = dummytext.node().getBBox();
             dummytext.remove();
@@ -645,8 +451,24 @@ module powerbi.extensibility.visual {
             return bbox.width;
         };
 
+        private setLegendWidth(el, legendData) {
+            var svg = el.append("svg").attr("width", 0).attr("height", 0);
+
+            var legend = legendData.map(d => {
+                return {
+                    width: this.getTextWidth(svg, d, this.legendFontSize),
+                    color: this.colorScale(d),
+                    text:d
+                }
+            })
+            svg.remove();
+
+            return legend;
+        }
+
         private axisLabelArray(labels, chartwidth, el, orientation) {
             var self = this;
+            var fontsize = this.fontSize;
             var rotate = false;
             var wordsArray = [];
             var space = 0;
@@ -665,11 +487,11 @@ module powerbi.extensibility.visual {
 
                 });
                 var longest = wordsArray.sort(function (a, b) { return b.length - a.length; })[0];
-                if (this.getTextWidth(svg, longest) > maxWidth) rotate = true;
+                if (this.getTextWidth(svg, longest, fontsize) > maxWidth) rotate = true;
                
                 if (rotate === true) {
                     var longest = labels.sort(function (a, b) { return b.length - a.length; })[0];
-                    space = self.getTextWidth(svg, longest);
+                    space = self.getTextWidth(svg, longest, fontsize);
                 }
                 else {
                     var lineCountArr = [1];
@@ -687,7 +509,7 @@ module powerbi.extensibility.visual {
                         while (word = words.pop()) {
                             line.push(word);
                             t = line.join(' ');
-                            if (self.getTextWidth(svg, t) > mWidth) {
+                            if (self.getTextWidth(svg, t, fontsize) > mWidth) {
                                
                                 line.pop();
                                 spanContent = line.join(' ');
@@ -713,7 +535,7 @@ module powerbi.extensibility.visual {
                
                 if (longest.length < 25 || needWarpping == false) {
                     rotate = false;
-                    space = this.getTextWidth(svg, longest);
+                    space = this.getTextWidth(svg, longest, fontsize);
                 }
                 else {
 
@@ -725,7 +547,7 @@ module powerbi.extensibility.visual {
 
                     var maxText = longest.split(/\s+/).slice(0, maxWord.split(/\s+/).length).join(" ");
 
-                    space = this.getTextWidth(svg, maxText);
+                    space = this.getTextWidth(svg, maxText, fontsize);
                     
                 }
             }
@@ -805,33 +627,55 @@ module powerbi.extensibility.visual {
             chartSvg.selectAll("text").style("font-size", this.fontSize + "px");
         }
 
+        private setValueDomain = function (Min, Max) {
+            var domain:any = {};
+            console.log(Min);
+            //OMIn and OMax are used for 100% Stacked where we need not to incerease the scale by 15%
+            if (Min > 0) {
+                domain.Min = 0;
+                domain.Max = Max + ((Max * 15) / 100);
+                domain.OMin = 0;
+                domain.OMax = Max;
+            }
+            else if (Max < 0) {
+                domain.Max = 0;
+                domain.Min = Min - ((Min * 15) / 100);
+                domain.OMax = 0;
+                domain.OMin = Min;
+            }
+            else {
+                domain.Min = Min - ((Min * 15) / 100);
+                domain.Max = Max + ((Max * 15) / 100);
+                domain.OMin = Min;
+                domain.OMax = Max;
+            }
+
+            if (this.yAxisMinValue == true) {
+                domain.Min = Min - ((Min * 10) / 100);
+                domain.Max = Max + ((Max * 10) / 100);
+            }
+
+            return domain;
+        };
+
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {
 
             let objectName = options.objectName;
             let objectEnumeration: VisualObjectInstance[] = [];
           
             switch (objectName) {
-                case 'Heat':
-                    objectEnumeration.push({ objectName: objectName, properties: { heatColor: this.heatColor }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { heatScale: this.heatScale }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { heatRange: this.heatRange }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { heatColorType: this.heatColorType }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { rectRadius: this.rectRadius }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { middleBinValue: this.middleBinValue }, selector: null });
-                   
-                    break;
+               
                 case 'Legend':
                     objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { minLegendText: this.minLegendText }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { maxLegendText: this.maxLegendText }, selector: null });
-                    
+                    objectEnumeration.push({ objectName: objectName, properties: { legendColor: this.legendColor }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.legendFontSize }, selector: null });
                     break;
                 case 'Axis':
-                    objectEnumeration.push({ objectName: objectName, properties: { showXAxis: this.showXAxis }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { xAxisLabel: this.xAxisLabel }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showYAxis: this.showYAxis }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
+                   // objectEnumeration.push({ objectName: objectName, properties: { showXAxis: this.showAxis }, selector: null });
+                    //objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.fontSize }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { yAxisMinValue: this.yAxisMinValue }, selector: null });
+                    
                     break;
                     
             };

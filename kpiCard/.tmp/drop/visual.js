@@ -9015,6 +9015,7 @@ var powerbi;
                             if (d.roles["period"]) {
                                 _this.hasPeriod = true;
                                 _this.periodIndex = i;
+                                _this.dateFormat = d.format;
                             }
                         });
                         this.element.style("overflow", "auto");
@@ -9325,12 +9326,12 @@ var powerbi;
                             .attr("cursor", "pointer");
                         this.sparklineCaptionName = this.sparklineMarker
                             .append("text")
-                            .attr("dy", 15)
-                            .attr("style", "cursor:pointer; text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;");
+                            .attr("dy", 12)
+                            .attr("style", "cursor:pointer; font-size:12px; text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;");
                         this.sparklineCaptionValue = this.sparklineMarker
                             .append("text")
-                            .attr("dy", 28)
-                            .attr("style", "cursor:pointer; text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;");
+                            .attr("dy", 25)
+                            .attr("style", "cursor:pointer;font-size:12px; text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;");
                     };
                     Visual.prototype.mouseMove = function (data, el, width) {
                         var _this = this;
@@ -9353,6 +9354,10 @@ var powerbi;
                                 hoverVal = _this.iValueFormatter.format(d.actual);
                             }
                         });
+                        if (this.dateFormat != undefined) {
+                            var dateformat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.dateFormat });
+                            hoverXValue = dateformat.format(hoverXValue);
+                        }
                         this.sparklineCaptionName.text(hoverXValue);
                         this.sparklineCaptionValue.text(hoverVal);
                         if (xPos > 60) {
@@ -9441,8 +9446,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.kpiCardCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
-                name: 'kpiCardCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
+            plugins.kpiCardCCFC224D9885417F9AAF5BB8D45B007E = {
+                name: 'kpiCardCCFC224D9885417F9AAF5BB8D45B007E',
                 displayName: 'Kpi Card',
                 class: 'Visual',
                 version: '1.0.0',

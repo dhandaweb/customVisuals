@@ -1,14 +1,14 @@
 {
-  "visual": {
-    "name": "heatmap",
-    "displayName": "Heat Map",
-    "guid": "heatMapCCFC224D9885417F9AAF5BB8D45B007E",
-    "visualClassName": "Visual",
-    "version": "1.0.0",
-    "description": "",
-    "supportUrl": "",
-    "gitHubUrl": ""
-  },
+    "visual": {
+        "name": "dotPlot",
+        "displayName": "Dot Plot",
+        "guid": "dotPlotCCFC224D9885417F9AAF5BB8D45B007E",
+        "visualClassName": "Visual",
+        "version": "1.0.0",
+        "description": "",
+        "supportUrl": "",
+        "gitHubUrl": ""
+    },
   "apiVersion": "1.11.0",
   "author": {
     "name": "",

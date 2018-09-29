@@ -86,7 +86,7 @@ module powerbi.extensibility.visual {
         private showYAxis: any = true;
         private showLabel: any = false;
         private rectRadius: any = 0;
-        private fontSize: any = 14;
+        private fontSize: any = 16;
         private minLegendText: any;
         private maxLegendText: any;
 

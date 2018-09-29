@@ -8961,6 +8961,7 @@ var powerbi;
                         this.belowThreshold2Color = { solid: { color: "#ffbd01" } };
                         this.belowThreshold3Color = { solid: { color: "#ff7601" } };
                         this.belowThreshold4Color = { solid: { color: "#ff4701" } };
+                        this.fontSize = 14;
                         this.element = d3.select(options.element);
                         this.host = options.host;
                         this.tooltipServiceWrapper = multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
@@ -8990,6 +8991,8 @@ var powerbi;
                                 // if (actObj["showTotalChange"] !== undefined) this.showTotalChange = actObj["showTotalChange"];
                                 if (actObj["totalChangeHeader"] !== undefined)
                                     this.totalChangeHeader = actObj["totalChangeHeader"];
+                                if (actObj.fontSize !== undefined)
+                                    this.fontSize = actObj["fontSize"];
                             }
                             if (options.dataViews[0].metadata.objects["Target"]) {
                                 var targetObj = options.dataViews[0].metadata.objects["Target"];
@@ -9072,6 +9075,7 @@ var powerbi;
                             }
                             if (d.roles["period"]) {
                                 _this.hasPeriod = true;
+                                _this.dateFormat = d.format;
                                 _this.periodIndex = i;
                             }
                             return d;
@@ -9192,6 +9196,7 @@ var powerbi;
                         this.drawVariancePer(rows, thead);
                         this.drawAdditionalFields(rows, thead);
                         this.updateRowStyle(tbody, thead);
+                        this.setFontSize(table);
                     };
                     Visual.prototype.setFilterOpacity = function (rows) {
                         var anyFilter = false;
@@ -9257,7 +9262,7 @@ var powerbi;
                                     xDomain.push(d.xValue);
                                     yDomain.push(d.yValue);
                                 });
-                                var xScale = d3.scale.ordinal().rangeRoundBands([0, 120]).domain(xDomain);
+                                var xScale = d3.scale.ordinal().rangeBands([0, 120]).domain(xDomain);
                                 var yScale = d3.scale.linear().range([25, 0]).domain([d3.min(yDomain), d3.max(yDomain)]);
                                 return "M" + d.values.map(function (d) {
                                     return xScale("" + d.xValue + "") + ',' + yScale(d.yValue);
@@ -9489,6 +9494,9 @@ var powerbi;
                                 .text(function (e) { return format.format(e.values[e.values.length - 1][d.Index]); });
                         });
                     };
+                    Visual.prototype.setFontSize = function (chartSvg) {
+                        chartSvg.style("font-size", this.fontSize + "px");
+                    };
                     //#region Tooltip
                     Visual.prototype.drawBisectorToolTip = function () {
                         var _this = this;
@@ -9516,12 +9524,12 @@ var powerbi;
                             .attr("cursor", "pointer");
                         this.sparklineCaptionName = this.sparklineMarker
                             .append("text")
-                            .attr("dy", 15)
-                            .attr("style", "cursor:pointer; text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;");
+                            .attr("dy", 12)
+                            .attr("style", "cursor:pointer;font-size:12px; text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;");
                         this.sparklineCaptionValue = this.sparklineMarker
                             .append("text")
-                            .attr("dy", 28)
-                            .attr("style", "cursor:pointer; text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;");
+                            .attr("dy", 25)
+                            .attr("style", "cursor:pointer;font-size:12px; text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;");
                     };
                     Visual.prototype.mouseMove = function (d, el) {
                         var _this = this;
@@ -9534,7 +9542,7 @@ var powerbi;
                             return "translate(" + (xPos) + ",0)";
                         });
                         var catScale = d3.scale.ordinal()
-                            .rangeRoundBands([0, 120])
+                            .rangeBands([0, 120])
                             .domain(selected.values.map(function (d) { return d.xValue; }));
                         var leftEdges = catScale.domain().map(function (d, i) { return catScale.rangeBand() * i; });
                         var j;
@@ -9546,6 +9554,10 @@ var powerbi;
                                 hoverVal = _this.iValueFormatter.format(d.yValue);
                             }
                         });
+                        if (this.dateFormat != undefined) {
+                            var dateformat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.dateFormat });
+                            hoverXValue = dateformat.format(hoverXValue);
+                        }
                         this.sparklineCaptionName.text(hoverXValue);
                         this.sparklineCaptionValue.text(hoverVal);
                         if (xPos > 60) {
@@ -9619,6 +9631,7 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { percentageChangeHeader: this.percentageChangeHeader }, selector: null });
                                 //objectEnumeration.push({ objectName: objectName, properties: { showTotalChange: this.showTotalChange }, selector: null });
                                 // objectEnumeration.push({ objectName: objectName, properties: { totalChangeHeader: this.totalChangeHeader }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.fontSize }, selector: null });
                                 break;
                             case 'Target':
                                 objectEnumeration.push({ objectName: objectName, properties: { showTarget: this.showTarget }, selector: null });

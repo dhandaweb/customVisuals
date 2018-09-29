@@ -93,7 +93,8 @@ module powerbi.extensibility.visual {
         private groupIndex: number;
         private hasPeriod: any;
         private periodIndex: number;
-       
+        private dateFormat: any;
+
         private iValueFormatter:any;
         private element: d3.Selection<SVGElement>;
         private container: d3.Selection<SVGElement>;
@@ -109,7 +110,7 @@ module powerbi.extensibility.visual {
         private TooltipEventArgs: any;
         public  TooltipEnabledDataPoint: any;
 
-      
+        private fontSize: any = 14;
         private HeaderTextColor: any;
         private BoldHeaderText: any;
         private RowBanding: any;
@@ -143,6 +144,7 @@ module powerbi.extensibility.visual {
                    if (actObj["percentageChangeHeader"] !== undefined) this.percentageChangeHeader = actObj["percentageChangeHeader"];
                   // if (actObj["showTotalChange"] !== undefined) this.showTotalChange = actObj["showTotalChange"];
                    if (actObj["totalChangeHeader"] !== undefined) this.totalChangeHeader = actObj["totalChangeHeader"];
+                   if (actObj.fontSize !== undefined) this.fontSize = actObj["fontSize"];
 
                }
                if (options.dataViews[0].metadata.objects["Target"]) {
@@ -214,6 +216,7 @@ module powerbi.extensibility.visual {
                }
                if (d.roles["period"]) {
                    this.hasPeriod = true;
+                   this.dateFormat = d.format;
                    this.periodIndex = i;
                }
                return d;
@@ -365,7 +368,7 @@ module powerbi.extensibility.visual {
            this.drawVariancePer(rows, thead);
            this.drawAdditionalFields(rows, thead);
            this.updateRowStyle(tbody, thead);
-          
+           this.setFontSize(table);
 
         }
 
@@ -457,7 +460,7 @@ module powerbi.extensibility.visual {
                            yDomain.push(d.yValue);
                        });
 
-                       var xScale = d3.scale.ordinal().rangeRoundBands([0, 120]).domain(xDomain);
+                       var xScale = d3.scale.ordinal().rangeBands([0, 120]).domain(xDomain);
                        var yScale = d3.scale.linear().range([25, 0]).domain([d3.min(yDomain), d3.max(yDomain)]);
 
                        return "M" + d.values.map((d) => {
@@ -769,7 +772,9 @@ module powerbi.extensibility.visual {
            
        }
 
-
+        private setFontSize(chartSvg) {
+            chartSvg.style("font-size", this.fontSize + "px");
+        }
         //#region Tooltip
        public drawBisectorToolTip() {
 
@@ -801,14 +806,14 @@ module powerbi.extensibility.visual {
 
             this.sparklineCaptionName = this.sparklineMarker
                 .append("text")
-                .attr("dy", 15)
-                .attr("style", "cursor:pointer; text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;");
+                .attr("dy", 12)
+                .attr("style", "cursor:pointer;font-size:12px; text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;");
 
 
             this.sparklineCaptionValue = this.sparklineMarker
                 .append("text")
-                .attr("dy", 28)
-                .attr("style", "cursor:pointer; text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;");
+                .attr("dy", 25)
+                .attr("style", "cursor:pointer;font-size:12px; text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;");
             
         }
 
@@ -827,7 +832,7 @@ module powerbi.extensibility.visual {
             });
 
             var catScale = d3.scale.ordinal()
-                                 .rangeRoundBands([0, 120])
+                                 .rangeBands([0, 120])
                                  .domain(selected.values.map(function (d) { return d.xValue; }));
             
 
@@ -844,7 +849,13 @@ module powerbi.extensibility.visual {
                     hoverVal = this.iValueFormatter.format(d.yValue);
                 }
             });
-          
+
+           if (this.dateFormat != undefined) {
+               let dateformat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.dateFormat });
+               hoverXValue = dateformat.format(hoverXValue);
+
+           }
+
             this.sparklineCaptionName.text(hoverXValue);
             this.sparklineCaptionValue.text(hoverVal);
 
@@ -932,6 +943,7 @@ module powerbi.extensibility.visual {
                     objectEnumeration.push({ objectName: objectName, properties: { percentageChangeHeader: this.percentageChangeHeader }, selector: null });
                     //objectEnumeration.push({ objectName: objectName, properties: { showTotalChange: this.showTotalChange }, selector: null });
                    // objectEnumeration.push({ objectName: objectName, properties: { totalChangeHeader: this.totalChangeHeader }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.fontSize }, selector: null });
                     break;
 
                 case 'Target':

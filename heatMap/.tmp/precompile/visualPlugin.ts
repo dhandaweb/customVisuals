@@ -1,6 +1,6 @@
 module powerbi.visuals.plugins {
-    export var heatMapCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
-        name: 'heatMapCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
+    export var heatMapCCFC224D9885417F9AAF5BB8D45B007E = {
+        name: 'heatMapCCFC224D9885417F9AAF5BB8D45B007E',
         displayName: 'Heat Map',
         class: 'Visual',
         version: '1.0.0',

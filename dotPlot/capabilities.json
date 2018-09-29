@@ -18,183 +18,47 @@
                 }
             ]
         },
-
         {
-            "displayName": "X Axis",
-            "name": "xAxis",
+            "displayName": "Axis",
+            "name": "axis",
             "kind": "Grouping"
 
         },
         {
-            "displayName": "Y Axis",
-            "name": "yAxis",
+            "displayName": "Color",
+            "name": "color",
             "kind": "Grouping"
         }
     ],
     "dataViewMappings": [
         {
-            "table": {
-                "rows": {
-                    "select": [
-                        {
-                            "for": {
-                                "in": "xAxis"
-                            }
-                        },
-                        {
-                            "for": {
-                                "in": "yAxis"
-                            }
-                        },
-                        {
-                            "for": {
-                                "in": "values"
-                            }
-                        }
-
-                    ]
-                }
-            },
-            "conditions": [
-                {
-                    "values": {
-                        "max": 1
-                    },
-                    "xAXis": {
-                        "min": 0,
-                        "max": 1
-                    },
-                    "yAXis": {
-                        "min": 0,
-                        "max": 1
+            "categorical": {
+                "categories": {
+                    "for": {
+                        "in": "axis"
                     }
-                }
-            ]
-        }
-    ],
-    "objects": {
-        "Heat": {
-            "displayName": "Heat",
-            "properties": {
-                "heatColor": {
-                    "displayName": "Heat Color",
-                    "type": {
-                        "enumeration": [
+                },
+                "values": {
+                    "group": {
+                        "by": "color",
+                        "select": [
                             {
-                                "value": "Heat",
-                                "displayName": "Heat"
-                            },
-                            {
-                                "value": "BlueRed",
-                                "displayName": "Blue Red"
-                            },
-                            {
-                                "value": "GreenOrange",
-                                "displayName": "Green Orange"
-                            },
-                            {
-                                "value": "RedBlue",
-                                "displayName": "Red Blue"
-                            },
-                            {
-                                "value": "OrangeGreen",
-                                "displayName": "Orange Green"
-                            },
-                            {
-                                "value": "YlOrBr",
-                                "displayName": "Yellow Orange Blue"
-                            },
-                            {
-                                "value": "YlOrRd",
-                                "displayName": "Yellow Orange Red"
+                                "for": {
+                                    "in": "values"
+                                }
                             }
                         ]
-                    }
-                },
-                "heatScale": {
-                    "displayName": "Heat Scale",
-                    "type": {
-                        "enumeration": [
-                            {
-                                "value": "default",
-                                "displayName": "Default"
-                            },
-                            {
-                                "value": "rows",
-                                "displayName": "Rows"
-                            },
-                            {
-                                "value": "columns",
-                                "displayName": "Columns"
-                            }
-                        ]
-                    }
-                },
-                "heatRange": {
-                    "displayName": "Heat Range",
-                    "type": { "text": true }
-                },
-                "middleBinValue": {
-                    "displayName": "Middle Bin Value",
-                    "type": { "numeric": true }
-                },
-                "heatColorType": {
-                    "displayName": "Heat Color Type",
-                    "type": {
-                        "enumeration": [
-                            {
-                                "value": "linear",
-                                "displayName": "Linear"
-                            },
-                            {
-                                "value": "bin",
-                                "displayName": "Bin"
-                            }
-                        ]
-                    }
-                },
-                "rectRadius": {
-                    "displayName": "Heat Unit Radius",
-                    "type": {
-                        "formatting": {
-                            "fontSize": true
-                        }
                     }
                 }
             }
-        },
+        }
+    ],
+    "objects": {
         "Axis": {
             "displayName": "Axis",
             "properties": {
-                "showXAxis": {
-                    "displayName": "Show X Axis",
-                    "type": { "bool": true }
-                },
-                "xAxisLabel": {
-                    "displayName": "X Axis Label",
-                    "type": {
-                        "enumeration": [
-                            {
-                                "value": "all",
-                                "displayName": "All"
-                            },
-                            {
-                                "value": "firstLast",
-                                "displayName": "First Last"
-                            },
-                            {
-                                "value": "firstMiddleLast",
-                                "displayName": "First Middle Last"
-                            }
-                        ]
-                    }
-                },
-                "showYAxis": {
-                    "displayName": "Show Y Axis",
-                    "type": { "bool": true }
-                },
-                "showLabel": {
-                    "displayName": "Show Label",
+                "yAxisMinValue": {
+                    "displayName": "Y Axis Start From Min Value",
                     "type": { "bool": true }
                 },
                 "fontSize": {
@@ -231,13 +95,60 @@
                         ]
                     }
                 },
-                "minLegendText": {
-                    "displayName": "Min Legend Text",
-                    "type": { "text": true }
+                "legendColor": {
+                    "displayName": "Legend Color",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "Category1",
+                                "displayName": "Category1"
+                            },
+                            {
+                                "value": "Category2",
+                                "displayName": "Category2"
+                            },
+                            {
+                                "value": "Category3",
+                                "displayName": "Category3"
+                            },
+                            {
+                                "value": "Category4",
+                                "displayName": "Category4"
+                            },
+                            {
+                                "value": "Category5",
+                                "displayName": "Category5"
+                            },
+                            {
+                                "value": "Category6",
+                                "displayName": "Category6"
+                            },
+                            {
+                                "value": "Category7",
+                                "displayName": "Category7"
+                            },
+                            {
+                                "value": "Category8",
+                                "displayName": "Category8"
+                            },
+                            {
+                                "value": "Category9",
+                                "displayName": "Category9"
+                            },
+                            {
+                                "value": "Category10",
+                                "displayName": "Category10"
+                            }
+                        ]
+                    }
                 },
-                "maxLegendText": {
-                    "displayName": "Max Legend Text",
-                    "type": { "text": true }
+                "fontSize": {
+                    "displayName": "Legend Font Size",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
                 }
             }
         }
