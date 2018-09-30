@@ -19,6 +19,24 @@
             ]
         },
         {
+            "displayName": "Size",
+            "name": "size",
+            "kind": "Measure",
+            "requiredTypes": [
+                {
+                    "integer": true
+                },
+                {
+                    "numeric": true
+                }
+            ],
+            "preferredTypes": [
+                {
+                    "numeric": true
+                }
+            ]
+        },
+        {
             "displayName": "Axis",
             "name": "axis",
             "kind": "Grouping"
@@ -42,11 +60,9 @@
                     "group": {
                         "by": "color",
                         "select": [
-                            {
-                                "for": {
-                                    "in": "values"
-                                }
-                            }
+                            
+                            { "bind": { "to": "values" } },
+                            { "bind": { "to": "size" } }
                         ]
                     }
                 }
@@ -149,6 +165,31 @@
                             "fontSize": true
                         }
                     }
+                }
+            }
+        },
+        "Basic": {
+            "displayName": "Basic",
+            "properties": {
+                "dotRadius": {
+                    "displayName": "Dot radius",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                },
+                "circleOpacity": {
+                    "displayName": "Circle Opacity",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                },
+                "showLabel": {
+                    "displayName": "Data Labels",
+                    "type": { "bool": true }
                 }
             }
         }

@@ -44,7 +44,8 @@ module powerbi.extensibility.visual {
         private hasAxis: any = false;
         private hasColor: any = false;
         private hasValue: any = false;
-
+        private hasSize: any = false;
+        private colorTitle: any = '';
         private legendPosition: any = "right";
 
         private axisFormat: any;
@@ -76,7 +77,10 @@ module powerbi.extensibility.visual {
     
         private showAxis: any = true;
         private showLabel: any = false;
-       
+
+        private dotRadius: any = 6;
+        private circleOpacity: any = 100;
+        
         private fontSize: any = 14;
         private legendFontSize: any=10;
 
@@ -89,7 +93,7 @@ module powerbi.extensibility.visual {
         }
 
         public update(options: VisualUpdateOptions) {
-           
+            
             this.setProperties(options);
             var data = this.formatData(options.dataViews[0]);
           
@@ -117,7 +121,7 @@ module powerbi.extensibility.visual {
             var yScale = this.setYScale(data, dimension);
            
             this.drawXScale(xScale, chartSvg, dimension);
-            this.drawYScale(yScale, chartSvg, dimension);
+            this.drawYScale(yScale, chartSvg, dimension,data);
             this.drawCircles(xScale, yScale, chartSvg, data, dimension);
 
             this.drawLegend(chartLegend, chartSvg, dimension, data);
@@ -134,14 +138,22 @@ module powerbi.extensibility.visual {
 
             if (this.hasAxis && this.hasValue) {
                 var xAxis = rawData.categorical.categories[0].values;
+                var xMetadata = rawData.categorical.categories[0].source;
 
                 if (this.axisFormat !== undefined) {
                     var axisFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.axisFormat });
                     xAxis = xAxis.map(d => { return axisFormat.format(d) });
                 }
 
-                var yAxis = [];
-                var valuesG = rawData.categorical.values;
+                var yAxis = [], valFormat;
+                var sizeValues = [];
+                var valuesG = rawData.categorical.values.filter(d => d.source.roles.values);
+
+                if (this.hasSize == true) {
+                    var sizeMetadata = rawData.categorical.values.filter(d => d.source.roles.size)[0];
+                    var sizeG = sizeMetadata.values;
+                    var sizeFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: sizeMetadata.source.format });
+                }
 
                 if (this.hasColor) {
                     
@@ -154,16 +166,20 @@ module powerbi.extensibility.visual {
                     
 
                     formattedData = filteredValues.map((d, i) => {
-                        var valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.source.format });
+                        valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.source.format });
+                        
                         return {
                             key: this.colorFormat !== undefined ? colorFormat.format(d.source.groupName) : d.source.groupName,
                             values: d.values.map((t, i) => {
                                 yAxis.push(t);
+                                if (this.hasSize) sizeValues.push(sizeG[i]);
                                 return {
-                                    xValue: xAxis[i],
-                                    yValue: { value: t, caption: valFormat.format(t) },
+                                    xValue: { title: xMetadata.displayName, value: xAxis[i], caption: xAxis[i]},
+                                    yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
                                     legend: d.source.groupName,
-                                    color: this.colorScale(d.source.groupName)
+                                    color: this.colorScale(d.source.groupName),
+                                    colorValue: { title: this.colorTitle, caption: d.source.groupName },
+                                    size: this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeG[i], caption: sizeFormat.format(sizeG[i]) } : null
                                 }
                             })
                         }
@@ -173,16 +189,19 @@ module powerbi.extensibility.visual {
                 else {
                     
                     formattedData = valuesG.map((d, i) => {
-                        var valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.source.format });
+                        valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.source.format });
                         return {
                             key: d.source.displayName,
                             values: d.values.map((t, i) => {
                                 yAxis.push(t);
+                                if (this.hasSize )sizeValues.push(sizeG[i]);
                                 return {
-                                    xValue: xAxis[i],
-                                    yValue: { value: t, caption: valFormat.format(t) },
+                                    xValue: { title: xMetadata.displayName, value: xAxis[i], caption: xAxis[i] },
+                                    yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
                                     legend: d.source.displayName,
-                                    color: this.colorScale(d.source.displayName)
+                                    color: this.colorScale(d.source.displayName),
+                                   
+                                    size: this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeG[i], caption: sizeFormat.format(sizeG[i]) } : null
                                 }
                             })
                         }
@@ -192,14 +211,21 @@ module powerbi.extensibility.visual {
             }
 
             var legend = this.setLegendWidth(this.element, formattedData.map(d => d.key));
-
-            return { xAxis: xAxis, yAxis: yAxis, data: formattedData, legend: legend}
+           
+            return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat.format, data: formattedData, legend: legend, sizeValues: sizeValues}
         }
 
         private setProperties(options) {
 
             if (options.dataViews[0].metadata.objects) {
-               
+
+                if (options.dataViews[0].metadata.objects["Basic"]) {
+                    var basic = options.dataViews[0].metadata.objects["Basic"];
+                    if (basic.dotRadius !== undefined) this.dotRadius = basic["dotRadius"];
+                    if (basic.circleOpacity !== undefined) this.circleOpacity = basic["circleOpacity"];
+                    if (basic.showLabel !== undefined) this.showLabel = basic["showLabel"];
+                    
+                }
                 if (options.dataViews[0].metadata.objects["Legend"]) {
                     var legend = options.dataViews[0].metadata.objects["Legend"];
                     if (legend.legendPosition !== undefined) this.legendPosition = legend["legendPosition"];
@@ -214,6 +240,8 @@ module powerbi.extensibility.visual {
                     if (axis.yAxisMinValue !== undefined) this.yAxisMinValue = axis["yAxisMinValue"];
                     
                 }
+
+                
             }
         }
 
@@ -221,6 +249,7 @@ module powerbi.extensibility.visual {
             this.hasValue = false;
             this.hasColor = false;
             this.hasAxis = false;
+            this.hasSize = false;
 
             metadata.map((d, i) => {
                 if (d.roles["axis"]) {
@@ -230,9 +259,13 @@ module powerbi.extensibility.visual {
                 if (d.roles["color"]) {
                     this.hasColor = true;
                     this.colorFormat = d.format;
+                    this.colorTitle = d.displayName;
                 }
                 if (d.roles["values"]) {
                     this.hasValue = true;
+                }
+                if (d.roles["size"]) {
+                    this.hasSize = true;
                 }
             });
 
@@ -321,13 +354,14 @@ module powerbi.extensibility.visual {
            
         }
 
-        private drawYScale(yScale, chartSvg, dimension) {
+        private drawYScale(yScale, chartSvg, dimension,data) {
             var self = this;
 
             var yaxis = d3.svg.axis()
                 .scale(yScale)
                 .orient("left")
-                .ticks(5);
+                .ticks(5)
+                .tickFormat(data.yFormat);
            
                 var yAxisG = chartSvg
                     .append("g")
@@ -354,10 +388,37 @@ module powerbi.extensibility.visual {
                                     .append("circle");
 
 
-            circle.attr("cx", d => xScale(d.xValue))
+            circle.attr("cx", d => xScale(d.xValue.value))
                 .attr("cy", d => yScale(d.yValue.value))
-                .attr("r", 10)
-                .attr("fill", d=> d.color);
+                .attr("r", this.dotRadius)
+                .attr("fill", d => d.color)
+                .style("stroke", d => d.color)
+                .style("fill-opacity", this.circleOpacity / 100);
+
+           
+            if (this.showLabel == true) {
+                var text = circleG.selectAll(".dotText")
+                            .data(d => d.values.filter(d => d.yValue.value !== null))
+                            .enter()
+                    .append("text");
+
+                text.attr("x", d => xScale(d.xValue.value)+2)
+                    .attr("dx", this.dotRadius)
+                    .attr("dy", this.dotRadius/2)
+                    .attr("y", d => yScale(d.yValue.value))
+                    .text(d => d.yValue.caption)
+               
+            }
+
+            if (this.hasSize) {
+
+                var sizeScale = d3.scale.linear()
+                                    .range([this.dotRadius, d3.min([25, (5 * this.dotRadius)])])
+                                    .domain([d3.min(data.sizeValues), d3.max(data.sizeValues)]);
+
+                circle.attr("r", d => sizeScale(Math.abs(d.size.value)));
+                
+            }
 
 
             this.tooltipServiceWrapper.addTooltip(circle,
@@ -431,13 +492,29 @@ module powerbi.extensibility.visual {
 
         private getTooltipData(data: any): VisualTooltipDataItem[] {
             var retData = [];
-           
+
             retData.push({
-                displayName: data.yValue.caption,
-                value: data.xValue,
-                header: data.legend,
+                displayName: data.xValue.title,
+                value: data.xValue.caption,
             });
-           
+            retData.push({
+                displayName: data.yValue.title,
+                value: data.yValue.caption,
+            });
+
+            if (this.hasSize === true) {
+                retData.push({
+                    displayName: data.size.title,
+                    value: data.size.caption,
+                });
+            }
+            if (this.hasColor === true) {
+                retData.push({
+                    displayName: data.colorValue.title,
+                    value: data.colorValue.caption,
+                });
+            }
+
             return retData;
         }
 
@@ -664,7 +741,13 @@ module powerbi.extensibility.visual {
             let objectEnumeration: VisualObjectInstance[] = [];
           
             switch (objectName) {
-               
+
+                case 'Basic':
+                    objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
+                    
+                    break;
                 case 'Legend':
                     objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { legendColor: this.legendColor }, selector: null });
@@ -677,7 +760,7 @@ module powerbi.extensibility.visual {
                     objectEnumeration.push({ objectName: objectName, properties: { yAxisMinValue: this.yAxisMinValue }, selector: null });
                     
                     break;
-                    
+                     
             };
            
 
