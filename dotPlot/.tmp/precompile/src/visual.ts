@@ -32,7 +32,6 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
     export class Visual implements IVisual {
        
         private host: IVisualHost;
-      //  private tooltipServiceWrapper: ITooltipServiceWrapper;
 
         private selectionManager: ISelectionManager;
        
@@ -50,7 +49,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
 
         private axisFormat: any;
         private colorFormat: any;
-
+        private circles: any;
         private colorScale: any;
         private iValueFormatter:any;
         private element: d3.Selection<SVGElement>;
@@ -113,6 +112,10 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                             .attr("width", dimension.width)
                             .on("click", (d, i) => {
                                 this.selectionManager.clear();
+                                this.circles.style("opacity", (d: any) => {
+                                    d.isFiltered = false;
+                                    return 1;
+                                });
                             });
            
             var chartSvg = chart.append("g")
@@ -139,7 +142,8 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
             if (this.hasAxis && this.hasValue) {
                 var xAxis = rawData.categorical.categories[0].values;
                 var xMetadata = rawData.categorical.categories[0].source;
-
+                var identityData = rawData.categorical.categories[0].identity;
+              
                 if (this.axisFormat !== undefined) {
                     var axisFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.axisFormat });
                     xAxis = xAxis.map(d => { return axisFormat.format(d) });
@@ -167,7 +171,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
 
                     formattedData = filteredValues.map((d, i) => {
                         valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.source.format });
-                        
+                     
                         return {
                             key: this.colorFormat !== undefined ? colorFormat.format(d.source.groupName) : d.source.groupName,
                             values: d.values.map((t, i) => {
@@ -177,6 +181,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                                     xValue: { title: xMetadata.displayName, value: xAxis[i], caption: xAxis[i]},
                                     yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
                                     legend: d.source.groupName,
+                                    selectionId: this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).withSeries(rawData.categorical.values, rawData.categorical.values[i]).createSelectionId(),
                                     color: this.colorScale(d.source.groupName),
                                     colorValue: { title: this.colorTitle, caption: d.source.groupName },
                                     size: this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeG[i], caption: sizeFormat.format(sizeG[i]) } : null
@@ -200,7 +205,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                                     yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
                                     legend: d.source.displayName,
                                     color: this.colorScale(d.source.displayName),
-                                   
+                                    selectionId: this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).createSelectionId(),
                                     size: this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeG[i], caption: sizeFormat.format(sizeG[i]) } : null
                                 }
                             })
@@ -382,8 +387,8 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                                 .attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
 
 
-            var circle = circleG.selectAll(".dots")
-                .data(d => d.values.filter(d => d.yValue.value !== null))
+            var circle = this.circles = circleG.selectAll(".dots")
+                                        .data(d => d.values.filter(d => d.yValue.value !== null))
                                     .enter()
                                     .append("circle");
 
@@ -395,7 +400,31 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                 .style("stroke", d => d.color)
                 .style("fill-opacity", this.circleOpacity / 100);
 
-           
+
+            circle.on("click", (d, i) => {
+                d.isFiltered = !d.isFiltered;
+
+                const categoryColumn: DataViewCategoryColumn = {
+                    source: d.xValue.value,
+                    values: null,
+                    identity: d.identity
+                };
+
+               
+                //host.createSelectionIdBuilder()
+                //    .withCategory(category, i)
+                //    .createSelectionId()
+
+                var id = this.host.createSelectionIdBuilder()
+                    .withCategory(categoryColumn, 0)
+                    .createSelectionId();
+                console.log(d.selectionId);
+                this.selectionManager.select(d.selectionId, true);
+
+                this.setFilterOpacity(circle);
+                (<Event>d3.event).stopPropagation();
+            });
+
             if (this.showLabel == true) {
                 var text = circleG.selectAll(".dotText")
                             .data(d => d.values.filter(d => d.yValue.value !== null))
@@ -419,7 +448,6 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                 circle.attr("r", d => sizeScale(Math.abs(d.size.value)));
                 
             }
-
 
             this.tooltipServiceWrapper.addTooltip(circle,
                 (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
@@ -706,8 +734,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
 
         private setValueDomain = function (Min, Max) {
             var domain:any = {};
-            console.log(Min);
-            //OMIn and OMax are used for 100% Stacked where we need not to incerease the scale by 15%
+          
             if (Min > 0) {
                 domain.Min = 0;
                 domain.Max = Max + ((Max * 15) / 100);

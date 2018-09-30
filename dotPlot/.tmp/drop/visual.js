@@ -8951,8 +8951,6 @@ var powerbi;
                         this.legendFontSize = 10;
                         this.setValueDomain = function (Min, Max) {
                             var domain = {};
-                            console.log(Min);
-                            //OMIn and OMax are used for 100% Stacked where we need not to incerease the scale by 15%
                             if (Min > 0) {
                                 domain.Min = 0;
                                 domain.Max = Max + ((Max * 15) / 100);
@@ -9000,6 +8998,10 @@ var powerbi;
                             .attr("width", dimension.width)
                             .on("click", function (d, i) {
                             _this.selectionManager.clear();
+                            _this.circles.style("opacity", function (d) {
+                                d.isFiltered = false;
+                                return 1;
+                            });
                         });
                         var chartSvg = chart.append("g");
                         var chartLegend = chart.append("g");
@@ -9020,6 +9022,7 @@ var powerbi;
                         if (this.hasAxis && this.hasValue) {
                             var xAxis = rawData.categorical.categories[0].values;
                             var xMetadata = rawData.categorical.categories[0].source;
+                            var identityData = rawData.categorical.categories[0].identity;
                             if (this.axisFormat !== undefined) {
                                 var axisFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.axisFormat });
                                 xAxis = xAxis.map(function (d) { return axisFormat.format(d); });
@@ -9050,6 +9053,7 @@ var powerbi;
                                                 xValue: { title: xMetadata.displayName, value: xAxis[i], caption: xAxis[i] },
                                                 yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
                                                 legend: d.source.groupName,
+                                                selectionId: _this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).withSeries(rawData.categorical.values, rawData.categorical.values[i]).createSelectionId(),
                                                 color: _this.colorScale(d.source.groupName),
                                                 colorValue: { title: _this.colorTitle, caption: d.source.groupName },
                                                 size: _this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeG[i], caption: sizeFormat.format(sizeG[i]) } : null
@@ -9072,6 +9076,7 @@ var powerbi;
                                                 yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
                                                 legend: d.source.displayName,
                                                 color: _this.colorScale(d.source.displayName),
+                                                selectionId: _this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).createSelectionId(),
                                                 size: _this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeG[i], caption: sizeFormat.format(sizeG[i]) } : null
                                             };
                                         })
@@ -9220,7 +9225,7 @@ var powerbi;
                             .enter()
                             .append("g")
                             .attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
-                        var circle = circleG.selectAll(".dots")
+                        var circle = this.circles = circleG.selectAll(".dots")
                             .data(function (d) { return d.values.filter(function (d) { return d.yValue.value !== null; }); })
                             .enter()
                             .append("circle");
@@ -9230,6 +9235,24 @@ var powerbi;
                             .attr("fill", function (d) { return d.color; })
                             .style("stroke", function (d) { return d.color; })
                             .style("fill-opacity", this.circleOpacity / 100);
+                        circle.on("click", function (d, i) {
+                            d.isFiltered = !d.isFiltered;
+                            var categoryColumn = {
+                                source: d.xValue.value,
+                                values: null,
+                                identity: d.identity
+                            };
+                            //host.createSelectionIdBuilder()
+                            //    .withCategory(category, i)
+                            //    .createSelectionId()
+                            var id = _this.host.createSelectionIdBuilder()
+                                .withCategory(categoryColumn, 0)
+                                .createSelectionId();
+                            console.log(d.selectionId);
+                            _this.selectionManager.select(d.selectionId, true);
+                            _this.setFilterOpacity(circle);
+                            d3.event.stopPropagation();
+                        });
                         if (this.showLabel == true) {
                             var text = circleG.selectAll(".dotText")
                                 .data(function (d) { return d.values.filter(function (d) { return d.yValue.value !== null; }); })
