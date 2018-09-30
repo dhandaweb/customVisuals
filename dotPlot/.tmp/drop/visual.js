@@ -8945,6 +8945,8 @@ var powerbi;
                         };
                         this.showAxis = true;
                         this.showLabel = false;
+                        this.connectDots = false;
+                        this.connectDotsBy = 'color';
                         this.dotRadius = 6;
                         this.circleOpacity = 100;
                         this.fontSize = 14;
@@ -9009,6 +9011,7 @@ var powerbi;
                         var yScale = this.setYScale(data, dimension);
                         this.drawXScale(xScale, chartSvg, dimension);
                         this.drawYScale(yScale, chartSvg, dimension, data);
+                        this.drawDumbellLines(data, chartSvg, dimension, xScale, yScale);
                         this.drawCircles(xScale, yScale, chartSvg, data, dimension);
                         this.drawLegend(chartLegend, chartSvg, dimension, data);
                         this.setFontSize(chartSvg);
@@ -9097,6 +9100,10 @@ var powerbi;
                                     this.circleOpacity = basic["circleOpacity"];
                                 if (basic.showLabel !== undefined)
                                     this.showLabel = basic["showLabel"];
+                                if (basic.connectDots !== undefined)
+                                    this.connectDots = basic["connectDots"];
+                                if (basic.connectDotsBy !== undefined)
+                                    this.connectDotsBy = basic["connectDotsBy"];
                             }
                             if (options.dataViews[0].metadata.objects["Legend"]) {
                                 var legend = options.dataViews[0].metadata.objects["Legend"];
@@ -9237,18 +9244,6 @@ var powerbi;
                             .style("fill-opacity", this.circleOpacity / 100);
                         circle.on("click", function (d, i) {
                             d.isFiltered = !d.isFiltered;
-                            var categoryColumn = {
-                                source: d.xValue.value,
-                                values: null,
-                                identity: d.identity
-                            };
-                            //host.createSelectionIdBuilder()
-                            //    .withCategory(category, i)
-                            //    .createSelectionId()
-                            var id = _this.host.createSelectionIdBuilder()
-                                .withCategory(categoryColumn, 0)
-                                .createSelectionId();
-                            console.log(d.selectionId);
                             _this.selectionManager.select(d.selectionId, true);
                             _this.setFilterOpacity(circle);
                             d3.event.stopPropagation();
@@ -9487,6 +9482,42 @@ var powerbi;
                     Visual.prototype.setFontSize = function (chartSvg) {
                         chartSvg.selectAll("text").style("font-size", this.fontSize + "px");
                     };
+                    Visual.prototype.drawDumbellLines = function (data, chartSvg, dimension, xScale, yScale) {
+                        if (this.connectDots == true) {
+                            var dumbellData = [], line;
+                            if (this.connectDotsBy == 'axis') {
+                                data.xAxis.map(function (d, i) {
+                                    var t = { key: d, values: [] };
+                                    data.data.map(function (g) {
+                                        t.values.push({
+                                            xValue: d,
+                                            yValue: g.values[i].yValue.value,
+                                        });
+                                    });
+                                    dumbellData.push(t);
+                                });
+                                line = d3.svg.line()
+                                    .y(function (d) { return yScale(d.yValue); })
+                                    .x(function (d) { return xScale(d.xValue); });
+                            }
+                            else {
+                                dumbellData = data.data;
+                                line = d3.svg.line()
+                                    .y(function (d) { return yScale(d.yValue.value); })
+                                    .x(function (d) { return xScale(d.xValue.value); });
+                            }
+                            var dumbellG = chartSvg.selectAll(".dots")
+                                .data(dumbellData)
+                                .enter()
+                                .append("g")
+                                .attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+                            var dumbell = dumbellG.append("path")
+                                .attr("style", "fill:none;")
+                                .style("stroke", "#b3b3b3")
+                                .attr("d", function (d) { return line(d.values); });
+                        }
+                    };
+                    ;
                     Visual.prototype.enumerateObjectInstances = function (options) {
                         var objectName = options.objectName;
                         var objectEnumeration = [];
@@ -9495,6 +9526,8 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { connectDots: this.connectDots }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { connectDotsBy: this.connectDotsBy }, selector: null });
                                 break;
                             case 'Legend':
                                 objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });

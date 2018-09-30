@@ -190,6 +190,26 @@
                 "showLabel": {
                     "displayName": "Data Labels",
                     "type": { "bool": true }
+                },
+                "connectDots": {
+                    "displayName": "Connect Dots",
+                    "type": { "bool": true }
+                },
+                "connectDotsBy": {
+                    "displayName": "Connect Dots By",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "axis",
+                                "displayName": "Axis"
+                            },
+                            {
+                                "value": "color",
+                                "displayName": "Color"
+                            }
+                          
+                        ]
+                    }
                 }
             }
         }

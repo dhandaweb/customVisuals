@@ -77,6 +77,9 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
         private showAxis: any = true;
         private showLabel: any = false;
 
+        private connectDots: any = false;
+        private connectDotsBy: any = 'color';
+
         private dotRadius: any = 6;
         private circleOpacity: any = 100;
         
@@ -124,11 +127,13 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
             var yScale = this.setYScale(data, dimension);
            
             this.drawXScale(xScale, chartSvg, dimension);
-            this.drawYScale(yScale, chartSvg, dimension,data);
+            this.drawYScale(yScale, chartSvg, dimension, data);
+            this.drawDumbellLines(data, chartSvg, dimension, xScale, yScale);
             this.drawCircles(xScale, yScale, chartSvg, data, dimension);
 
             this.drawLegend(chartLegend, chartSvg, dimension, data);
             this.setFontSize(chartSvg);
+
         }
 
         public formatData(rawData) {
@@ -167,7 +172,6 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                     if (this.colorFormat !== undefined) {
                         var colorFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.colorFormat });
                     }
-                    
 
                     formattedData = filteredValues.map((d, i) => {
                         valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.source.format });
@@ -229,7 +233,9 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                     if (basic.dotRadius !== undefined) this.dotRadius = basic["dotRadius"];
                     if (basic.circleOpacity !== undefined) this.circleOpacity = basic["circleOpacity"];
                     if (basic.showLabel !== undefined) this.showLabel = basic["showLabel"];
-                    
+                    if (basic.connectDots !== undefined) this.connectDots = basic["connectDots"];
+                    if (basic.connectDotsBy !== undefined) this.connectDotsBy = basic["connectDotsBy"];
+
                 }
                 if (options.dataViews[0].metadata.objects["Legend"]) {
                     var legend = options.dataViews[0].metadata.objects["Legend"];
@@ -337,7 +343,6 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                 .scale(xScale)
                 .orient("bottom")
                 .tickValues(dimension.xTickval);
-
            
                 var xAxisG = chartSvg
                     .append("g")
@@ -355,8 +360,6 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                             return "rotate(" + (75) + ")";
                         });
                 }
-           
-           
         }
 
         private drawYScale(yScale, chartSvg, dimension,data) {
@@ -373,7 +376,6 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                     .attr("transform", "translate(" + (dimension.yOffset) + "," + 0 + ")")
                     .attr("class", "axis")
                     .call(yaxis)
-            
         }
 
         private drawCircles(xScale, yScale, chartSvg, data, dimension) {
@@ -403,22 +405,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
 
             circle.on("click", (d, i) => {
                 d.isFiltered = !d.isFiltered;
-
-                const categoryColumn: DataViewCategoryColumn = {
-                    source: d.xValue.value,
-                    values: null,
-                    identity: d.identity
-                };
-
-               
-                //host.createSelectionIdBuilder()
-                //    .withCategory(category, i)
-                //    .createSelectionId()
-
-                var id = this.host.createSelectionIdBuilder()
-                    .withCategory(categoryColumn, 0)
-                    .createSelectionId();
-                console.log(d.selectionId);
+                              
                 this.selectionManager.select(d.selectionId, true);
 
                 this.setFilterOpacity(circle);
@@ -762,6 +749,57 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
             return domain;
         };
 
+        private drawDumbellLines(data, chartSvg, dimension, xScale, yScale) {
+
+            if (this.connectDots == true) {
+                var dumbellData:any = [], line:any;
+
+                if (this.connectDotsBy == 'axis') {
+
+                    data.xAxis.map((d,i) => {
+                        var t = { key: d, values: [] };
+
+                        data.data.map(g => {
+                            t.values.push({
+                                xValue: d,
+                                yValue: g.values[i].yValue.value,
+                            })
+                        })
+
+                        dumbellData.push(t);
+                        
+                    });
+
+                    line = d3.svg.line()
+                        .y((d: any) => yScale(d.yValue))
+                        .x((d: any) => xScale(d.xValue));
+
+                    
+                }
+                else {
+                    dumbellData = data.data;
+
+                    line = d3.svg.line()
+                        .y((d: any) => yScale(d.yValue.value))
+                        .x((d: any) => xScale(d.xValue.value));
+                }
+
+                var dumbellG = chartSvg.selectAll(".dots")
+                    .data(dumbellData)
+                    .enter()
+                    .append("g")
+                    .attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+
+                var dumbell = dumbellG.append("path")
+                                        .attr("style", "fill:none;")
+                                        .style("stroke", "#b3b3b3")
+                                        .attr("d", d=> line(d.values));
+
+            }
+           
+
+        };
+
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {
 
             let objectName = options.objectName;
@@ -773,7 +811,9 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                     objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
-                    
+                    objectEnumeration.push({ objectName: objectName, properties: { connectDots: this.connectDots }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { connectDotsBy: this.connectDotsBy }, selector: null });
+
                     break;
                 case 'Legend':
                     objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });
