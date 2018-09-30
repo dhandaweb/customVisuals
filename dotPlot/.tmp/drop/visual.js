@@ -8929,6 +8929,7 @@ var powerbi;
                         this.hasSize = false;
                         this.colorTitle = '';
                         this.legendPosition = "right";
+                        this.showAs = "default";
                         this.yAxisMinValue = false;
                         this.legendColor = 'Category1';
                         this.colorOptions = {
@@ -8961,18 +8962,18 @@ var powerbi;
                             }
                             else if (Max < 0) {
                                 domain.Max = 0;
-                                domain.Min = Min - ((Min * 15) / 100);
+                                domain.Min = Min + ((Min * 15) / 100);
                                 domain.OMax = 0;
                                 domain.OMin = Min;
                             }
                             else {
-                                domain.Min = Min - ((Min * 15) / 100);
+                                domain.Min = Min > 0 ? Min - ((Min * 10) / 100) : Min + ((Min * 10) / 100);
                                 domain.Max = Max + ((Max * 15) / 100);
                                 domain.OMin = Min;
                                 domain.OMax = Max;
                             }
                             if (this.yAxisMinValue == true) {
-                                domain.Min = Min - ((Min * 10) / 100);
+                                domain.Min = Min > 0 ? Min - ((Min * 10) / 100) : Min + ((Min * 10) / 100);
                                 domain.Max = Max + ((Max * 10) / 100);
                             }
                             return domain;
@@ -8984,15 +8985,23 @@ var powerbi;
                     }
                     ;
                     Visual.prototype.update = function (options) {
-                        var _this = this;
-                        this.setProperties(options);
-                        var data = this.formatData(options.dataViews[0]);
                         this.element.style("overflow", "hidden");
                         this.element.select('.dotPlot').remove();
+                        this.draw(options);
+                    };
+                    Visual.prototype.draw = function (options) {
+                        var _this = this;
+                        this.findAvailableMetadata(options.dataViews[0].metadata.columns);
                         var chartContainer = this.element
                             .append("div")
                             .attr("class", "dotPlot")
                             .attr("style", "width:100%;");
+                        if (this.hasAxis == false || this.hasValue == false) {
+                            chartContainer.append("span").html("Axis and Value is required to draw the chart");
+                            return;
+                        }
+                        this.setProperties(options);
+                        var data = this.formatData(options.dataViews[0]);
                         var dimension = this.getDimensions(options.viewport, data);
                         var chart = chartContainer
                             .append("svg")
@@ -9020,7 +9029,6 @@ var powerbi;
                         var _this = this;
                         var metadata = rawData.metadata.columns;
                         this.colorScale = d3.scale.ordinal().range(this.colorOptions[this.legendColor]);
-                        this.findAvailableMetadata(metadata);
                         var formattedData = [];
                         if (this.hasAxis && this.hasValue) {
                             var xAxis = rawData.categorical.categories[0].values;
@@ -9030,7 +9038,7 @@ var powerbi;
                                 var axisFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.axisFormat });
                                 xAxis = xAxis.map(function (d) { return axisFormat.format(d); });
                             }
-                            var yAxis = [], valFormat;
+                            var valFormat;
                             var sizeValues = [];
                             var valuesG = rawData.categorical.values.filter(function (d) { return d.source.roles.values; });
                             if (this.hasSize == true) {
@@ -9049,7 +9057,6 @@ var powerbi;
                                     return {
                                         key: _this.colorFormat !== undefined ? colorFormat.format(d.source.groupName) : d.source.groupName,
                                         values: d.values.map(function (t, i) {
-                                            yAxis.push(t);
                                             if (_this.hasSize)
                                                 sizeValues.push(sizeG[i]);
                                             return {
@@ -9071,7 +9078,6 @@ var powerbi;
                                     return {
                                         key: d.source.displayName,
                                         values: d.values.map(function (t, i) {
-                                            yAxis.push(t);
                                             if (_this.hasSize)
                                                 sizeValues.push(sizeG[i]);
                                             return {
@@ -9088,7 +9094,20 @@ var powerbi;
                             }
                         }
                         var legend = this.setLegendWidth(this.element, formattedData.map(function (d) { return d.key; }));
-                        return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat.format, data: formattedData, legend: legend, sizeValues: sizeValues };
+                        var retData = this.setUpAnalyticData(formattedData);
+                        var yAxis = [];
+                        retData.map(function (d) {
+                            d.values.map(function (d) {
+                                yAxis.push(d.yValue.value);
+                            });
+                        });
+                        if (this.showAs == "perDifference"
+                            || this.showAs == "perDifferenceFromAverage"
+                            || this.showAs == "perTotal"
+                            || this.showAs == "perGrandTotal"
+                            || this.showAs == "perAxisValue")
+                            valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: "0.00 %;-0.00 %;0.00 %" });
+                        return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat.format, data: retData, legend: legend, sizeValues: sizeValues };
                     };
                     Visual.prototype.setProperties = function (options) {
                         if (options.dataViews[0].metadata.objects) {
@@ -9104,6 +9123,8 @@ var powerbi;
                                     this.connectDots = basic["connectDots"];
                                 if (basic.connectDotsBy !== undefined)
                                     this.connectDotsBy = basic["connectDotsBy"];
+                                if (basic.showAs !== undefined)
+                                    this.showAs = basic["showAs"];
                             }
                             if (options.dataViews[0].metadata.objects["Legend"]) {
                                 var legend = options.dataViews[0].metadata.objects["Legend"];
@@ -9162,7 +9183,7 @@ var powerbi;
                         var xDomain = d3.scale.ordinal().domain(xdata).domain();
                         var xT = this.axisLabelArray(xDomain.slice(0), vp.width, this.element, "Vertical");
                         var xOffset = xT.Space + 15;
-                        var yOffset = 50;
+                        var yOffset = 60;
                         var chartWidth = vp.width - yOffset - ylegendOffset;
                         var chartHeight = vp.height - xOffset - xlegendOffset;
                         var xFilter = (xT.Rotate === true) ? Math.round((xDomain.length / chartWidth * 100) / 2) : 1;
@@ -9260,10 +9281,14 @@ var powerbi;
                                 .text(function (d) { return d.yValue.caption; });
                         }
                         if (this.hasSize) {
+                            console.log(data.sizeValues);
                             var sizeScale = d3.scale.linear()
                                 .range([this.dotRadius, d3.min([25, (5 * this.dotRadius)])])
                                 .domain([d3.min(data.sizeValues), d3.max(data.sizeValues)]);
-                            circle.attr("r", function (d) { return sizeScale(Math.abs(d.size.value)); });
+                            circle.attr("r", function (d) {
+                                console.log(d.size.value);
+                                return d.size.value !== null ? sizeScale(Math.abs(d.size.value)) : 0;
+                            });
                         }
                         this.tooltipServiceWrapper.addTooltip(circle, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
                     };
@@ -9299,10 +9324,11 @@ var powerbi;
                         if (this.legendPosition == "right")
                             legengG.attr("transform", function (d, i) { return "translate(0," + i * (fontSize + 5) + ")"; });
                         else {
-                            var wd = -data.legend[0].width;
+                            var wd = 0, rt;
                             legengG.attr("transform", function (d, i) {
+                                rt = "translate(" + wd + ",0)";
                                 wd = wd + d.width;
-                                return "translate(" + wd + ",0)";
+                                return rt;
                             });
                         }
                         legengG.append("circle")
@@ -9358,7 +9384,7 @@ var powerbi;
                         var svg = el.append("svg").attr("width", 0).attr("height", 0);
                         var legend = legendData.map(function (d) {
                             return {
-                                width: _this.getTextWidth(svg, d, _this.legendFontSize),
+                                width: _this.getTextWidth(svg, d, _this.legendFontSize) + 20,
                                 color: _this.colorScale(d),
                                 text: d
                             };
@@ -9518,6 +9544,133 @@ var powerbi;
                         }
                     };
                     ;
+                    Visual.prototype.setUpAnalyticData = function (data) {
+                        var retData;
+                        switch (this.showAs) {
+                            case "runningTotal":
+                                retData = data.map(function (d) {
+                                    var cumulative = 0;
+                                    d.values.map(function (d) {
+                                        if (d.yValue.value !== null) {
+                                            d.ShowingAs = "Running Total";
+                                            cumulative += d.yValue.value;
+                                            d.yValue.value = cumulative;
+                                        }
+                                    });
+                                    return d;
+                                });
+                                break;
+                            case "difference":
+                                var current, previous;
+                                retData = data.map(function (d) {
+                                    previous = 0;
+                                    d.values.map(function (d, i) {
+                                        if (d.yValue.value !== null) {
+                                            current = d.yValue.value;
+                                            if (i !== 0)
+                                                d.yValue.value = current - previous;
+                                            else
+                                                d.yValue.value = 0;
+                                            previous = current;
+                                        }
+                                    });
+                                    return d;
+                                });
+                                break;
+                            case "perDifference":
+                                var previous;
+                                retData = data.map(function (d) {
+                                    previous = 0;
+                                    d.values.map(function (d) {
+                                        if (d.yValue.value !== null) {
+                                            current = d.yValue.value;
+                                            if (previous !== 0)
+                                                d.yValue.value = (current - previous) / previous;
+                                            else
+                                                d.yValue.value = 0;
+                                            previous = current;
+                                        }
+                                    });
+                                    return d;
+                                });
+                                break;
+                            case "differenceFromAverage":
+                                var average;
+                                retData = data.map(function (d) {
+                                    average = d3.sum(d.values.map(function (d) { return d.yValue.value; })) / d.values.length;
+                                    d.AnalyticValue = average;
+                                    d.values.map(function (d, i) {
+                                        if (d.yValue.value !== null) {
+                                            d.yValue.value = d.yValue.value - average;
+                                        }
+                                    });
+                                    return d;
+                                });
+                                break;
+                            case "perDifferenceFromAverage":
+                                var average;
+                                retData = data.map(function (d) {
+                                    average = d3.sum(d.values.map(function (d) { return d.yValue.value; })) / d.values.length;
+                                    d.AnalyticValue = average;
+                                    d.values.map(function (d) {
+                                        if (d.yValue.value !== null) {
+                                            d.yValue.value = d.yValue.value - average / average;
+                                        }
+                                    });
+                                    return d;
+                                });
+                                break;
+                            case "perAxisValue":
+                                var axisTotalValue;
+                                retData = data.map(function (d, j) {
+                                    d.values.map(function (d, i) {
+                                        axisTotalValue = d3.sum(data.map(function (d) { return d.values[i].yValue.value; }));
+                                        if (d.yValue.value !== null)
+                                            d.yValue.value = d.yValue.value / axisTotalValue;
+                                    });
+                                    return d;
+                                });
+                                break;
+                            case "perTotal":
+                                retData = data.map(function (d) {
+                                    var total = d3.sum(d.values.map(function (d) { return d.yValue.value; }));
+                                    d.values.map(function (d, i) {
+                                        if (d.yValue.value !== null)
+                                            d.yValue.value = (d.yValue.value / total);
+                                    });
+                                    return d;
+                                });
+                                break;
+                            case "perGrandTotal":
+                                var grandTotal = d3.sum(data.map(function (d) { return d3.sum(d.values.map(function (d) { return d.yValue.value; })); }));
+                                retData = data.map(function (d) {
+                                    d.AnalyticValue = grandTotal;
+                                    d.values.map(function (d, i) {
+                                        if (d.yValue.value !== null)
+                                            d.yValue.value = (d.yValue.value / grandTotal);
+                                    });
+                                    return d;
+                                });
+                                break;
+                            case "movingAverage":
+                                var previous = 0, secondprevious = 0;
+                                retData = data.map(function (d) {
+                                    d.values.map(function (d) {
+                                        if (d.yValue.value !== null) {
+                                            d.yValue.value = (d.yValue.value + previous + secondprevious) / 3;
+                                            secondprevious = previous;
+                                            previous = d.yValue.value;
+                                        }
+                                    });
+                                    return d;
+                                });
+                                break;
+                            default:
+                                retData = data;
+                                break;
+                        }
+                        return retData;
+                    };
                     Visual.prototype.enumerateObjectInstances = function (options) {
                         var objectName = options.objectName;
                         var objectEnumeration = [];
@@ -9528,6 +9681,7 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { connectDots: this.connectDots }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { connectDotsBy: this.connectDotsBy }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAs }, selector: null });
                                 break;
                             case 'Legend':
                                 objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });
@@ -9558,8 +9712,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.dotPlotCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
-                name: 'dotPlotCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
+            plugins.dotPlotCCFC224D9885417F9AAF5BB8D45B007E = {
+                name: 'dotPlotCCFC224D9885417F9AAF5BB8D45B007E',
                 displayName: 'Dot Plot',
                 class: 'Visual',
                 version: '1.0.0',

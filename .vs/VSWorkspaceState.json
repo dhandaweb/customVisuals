@@ -1,10 +1,11 @@
 {
   "ExpandedNodes": [
     "",
-    "\\heatMap\\src",
-    "\\multipleSparkline",
-    "\\multipleSparkline\\src"
+    "\\dotPlot",
+    "\\dotPlot\\src",
+    "\\heatMap",
+    "\\heatMap\\src"
   ],
-  "SelectedNode": "\\multipleSparkline\\src\\visual.ts",
+  "SelectedNode": "\\heatMap\\capabilities.json",
   "PreviewInSolutionExplorer": false
 }

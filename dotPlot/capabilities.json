@@ -40,7 +40,6 @@
             "displayName": "Axis",
             "name": "axis",
             "kind": "Grouping"
-
         },
         {
             "displayName": "Color",
@@ -60,13 +59,32 @@
                     "group": {
                         "by": "color",
                         "select": [
-                            
+
                             { "bind": { "to": "values" } },
                             { "bind": { "to": "size" } }
                         ]
                     }
                 }
-            }
+            },
+            "conditions": [
+                {
+                    "values": {
+                        "min": 0
+                    },
+                    "size": {
+                        "min": 0,
+                        "max": 1
+                    },
+                    "axis": {
+                        "min": 0,
+                        "max": 1
+                    },
+                    "color": {
+                        "min": 0,
+                        "max": 1
+                    }
+                }
+            ]
         }
     ],
     "objects": {
@@ -207,7 +225,54 @@
                                 "value": "color",
                                 "displayName": "Color"
                             }
-                          
+
+                        ]
+                    }
+                },
+                "showAs": {
+                    "displayName": "Show Dots as",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "runningTotal",
+                                "displayName": "Running Total"
+                            },
+                            {
+                                "value": "difference",
+                                "displayName": "Difference"
+                            },
+                            {
+                                "value": "perDifference",
+                                "displayName": "% Difference"
+                            },
+                            {
+                                "value": "differenceFromAverage",
+                                "displayName": "Difference From Average"
+                            },
+                            {
+                                "value": "perDifferenceFromAverage",
+                                "displayName": "% Difference From Average"
+                            },
+                            {
+                                "value": "perAxisValue",
+                                "displayName": "% of Axis Value"
+                            },
+                            {
+                                "value": "perTotal",
+                                "displayName": "% of Total"
+                            },
+                            {
+                                "value": "perGrandTotal",
+                                "displayName": "% of Grand Total"
+                            },
+                            {
+                                "value": "movingAverage",
+                                "displayName": "Moving Average"
+                            }
                         ]
                     }
                 }

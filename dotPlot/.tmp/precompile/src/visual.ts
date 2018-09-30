@@ -47,6 +47,8 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
         private colorTitle: any = '';
         private legendPosition: any = "right";
 
+        private showAs: any = "default";
+
         private axisFormat: any;
         private colorFormat: any;
         private circles: any;
@@ -95,37 +97,48 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
         }
 
         public update(options: VisualUpdateOptions) {
-            
+
+            this.element.style("overflow", "hidden");
+            this.element.select('.dotPlot').remove();
+
+            this.draw(options);
+
+        }
+
+        public draw(options) {
+        
+            this.findAvailableMetadata(options.dataViews[0].metadata.columns);
+            var chartContainer = this.element
+                .append("div")
+                .attr("class", "dotPlot")
+                .attr("style", "width:100%;");
+
+            if (this.hasAxis == false || this.hasValue == false) {
+                chartContainer.append("span").html("Axis and Value is required to draw the chart");
+                return;
+            }
+
             this.setProperties(options);
             var data = this.formatData(options.dataViews[0]);
-          
-           this.element.style("overflow", "hidden");
-           this.element.select('.dotPlot').remove();
-
-            var chartContainer = this.element
-                                        .append("div")
-                                        .attr("class", "dotPlot")
-                                        .attr("style", "width:100%;");
-
-            var dimension = this.getDimensions(options.viewport,data);
-        
-            var chart = chartContainer
-                            .append("svg")
-                            .attr("height", dimension.height)
-                            .attr("width", dimension.width)
-                            .on("click", (d, i) => {
-                                this.selectionManager.clear();
-                                this.circles.style("opacity", (d: any) => {
-                                    d.isFiltered = false;
-                                    return 1;
-                                });
-                            });
+            var dimension = this.getDimensions(options.viewport, data);
            
+            var chart = chartContainer
+                .append("svg")
+                .attr("height", dimension.height)
+                .attr("width", dimension.width)
+                .on("click", (d, i) => {
+                    this.selectionManager.clear();
+                    this.circles.style("opacity", (d: any) => {
+                        d.isFiltered = false;
+                        return 1;
+                    });
+                });
+
             var chartSvg = chart.append("g")
             var chartLegend = chart.append("g")
             var xScale = this.setXScale(data, dimension);
             var yScale = this.setYScale(data, dimension);
-           
+         
             this.drawXScale(xScale, chartSvg, dimension);
             this.drawYScale(yScale, chartSvg, dimension, data);
             this.drawDumbellLines(data, chartSvg, dimension, xScale, yScale);
@@ -139,9 +152,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
         public formatData(rawData) {
             var metadata = rawData.metadata.columns;
             this.colorScale = d3.scale.ordinal().range(this.colorOptions[this.legendColor]);
-
-            this.findAvailableMetadata(metadata);
-
+           
             var formattedData = [];
 
             if (this.hasAxis && this.hasValue) {
@@ -154,16 +165,16 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                     xAxis = xAxis.map(d => { return axisFormat.format(d) });
                 }
 
-                var yAxis = [], valFormat;
+                var valFormat;
                 var sizeValues = [];
                 var valuesG = rawData.categorical.values.filter(d => d.source.roles.values);
-
+               
                 if (this.hasSize == true) {
                     var sizeMetadata = rawData.categorical.values.filter(d => d.source.roles.size)[0];
                     var sizeG = sizeMetadata.values;
                     var sizeFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: sizeMetadata.source.format });
                 }
-
+             
                 if (this.hasColor) {
                     
                     var valuesMetadata = metadata.filter(d => d.roles["values"])[0].displayName;
@@ -172,14 +183,13 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                     if (this.colorFormat !== undefined) {
                         var colorFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.colorFormat });
                     }
-
+                  
                     formattedData = filteredValues.map((d, i) => {
-                        valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.source.format });
+                        valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.source.format});
                      
                         return {
                             key: this.colorFormat !== undefined ? colorFormat.format(d.source.groupName) : d.source.groupName,
                             values: d.values.map((t, i) => {
-                                yAxis.push(t);
                                 if (this.hasSize) sizeValues.push(sizeG[i]);
                                 return {
                                     xValue: { title: xMetadata.displayName, value: xAxis[i], caption: xAxis[i]},
@@ -188,12 +198,12 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                                     selectionId: this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).withSeries(rawData.categorical.values, rawData.categorical.values[i]).createSelectionId(),
                                     color: this.colorScale(d.source.groupName),
                                     colorValue: { title: this.colorTitle, caption: d.source.groupName },
-                                    size: this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeG[i], caption: sizeFormat.format(sizeG[i]) } : null
+                                    size: this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeG[i] , caption: sizeFormat.format(sizeG[i]) } : null
                                 }
                             })
                         }
                     })
-
+                  
                 }
                 else {
                     
@@ -202,8 +212,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                         return {
                             key: d.source.displayName,
                             values: d.values.map((t, i) => {
-                                yAxis.push(t);
-                                if (this.hasSize )sizeValues.push(sizeG[i]);
+                                if (this.hasSize)sizeValues.push(sizeG[i]);
                                 return {
                                     xValue: { title: xMetadata.displayName, value: xAxis[i], caption: xAxis[i] },
                                     yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
@@ -220,8 +229,24 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
             }
 
             var legend = this.setLegendWidth(this.element, formattedData.map(d => d.key));
-           
-            return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat.format, data: formattedData, legend: legend, sizeValues: sizeValues}
+       
+            var retData = this.setUpAnalyticData(formattedData)
+            var yAxis = [];
+
+            retData.map(d => {
+                d.values.map(d => {
+                    yAxis.push(d.yValue.value);
+                })
+            });
+
+            if (this.showAs == "perDifference"
+                || this.showAs == "perDifferenceFromAverage"
+                || this.showAs == "perTotal"
+                || this.showAs == "perGrandTotal"
+                || this.showAs == "perAxisValue"
+            ) valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: "0.00 %;-0.00 %;0.00 %" });
+        
+            return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat.format, data: retData, legend: legend, sizeValues: sizeValues}
         }
 
         private setProperties(options) {
@@ -235,6 +260,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                     if (basic.showLabel !== undefined) this.showLabel = basic["showLabel"];
                     if (basic.connectDots !== undefined) this.connectDots = basic["connectDots"];
                     if (basic.connectDotsBy !== undefined) this.connectDotsBy = basic["connectDotsBy"];
+                    if (basic.showAs !== undefined) this.showAs = basic["showAs"];
 
                 }
                 if (options.dataViews[0].metadata.objects["Legend"]) {
@@ -249,10 +275,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                     if (axis.showLabel !== undefined) this.showLabel = axis["showLabel"];
                     if (axis.fontSize !== undefined) this.fontSize = axis["fontSize"];
                     if (axis.yAxisMinValue !== undefined) this.yAxisMinValue = axis["yAxisMinValue"];
-                    
                 }
-
-                
             }
         }
 
@@ -297,7 +320,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
             let xT:any = this.axisLabelArray(xDomain.slice(0), vp.width, this.element, "Vertical");
             
             let xOffset = xT.Space + 15;
-            let yOffset = 50;
+            let yOffset = 60;
 
             let chartWidth = vp.width - yOffset - ylegendOffset;
 
@@ -427,12 +450,15 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
             }
 
             if (this.hasSize) {
-
+                console.log(data.sizeValues)
                 var sizeScale = d3.scale.linear()
                                     .range([this.dotRadius, d3.min([25, (5 * this.dotRadius)])])
                                     .domain([d3.min(data.sizeValues), d3.max(data.sizeValues)]);
 
-                circle.attr("r", d => sizeScale(Math.abs(d.size.value)));
+                circle.attr("r", d => {
+                    console.log(d.size.value);
+                    return d.size.value !== null ? sizeScale(Math.abs(d.size.value)) : 0
+                });
                 
             }
 
@@ -479,11 +505,11 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
 
             if (this.legendPosition == "right") legengG.attr("transform", (d, i) => "translate(0," + i * (fontSize + 5) + ")");
             else {
-                var wd = -data.legend[0].width;
+                var wd = 0, rt;
                 legengG.attr("transform", (d, i) => {
+                    rt = "translate(" + wd + ",0)"
                     wd = wd + d.width;
-
-                    return "translate(" + wd + ",0)";
+                    return rt;
                 });
             }
 
@@ -548,7 +574,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
 
             var legend = legendData.map(d => {
                 return {
-                    width: this.getTextWidth(svg, d, this.legendFontSize),
+                    width: this.getTextWidth(svg, d, this.legendFontSize) + 20,
                     color: this.colorScale(d),
                     text:d
                 }
@@ -730,19 +756,19 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
             }
             else if (Max < 0) {
                 domain.Max = 0;
-                domain.Min = Min - ((Min * 15) / 100);
+                domain.Min = Min + ((Min * 15) / 100);
                 domain.OMax = 0;
                 domain.OMin = Min;
             }
             else {
-                domain.Min = Min - ((Min * 15) / 100);
+                domain.Min = Min > 0 ? Min - ((Min * 10) / 100) : Min + ((Min * 10) / 100);
                 domain.Max = Max + ((Max * 15) / 100);
                 domain.OMin = Min;
                 domain.OMax = Max;
             }
 
             if (this.yAxisMinValue == true) {
-                domain.Min = Min - ((Min * 10) / 100);
+                domain.Min = Min > 0 ? Min - ((Min * 10) / 100) : Min + ((Min * 10) / 100);
                 domain.Max = Max + ((Max * 10) / 100);
             }
 
@@ -800,11 +826,152 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
 
         };
 
+        private setUpAnalyticData(data) {
+            var retData;
+
+            switch (this.showAs) {
+
+                case "runningTotal":
+                    retData =  data.map(function (d) {
+                        var cumulative = 0;
+                        d.values.map(function (d) {
+                            if (d.yValue.value !== null) {
+                                d.ShowingAs = "Running Total";
+                                cumulative += d.yValue.value;
+                                d.yValue.value = cumulative;
+                            }
+                        });
+                        return d;
+                    });
+                    break;
+
+                case "difference":
+                    var current, previous;
+                    retData = data.map(d => {
+                        previous = 0;
+                        d.values.map(function (d, i) {
+                            if (d.yValue.value !== null) {
+                                current = d.yValue.value;
+                                if (i !== 0) d.yValue.value = current - previous;
+                                else d.yValue.value = 0;
+                                previous = current;
+                            }
+                        });
+                        return d;
+                    });
+
+                    break;
+                   
+                case "perDifference":
+                    var previous;
+                    retData = data.map(d=> {
+                        previous = 0;
+                        d.values.map(d => {
+                            if (d.yValue.value !== null) {
+                                current = d.yValue.value;
+                                if (previous !== 0) d.yValue.value = (current - previous) / previous;
+                                else d.yValue.value = 0;
+                                previous = current;
+                            }
+                        });
+                        return d;
+                    });
+
+                    break;
+                   
+                case "differenceFromAverage":
+                    var average;
+                    retData = data.map(function (d) {
+                        average = d3.sum(d.values.map(function (d) { return d.yValue.value; })) / d.values.length;
+                        d.AnalyticValue = average;
+                        d.values.map(function (d, i) {
+                            if (d.yValue.value !== null) {
+                                d.yValue.value = d.yValue.value - average;
+                            }
+                        });
+                        return d;
+                    });
+                    break;
+                   
+                case "perDifferenceFromAverage":
+                    var average;
+                    retData = data.map(function (d) {
+                        average = d3.sum(d.values.map(function (d) { return d.yValue.value; })) / d.values.length;
+                        d.AnalyticValue = average;
+                        d.values.map(function (d) {
+                            if (d.yValue.value !== null) {
+                                d.yValue.value = d.yValue.value - average / average;
+                            }
+                        });
+                        return d;
+                    });
+
+                    break;
+
+                case "perAxisValue":
+                    var axisTotalValue;
+                    retData = data.map(function (d, j) {
+                        d.values.map(function (d, i) {
+                            axisTotalValue = d3.sum(data.map(function (d) { return d.values[i].yValue.value }));
+                            if (d.yValue.value !== null)  d.yValue.value = d.yValue.value / axisTotalValue;
+                        });
+                        return d;
+                    });
+
+                    break;
+
+                case "perTotal":
+                    retData = data.map(function (d) {
+                        var total = d3.sum(d.values.map(function (d) { return d.yValue.value; }));
+                        d.values.map(function (d, i) {
+                            if (d.yValue.value !== null)  d.yValue.value = (d.yValue.value / total);
+                        });
+                        return d;
+                    });
+                    break;
+
+                case "perGrandTotal":
+
+                    var grandTotal = d3.sum(data.map(function (d) { return d3.sum(d.values.map(d=> d.yValue.value)) }));
+
+                    retData = data.map(function (d) {
+                        d.AnalyticValue = grandTotal;
+                        d.values.map(function (d, i) {
+                            if (d.yValue.value !== null) d.yValue.value = (d.yValue.value / grandTotal);
+                        });
+                        return d;
+                    });
+
+                    break;
+
+                case "movingAverage":
+                    var previous:any = 0, secondprevious = 0;
+                    retData = data.map(function (d) {
+                        d.values.map(function (d) {
+                            if (d.yValue.value !== null) {
+                                d.yValue.value = (d.yValue.value + previous + secondprevious) / 3;
+                                secondprevious = previous;
+                                previous = d.yValue.value;
+                            }
+                        });
+                        return d;
+                    });
+
+                    break;
+
+                default:
+                    retData = data;
+                    break;
+            }
+
+            return retData;
+        }
+
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {
 
             let objectName = options.objectName;
             let objectEnumeration: VisualObjectInstance[] = [];
-          
+            
             switch (objectName) {
 
                 case 'Basic':
@@ -813,7 +980,8 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                     objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { connectDots: this.connectDots }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { connectDotsBy: this.connectDotsBy }, selector: null });
-
+                    objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAs }, selector: null });
+                    
                     break;
                 case 'Legend':
                     objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });
