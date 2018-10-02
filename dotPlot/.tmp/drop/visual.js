@@ -8950,6 +8950,7 @@ var powerbi;
                         this.connectDotsBy = 'color';
                         this.dotRadius = 6;
                         this.circleOpacity = 100;
+                        this.orientation = "vertical";
                         this.fontSize = 14;
                         this.legendFontSize = 10;
                         this.setValueDomain = function (Min, Max) {
@@ -8987,6 +8988,7 @@ var powerbi;
                     Visual.prototype.update = function (options) {
                         this.element.style("overflow", "hidden");
                         this.element.select('.dotPlot').remove();
+                        //console.log(options.dataViews[0].metadata.columns);
                         this.draw(options);
                     };
                     Visual.prototype.draw = function (options) {
@@ -9015,6 +9017,7 @@ var powerbi;
                             });
                         });
                         var chartSvg = chart.append("g");
+                        chartSvg.attr("transform", "translate(0," + 5 + ")");
                         var chartLegend = chart.append("g");
                         var xScale = this.setXScale(data, dimension);
                         var yScale = this.setYScale(data, dimension);
@@ -9125,6 +9128,8 @@ var powerbi;
                                     this.connectDotsBy = basic["connectDotsBy"];
                                 if (basic.showAs !== undefined)
                                     this.showAs = basic["showAs"];
+                                if (basic.orientation !== undefined)
+                                    this.orientation = basic["orientation"];
                             }
                             if (options.dataViews[0].metadata.objects["Legend"]) {
                                 var legend = options.dataViews[0].metadata.objects["Legend"];
@@ -9181,13 +9186,24 @@ var powerbi;
                             xlegendOffset = this.legendFontSize * 3;
                         var xdata = data.xAxis;
                         var xDomain = d3.scale.ordinal().domain(xdata).domain();
-                        var xT = this.axisLabelArray(xDomain.slice(0), vp.width, this.element, "Vertical");
-                        var xOffset = xT.Space + 15;
-                        var yOffset = 60;
-                        var chartWidth = vp.width - yOffset - ylegendOffset;
-                        var chartHeight = vp.height - xOffset - xlegendOffset;
-                        var xFilter = (xT.Rotate === true) ? Math.round((xDomain.length / chartWidth * 100) / 2) : 1;
-                        var xTickval = xDomain.filter(function (d, i) { return (i % xFilter === 0); });
+                        var xT = this.axisLabelArray(xDomain.slice(0), vp.width, this.element, this.orientation);
+                        var xOffset, yOffset, chartWidth, chartHeight, xFilter, xTickval;
+                        if (this.orientation == 'vertical') {
+                            xOffset = xT.Space + 15;
+                            yOffset = 60;
+                            chartWidth = vp.width - yOffset - ylegendOffset;
+                            chartHeight = vp.height - xOffset - xlegendOffset;
+                            xFilter = (xT.Rotate === true) ? Math.round((xDomain.length / chartWidth * 100) / 2) : 1;
+                            xTickval = xDomain.filter(function (d, i) { return (i % xFilter === 0); });
+                        }
+                        else {
+                            yOffset = xT.Space + 15;
+                            xOffset = 30;
+                            chartWidth = vp.width - yOffset - ylegendOffset;
+                            chartHeight = vp.height - xOffset - xlegendOffset;
+                            xFilter = chartHeight / xDomain.length < this.fontSize ? Math.round((xDomain.length / chartHeight * 100) / 2) : 1;
+                            xTickval = xDomain.filter(function (d, i) { return (i % xFilter === 0); });
+                        }
                         return {
                             width: vp.width,
                             height: vp.height,
@@ -9200,25 +9216,32 @@ var powerbi;
                         };
                     };
                     Visual.prototype.setXScale = function (data, dimension) {
-                        var scale = d3.scale.ordinal().rangeBands([0, dimension.chartWidth]).domain(data.xAxis);
+                        var rg = this.orientation == 'vertical' ? dimension.chartWidth : dimension.chartHeight;
+                        var scale = d3.scale.ordinal().rangeBands([0, rg]).domain(data.xAxis);
                         return scale;
                     };
                     Visual.prototype.setYScale = function (data, dimension) {
                         var yDomain = data.yAxis;
                         var valueDomain = this.setValueDomain(d3.min(yDomain), d3.max(yDomain));
+                        var rg = this.orientation == 'vertical' ? dimension.chartHeight : dimension.chartWidth;
+                        var rng = this.orientation == 'vertical' ? [rg, 0] : [0, rg];
                         var scale = d3.scale.linear()
-                            .range([dimension.chartHeight, 0])
+                            .range(rng)
                             .domain([valueDomain.Min, valueDomain.Max]);
                         return scale;
                     };
                     Visual.prototype.drawXScale = function (xScale, chartSvg, dimension) {
+                        var direction = this.orientation == 'vertical' ? "bottom" : "left";
+                        var translate = this.orientation == 'vertical' ?
+                            "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight) + ")" :
+                            "translate(" + (dimension.yOffset) + "," + 0 + ")";
                         var xaxis = d3.svg.axis()
                             .scale(xScale)
-                            .orient("bottom")
+                            .orient(direction)
                             .tickValues(dimension.xTickval);
                         var xAxisG = chartSvg
                             .append("g")
-                            .attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight) + ")")
+                            .attr("transform", translate)
                             .attr("class", "axis")
                             .call(xaxis);
                         if (dimension.xRotate == true) {
@@ -9234,14 +9257,18 @@ var powerbi;
                     };
                     Visual.prototype.drawYScale = function (yScale, chartSvg, dimension, data) {
                         var self = this;
+                        var direction = this.orientation == 'vertical' ? "left" : "bottom";
+                        var translate = this.orientation == 'vertical' ?
+                            "translate(" + (dimension.yOffset) + "," + (0) + ")" :
+                            "translate(" + (dimension.yOffset) + "," + dimension.chartHeight + ")";
                         var yaxis = d3.svg.axis()
                             .scale(yScale)
-                            .orient("left")
+                            .orient(direction)
                             .ticks(5)
                             .tickFormat(data.yFormat);
                         var yAxisG = chartSvg
                             .append("g")
-                            .attr("transform", "translate(" + (dimension.yOffset) + "," + 0 + ")")
+                            .attr("transform", translate)
                             .attr("class", "axis")
                             .call(yaxis);
                     };
@@ -9251,14 +9278,24 @@ var powerbi;
                         var circleG = chartSvg.selectAll(".dots")
                             .data(circleData)
                             .enter()
-                            .append("g")
-                            .attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+                            .append("g");
                         var circle = this.circles = circleG.selectAll(".dots")
                             .data(function (d) { return d.values.filter(function (d) { return d.yValue.value !== null; }); })
                             .enter()
                             .append("circle");
-                        circle.attr("cx", function (d) { return xScale(d.xValue.value); })
-                            .attr("cy", function (d) { return yScale(d.yValue.value); })
+                        if (this.orientation == 'vertical') {
+                            circleG.attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+                            circle
+                                .attr("cx", function (d) { return xScale(d.xValue.value); })
+                                .attr("cy", function (d) { return yScale(d.yValue.value); });
+                        }
+                        else {
+                            circleG.attr("transform", "translate(0," + (xScale.rangeBand() / 2) + ")");
+                            circle
+                                .attr("cy", function (d) { return xScale(d.xValue.value); })
+                                .attr("cx", function (d) { return yScale(d.yValue.value); });
+                        }
+                        circle
                             .attr("r", this.dotRadius)
                             .attr("fill", function (d) { return d.color; })
                             .style("stroke", function (d) { return d.color; })
@@ -9286,7 +9323,6 @@ var powerbi;
                                 .range([this.dotRadius, d3.min([25, (5 * this.dotRadius)])])
                                 .domain([d3.min(data.sizeValues), d3.max(data.sizeValues)]);
                             circle.attr("r", function (d) {
-                                console.log(d.size.value);
                                 return d.size.value !== null ? sizeScale(Math.abs(d.size.value)) : 0;
                             });
                         }
@@ -9314,7 +9350,7 @@ var powerbi;
                             chartLegend.attr("transform", "translate(" + (dimension.yOffset) + "," + this.legendFontSize + ")");
                         }
                         if (this.legendPosition == "bottom") {
-                            chartLegend.attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight + (this.legendFontSize * 3)) + ")");
+                            chartLegend.attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight + dimension.xOffset + (this.legendFontSize * 2)) + ")");
                         }
                         var fontSize = parseInt(this.legendFontSize);
                         var legengG = chartLegend.selectAll(".legend")
@@ -9401,7 +9437,7 @@ var powerbi;
                         var svg = el.append("svg").attr("width", 0).attr("height", 0);
                         var scale = d3.scale.ordinal().domain(labels).rangeRoundBands([0, chartwidth]);
                         var maxWidth = scale.rangeBand();
-                        if (orientation === "Vertical") {
+                        if (orientation === "vertical") {
                             labels.map(function (text) {
                                 var words = String(text).split(/\s+/).reverse();
                                 words.map(function (d) { wordsArray.push(d); });
@@ -9509,8 +9545,10 @@ var powerbi;
                         chartSvg.selectAll("text").style("font-size", this.fontSize + "px");
                     };
                     Visual.prototype.drawDumbellLines = function (data, chartSvg, dimension, xScale, yScale) {
+                        var _this = this;
                         if (this.connectDots == true) {
                             var dumbellData = [], line;
+                            line = d3.svg.line();
                             if (this.connectDotsBy == 'axis') {
                                 data.xAxis.map(function (d, i) {
                                     var t = { key: d, values: [] };
@@ -9522,21 +9560,26 @@ var powerbi;
                                     });
                                     dumbellData.push(t);
                                 });
-                                line = d3.svg.line()
-                                    .y(function (d) { return yScale(d.yValue); })
-                                    .x(function (d) { return xScale(d.xValue); });
                             }
                             else {
                                 dumbellData = data.data;
-                                line = d3.svg.line()
-                                    .y(function (d) { return yScale(d.yValue.value); })
-                                    .x(function (d) { return xScale(d.xValue.value); });
                             }
                             var dumbellG = chartSvg.selectAll(".dots")
                                 .data(dumbellData)
                                 .enter()
-                                .append("g")
-                                .attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+                                .append("g");
+                            if (this.orientation == 'vertical') {
+                                line
+                                    .y(function (d) { return yScale(_this.connectDotsBy == 'axis' ? d.yValue : d.yValue.value); })
+                                    .x(function (d) { return xScale(_this.connectDotsBy == 'axis' ? d.xValue : d.xValue.value); });
+                                dumbellG.attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+                            }
+                            else {
+                                line
+                                    .x(function (d) { return yScale(_this.connectDotsBy == 'axis' ? d.yValue : d.yValue.value); })
+                                    .y(function (d) { return xScale(_this.connectDotsBy == 'axis' ? d.xValue : d.xValue.value); });
+                                dumbellG.attr("transform", "translate(0," + (xScale.rangeBand() / 2) + ")");
+                            }
                             var dumbell = dumbellG.append("path")
                                 .attr("style", "fill:none;")
                                 .style("stroke", "#b3b3b3")
@@ -9676,6 +9719,7 @@ var powerbi;
                         var objectEnumeration = [];
                         switch (objectName) {
                             case 'Basic':
+                                objectEnumeration.push({ objectName: objectName, properties: { orientation: this.orientation }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
@@ -9712,8 +9756,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.dotPlotCCFC224D9885417F9AAF5BB8D45B007E = {
-                name: 'dotPlotCCFC224D9885417F9AAF5BB8D45B007E',
+            plugins.dotPlotCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
+                name: 'dotPlotCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
                 displayName: 'Dot Plot',
                 class: 'Visual',
                 version: '1.0.0',

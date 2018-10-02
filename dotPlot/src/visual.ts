@@ -35,7 +35,7 @@ module powerbi.extensibility.visual {
 
         private selectionManager: ISelectionManager;
        
-        private settings: VisualSettings;
+        //private settings: VisualSettings;
 
         private columns: any;
         private dimension:any
@@ -84,7 +84,8 @@ module powerbi.extensibility.visual {
 
         private dotRadius: any = 6;
         private circleOpacity: any = 100;
-        
+
+        private orientation: any = "vertical";
         private fontSize: any = 14;
         private legendFontSize: any=10;
 
@@ -100,7 +101,7 @@ module powerbi.extensibility.visual {
 
             this.element.style("overflow", "hidden");
             this.element.select('.dotPlot').remove();
-
+            //console.log(options.dataViews[0].metadata.columns);
             this.draw(options);
 
         }
@@ -135,6 +136,9 @@ module powerbi.extensibility.visual {
                 });
 
             var chartSvg = chart.append("g")
+
+            chartSvg.attr("transform", "translate(0," + 5 + ")");
+
             var chartLegend = chart.append("g")
             var xScale = this.setXScale(data, dimension);
             var yScale = this.setYScale(data, dimension);
@@ -261,7 +265,8 @@ module powerbi.extensibility.visual {
                     if (basic.connectDots !== undefined) this.connectDots = basic["connectDots"];
                     if (basic.connectDotsBy !== undefined) this.connectDotsBy = basic["connectDotsBy"];
                     if (basic.showAs !== undefined) this.showAs = basic["showAs"];
-
+                    if (basic.orientation !== undefined) this.orientation = basic["orientation"];
+                    
                 }
                 if (options.dataViews[0].metadata.objects["Legend"]) {
                     var legend = options.dataViews[0].metadata.objects["Legend"];
@@ -316,19 +321,32 @@ module powerbi.extensibility.visual {
            
             let xdata = data.xAxis;
             let xDomain = d3.scale.ordinal().domain(xdata).domain();
-           
-            let xT:any = this.axisLabelArray(xDomain.slice(0), vp.width, this.element, "Vertical");
+
             
-            let xOffset = xT.Space + 15;
-            let yOffset = 60;
+            
+            let xT: any = this.axisLabelArray(xDomain.slice(0), vp.width, this.element, this.orientation);
 
-            let chartWidth = vp.width - yOffset - ylegendOffset;
+            let xOffset, yOffset, chartWidth, chartHeight, xFilter, xTickval;
+            if (this.orientation == 'vertical') {
+                 xOffset = xT.Space + 15;
+                 yOffset = 60;
+                 chartWidth = vp.width - yOffset - ylegendOffset;
+                 chartHeight = vp.height - xOffset - xlegendOffset;
+                 xFilter = (xT.Rotate === true) ? Math.round((xDomain.length / chartWidth * 100) / 2) : 1;
+                 xTickval = xDomain.filter((d, i) => (i % xFilter === 0));
 
-            let chartHeight = vp.height - xOffset - xlegendOffset;
+            }
+            else {
 
-            let xFilter = (xT.Rotate === true) ? Math.round((xDomain.length / chartWidth * 100) / 2) : 1;
+                yOffset = xT.Space + 15;
+                xOffset = 30;
+                chartWidth = vp.width - yOffset - ylegendOffset;
+                chartHeight = vp.height - xOffset - xlegendOffset;
+                xFilter = chartHeight / xDomain.length < this.fontSize ?  Math.round((xDomain.length / chartHeight * 100) / 2) : 1;
+                xTickval = xDomain.filter((d, i) => (i % xFilter === 0));
+            }
+
            
-            let xTickval = xDomain.filter((d, i) => (i % xFilter === 0));
 
             return {
                 width: vp.width,
@@ -343,33 +361,40 @@ module powerbi.extensibility.visual {
         }
 
         private setXScale(data, dimension) {
-            
-            var scale = d3.scale.ordinal().rangeBands([0, dimension.chartWidth]).domain(data.xAxis);
+            let rg = this.orientation == 'vertical' ? dimension.chartWidth : dimension.chartHeight;
+            var scale = d3.scale.ordinal().rangeBands([0, rg]).domain(data.xAxis);
             return scale;
         }
 
         private setYScale(data, dimension) {
-            var yDomain = data.yAxis;
+            let yDomain = data.yAxis;
 
-            var valueDomain = this.setValueDomain(d3.min(yDomain), d3.max(yDomain));
+            let valueDomain = this.setValueDomain(d3.min(yDomain), d3.max(yDomain));
+            let rg = this.orientation == 'vertical' ? dimension.chartHeight : dimension.chartWidth;
+            let rng = this.orientation == 'vertical' ? [rg, 0] : [0,rg];
 
-            var scale = d3.scale.linear()
-                            .range([dimension.chartHeight, 0])
+            let scale = d3.scale.linear()
+                            .range(rng)
                             .domain([valueDomain.Min, valueDomain.Max]);
 
             return scale;
         }
 
         private drawXScale(xScale, chartSvg, dimension) {
+            let direction = this.orientation == 'vertical' ? "bottom" : "left";
+
+            let translate = this.orientation == 'vertical' ?
+                "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight) + ")" :
+                "translate(" + (dimension.yOffset) + "," + 0 + ")";
 
             var xaxis = d3.svg.axis()
                 .scale(xScale)
-                .orient("bottom")
+                .orient(direction)
                 .tickValues(dimension.xTickval);
            
                 var xAxisG = chartSvg
                     .append("g")
-                    .attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight) + ")")
+                    .attr("transform", translate )
                     .attr("class", "axis")
                     .call(xaxis)
                 
@@ -387,16 +412,20 @@ module powerbi.extensibility.visual {
 
         private drawYScale(yScale, chartSvg, dimension,data) {
             var self = this;
+            let direction = this.orientation == 'vertical' ? "left" : "bottom";
+            let translate = this.orientation == 'vertical' ?
+                "translate(" + (dimension.yOffset) + "," + (0) + ")" :
+                "translate(" + (dimension.yOffset) + "," + dimension.chartHeight + ")";
 
             var yaxis = d3.svg.axis()
                 .scale(yScale)
-                .orient("left")
+                .orient(direction)
                 .ticks(5)
                 .tickFormat(data.yFormat);
            
                 var yAxisG = chartSvg
                     .append("g")
-                    .attr("transform", "translate(" + (dimension.yOffset) + "," + 0 + ")")
+                    .attr("transform", translate)
                     .attr("class", "axis")
                     .call(yaxis)
         }
@@ -409,7 +438,7 @@ module powerbi.extensibility.visual {
                                 .data(circleData)
                                 .enter()
                                 .append("g")
-                                .attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+                               
 
 
             var circle = this.circles = circleG.selectAll(".dots")
@@ -417,9 +446,24 @@ module powerbi.extensibility.visual {
                                     .enter()
                                     .append("circle");
 
+            if (this.orientation == 'vertical') {
 
-            circle.attr("cx", d => xScale(d.xValue.value))
-                .attr("cy", d => yScale(d.yValue.value))
+                circleG.attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+
+                circle
+                    .attr("cx", d => xScale(d.xValue.value))
+                    .attr("cy", d => yScale(d.yValue.value))
+            }
+            else {
+                circleG.attr("transform", "translate(0," + (xScale.rangeBand() / 2) + ")");
+
+                circle
+                    .attr("cy", d => xScale(d.xValue.value))
+                    .attr("cx", d => yScale(d.yValue.value))
+            }
+
+
+            circle
                 .attr("r", this.dotRadius)
                 .attr("fill", d => d.color)
                 .style("stroke", d => d.color)
@@ -456,7 +500,6 @@ module powerbi.extensibility.visual {
                                     .domain([d3.min(data.sizeValues), d3.max(data.sizeValues)]);
 
                 circle.attr("r", d => {
-                    console.log(d.size.value);
                     return d.size.value !== null ? sizeScale(Math.abs(d.size.value)) : 0
                 });
                 
@@ -494,7 +537,7 @@ module powerbi.extensibility.visual {
                 chartLegend.attr("transform", "translate(" + (dimension.yOffset) + "," + this.legendFontSize + ")");
             }
             if (this.legendPosition == "bottom") {
-                chartLegend.attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight + (this.legendFontSize * 3)) + ")");
+                chartLegend.attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight + dimension.xOffset + (this.legendFontSize * 2)) + ")");
             }
             var fontSize = parseInt(this.legendFontSize);
            
@@ -595,7 +638,7 @@ module powerbi.extensibility.visual {
             var scale = d3.scale.ordinal().domain(labels).rangeRoundBands([0, chartwidth]);
             var maxWidth = scale.rangeBand();
            
-            if (orientation === "Vertical") {
+            if (orientation === "vertical") {
                
                 labels.map(function (text) {
                     var words = String(text).split(/\s+/).reverse();
@@ -779,7 +822,7 @@ module powerbi.extensibility.visual {
 
             if (this.connectDots == true) {
                 var dumbellData:any = [], line:any;
-
+                line = d3.svg.line();
                 if (this.connectDotsBy == 'axis') {
 
                     data.xAxis.map((d,i) => {
@@ -796,25 +839,35 @@ module powerbi.extensibility.visual {
                         
                     });
 
-                    line = d3.svg.line()
-                        .y((d: any) => yScale(d.yValue))
-                        .x((d: any) => xScale(d.xValue));
-
                     
                 }
                 else {
                     dumbellData = data.data;
 
-                    line = d3.svg.line()
-                        .y((d: any) => yScale(d.yValue.value))
-                        .x((d: any) => xScale(d.xValue.value));
+                   
                 }
 
                 var dumbellG = chartSvg.selectAll(".dots")
                     .data(dumbellData)
                     .enter()
                     .append("g")
-                    .attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+
+                if (this.orientation == 'vertical') {
+                    line
+                        .y((d: any) => yScale(this.connectDotsBy == 'axis' ? d.yValue : d.yValue.value))
+                        .x((d: any) => xScale(this.connectDotsBy == 'axis' ? d.xValue : d.xValue.value));
+
+                    dumbellG.attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+
+                }
+                else {
+                    line
+                        .x((d: any) => yScale(this.connectDotsBy == 'axis' ? d.yValue : d.yValue.value))
+                        .y((d: any) => xScale(this.connectDotsBy == 'axis' ? d.xValue : d.xValue.value));
+
+                    dumbellG.attr("transform", "translate(0," + (xScale.rangeBand() / 2) + ")");
+
+                }
 
                 var dumbell = dumbellG.append("path")
                                         .attr("style", "fill:none;")
@@ -975,12 +1028,14 @@ module powerbi.extensibility.visual {
             switch (objectName) {
 
                 case 'Basic':
+                    objectEnumeration.push({ objectName: objectName, properties: { orientation: this.orientation }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { connectDots: this.connectDots }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { connectDotsBy: this.connectDotsBy }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAs }, selector: null });
+                  
                     
                     break;
                 case 'Legend':

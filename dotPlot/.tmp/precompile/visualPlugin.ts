@@ -1,6 +1,6 @@
 module powerbi.visuals.plugins {
-    export var dotPlotCCFC224D9885417F9AAF5BB8D45B007E = {
-        name: 'dotPlotCCFC224D9885417F9AAF5BB8D45B007E',
+    export var dotPlotCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
+        name: 'dotPlotCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
         displayName: 'Dot Plot',
         class: 'Visual',
         version: '1.0.0',

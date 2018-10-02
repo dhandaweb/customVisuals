@@ -59,7 +59,6 @@
                     "group": {
                         "by": "color",
                         "select": [
-
                             { "bind": { "to": "values" } },
                             { "bind": { "to": "size" } }
                         ]
@@ -88,6 +87,114 @@
         }
     ],
     "objects": {
+        "Basic": {
+            "displayName": "Basic",
+            "properties": {
+                "dotRadius": {
+                    "displayName": "Dot radius",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                },
+                "orientation": {
+                    "displayName": "Orientation",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "vertical",
+                                "displayName": "Vertical"
+                            },
+                            {
+                                "value": "horizontal",
+                                "displayName": "Horizontal"
+                            }
+
+                        ]
+                    }
+                },
+                "circleOpacity": {
+                    "displayName": "Circle Opacity",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                },
+                "showLabel": {
+                    "displayName": "Data Labels",
+                    "type": { "bool": true }
+                },
+                "connectDots": {
+                    "displayName": "Connect Dots",
+                    "type": { "bool": true }
+                },
+                "connectDotsBy": {
+                    "displayName": "Connect Dots By",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "axis",
+                                "displayName": "Axis"
+                            },
+                            {
+                                "value": "color",
+                                "displayName": "Color"
+                            }
+
+                        ]
+                    }
+                },
+                "showAs": {
+                    "displayName": "Show Dots as",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "runningTotal",
+                                "displayName": "Running Total"
+                            },
+                            {
+                                "value": "difference",
+                                "displayName": "Difference"
+                            },
+                            {
+                                "value": "perDifference",
+                                "displayName": "% Difference"
+                            },
+                            {
+                                "value": "differenceFromAverage",
+                                "displayName": "Difference From Average"
+                            },
+                            {
+                                "value": "perDifferenceFromAverage",
+                                "displayName": "% Difference From Average"
+                            },
+                            {
+                                "value": "perAxisValue",
+                                "displayName": "% of Axis Value"
+                            },
+                            {
+                                "value": "perTotal",
+                                "displayName": "% of Total"
+                            },
+                            {
+                                "value": "perGrandTotal",
+                                "displayName": "% of Grand Total"
+                            },
+                            {
+                                "value": "movingAverage",
+                                "displayName": "Moving Average"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
         "Axis": {
             "displayName": "Axis",
             "properties": {
@@ -185,99 +292,8 @@
                     }
                 }
             }
-        },
-        "Basic": {
-            "displayName": "Basic",
-            "properties": {
-                "dotRadius": {
-                    "displayName": "Dot radius",
-                    "type": {
-                        "formatting": {
-                            "fontSize": true
-                        }
-                    }
-                },
-                "circleOpacity": {
-                    "displayName": "Circle Opacity",
-                    "type": {
-                        "formatting": {
-                            "fontSize": true
-                        }
-                    }
-                },
-                "showLabel": {
-                    "displayName": "Data Labels",
-                    "type": { "bool": true }
-                },
-                "connectDots": {
-                    "displayName": "Connect Dots",
-                    "type": { "bool": true }
-                },
-                "connectDotsBy": {
-                    "displayName": "Connect Dots By",
-                    "type": {
-                        "enumeration": [
-                            {
-                                "value": "axis",
-                                "displayName": "Axis"
-                            },
-                            {
-                                "value": "color",
-                                "displayName": "Color"
-                            }
-
-                        ]
-                    }
-                },
-                "showAs": {
-                    "displayName": "Show Dots as",
-                    "type": {
-                        "enumeration": [
-                            {
-                                "value": "default",
-                                "displayName": "Default"
-                            },
-                            {
-                                "value": "runningTotal",
-                                "displayName": "Running Total"
-                            },
-                            {
-                                "value": "difference",
-                                "displayName": "Difference"
-                            },
-                            {
-                                "value": "perDifference",
-                                "displayName": "% Difference"
-                            },
-                            {
-                                "value": "differenceFromAverage",
-                                "displayName": "Difference From Average"
-                            },
-                            {
-                                "value": "perDifferenceFromAverage",
-                                "displayName": "% Difference From Average"
-                            },
-                            {
-                                "value": "perAxisValue",
-                                "displayName": "% of Axis Value"
-                            },
-                            {
-                                "value": "perTotal",
-                                "displayName": "% of Total"
-                            },
-                            {
-                                "value": "perGrandTotal",
-                                "displayName": "% of Grand Total"
-                            },
-                            {
-                                "value": "movingAverage",
-                                "displayName": "Moving Average"
-                            }
-                        ]
-                    }
-                }
-            }
         }
+
     }
 } 
 
