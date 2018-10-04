@@ -122,6 +122,60 @@
                         }
                     }
                 },
+                "valFormat": {
+                    "displayName": "Value Format",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "thousand",
+                                "displayName": "Thousand"
+                            },
+                            {
+                                "value": "million",
+                                "displayName": "Million"
+                            },
+                            {
+                                "value": "billion",
+                                "displayName": "Billion"
+                            },
+                            {
+                                "value": "trillion",
+                                "displayName": "Trillion"
+                            }
+                        ]
+                    }
+                },
+                "valPrecision": {
+                    "displayName": "Value Precision",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "0",
+                                "displayName": "0"
+                            },
+                            {
+                                "value": "1",
+                                "displayName": "1"
+                            },
+                            {
+                                "value": "2",
+                                "displayName": "2"
+                            },
+                            {
+                                "value": "3",
+                                "displayName": "3"
+                            },
+                            {
+                                "value": "4",
+                                "displayName": "4"
+                            }
+                        ]
+                    }
+                },
                 "showLabel": {
                     "displayName": "Data Labels",
                     "type": { "bool": true }

@@ -56,6 +56,8 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
         private iValueFormatter:any;
         private element: d3.Selection<SVGElement>;
         private container: d3.Selection<SVGElement>;
+        private valFormat: any = 'default';
+        private valPrecision: any= 2;
 
         private tooltipServiceWrapper: ITooltipServiceWrapper;
         private TooltipEventArgs: any;
@@ -189,7 +191,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                     }
                   
                     formattedData = filteredValues.map((d, i) => {
-                        valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.source.format});
+                        valFormat = this.getValueFormat(d.source.format);
                      
                         return {
                             key: this.colorFormat !== undefined ? colorFormat.format(d.source.groupName) : d.source.groupName,
@@ -212,7 +214,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                 else {
                     
                     formattedData = valuesG.map((d, i) => {
-                        valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.source.format });
+                        valFormat = this.getValueFormat(d.source.format);
                         return {
                             key: d.source.displayName,
                             values: d.values.map((t, i) => {
@@ -266,6 +268,8 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                     if (basic.connectDotsBy !== undefined) this.connectDotsBy = basic["connectDotsBy"];
                     if (basic.showAs !== undefined) this.showAs = basic["showAs"];
                     if (basic.orientation !== undefined) this.orientation = basic["orientation"];
+                    if (basic.valFormat !== undefined) this.valFormat = basic["valFormat"];
+                    if (basic.valPrecision !== undefined) this.valPrecision = basic["valPrecision"];
                     
                 }
                 if (options.dataViews[0].metadata.objects["Legend"]) {
@@ -321,15 +325,13 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
            
             let xdata = data.xAxis;
             let xDomain = d3.scale.ordinal().domain(xdata).domain();
-
-            
             
             let xT: any = this.axisLabelArray(xDomain.slice(0), vp.width, this.element, this.orientation);
 
             let xOffset, yOffset, chartWidth, chartHeight, xFilter, xTickval;
             if (this.orientation == 'vertical') {
                  xOffset = xT.Space + 15;
-                 yOffset = 60;
+                yOffset = this.getYOffset(data);
                  chartWidth = vp.width - yOffset - ylegendOffset;
                  chartHeight = vp.height - xOffset - xlegendOffset;
                  xFilter = (xT.Rotate === true) ? Math.round((xDomain.length / chartWidth * 100) / 2) : 1;
@@ -788,6 +790,59 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
             chartSvg.selectAll("text").style("font-size", this.fontSize + "px");
         }
 
+        private getValueFormat(val) {
+           
+            let valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
+            let iValueFormatter = valueFormatter.create({});
+           
+            switch (this.valFormat) {
+                case 'thousand':
+                    iValueFormatter = valueFormatter.create({ value: 1001, precision: parseInt(this.valPrecision) });
+                    break;
+                case 'million':
+                    iValueFormatter = valueFormatter.create({ value: 1e6, precision: parseInt(this.valPrecision) });
+                    break;
+                case 'billion':
+                    iValueFormatter = valueFormatter.create({ value: 1e9, precision: parseInt(this.valPrecision) });
+                    break;
+                case 'trillion':
+                    iValueFormatter = valueFormatter.create({ value: 1e12, precision: parseInt(this.valPrecision) });
+                    break;
+                case 'default':
+                    iValueFormatter = valueFormatter.create({ format: val, precision: parseInt(this.valPrecision) });
+                    break;
+            }
+           
+            return iValueFormatter;
+        }
+
+        private getYOffset(data) {
+
+            let retVal = 4.5 * this.fontSize;
+            let max = d3.max(data.yAxis);
+            switch (this.valFormat) {
+                case 'thousand':
+                case 'million':
+                case 'billion':
+                case 'trillion':
+                    retVal = (data.yFormat(max).length * this.fontSize/1.5);
+                    break;
+                
+                case 'default':
+                   
+                    if (max < 1) retVal = 4.5 * this.fontSize;
+                    if (max >= 1) retVal = 1.5 * this.fontSize;
+                    if (max > 99) retVal = 2.5 * this.fontSize;
+                    if (max > 999) retVal = 3.5 * this.fontSize;
+                    if (max > 99999) retVal = 4.5 * this.fontSize;
+                    if (max > 9999999) retVal = 5.5 * this.fontSize;
+
+                    break;
+            }
+
+            return retVal;
+        }
+
         private setValueDomain = function (Min, Max) {
             var domain:any = {};
           
@@ -1030,13 +1085,14 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                 case 'Basic':
                     objectEnumeration.push({ objectName: objectName, properties: { orientation: this.orientation }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { valFormat: this.valFormat }, selector: null });
+                    if (this.valFormat !== "default") objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { connectDots: this.connectDots }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { connectDotsBy: this.connectDotsBy }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAs }, selector: null });
-                  
-                    
+                       
                     break;
                 case 'Legend':
                     objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });

@@ -8930,6 +8930,8 @@ var powerbi;
                         this.colorTitle = '';
                         this.legendPosition = "right";
                         this.showAs = "default";
+                        this.valFormat = 'default';
+                        this.valPrecision = 2;
                         this.yAxisMinValue = false;
                         this.legendColor = 'Category1';
                         this.colorOptions = {
@@ -9056,7 +9058,7 @@ var powerbi;
                                     var colorFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.colorFormat });
                                 }
                                 formattedData = filteredValues.map(function (d, i) {
-                                    valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.source.format });
+                                    valFormat = _this.getValueFormat(d.source.format);
                                     return {
                                         key: _this.colorFormat !== undefined ? colorFormat.format(d.source.groupName) : d.source.groupName,
                                         values: d.values.map(function (t, i) {
@@ -9077,7 +9079,7 @@ var powerbi;
                             }
                             else {
                                 formattedData = valuesG.map(function (d, i) {
-                                    valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.source.format });
+                                    valFormat = _this.getValueFormat(d.source.format);
                                     return {
                                         key: d.source.displayName,
                                         values: d.values.map(function (t, i) {
@@ -9130,6 +9132,10 @@ var powerbi;
                                     this.showAs = basic["showAs"];
                                 if (basic.orientation !== undefined)
                                     this.orientation = basic["orientation"];
+                                if (basic.valFormat !== undefined)
+                                    this.valFormat = basic["valFormat"];
+                                if (basic.valPrecision !== undefined)
+                                    this.valPrecision = basic["valPrecision"];
                             }
                             if (options.dataViews[0].metadata.objects["Legend"]) {
                                 var legend = options.dataViews[0].metadata.objects["Legend"];
@@ -9190,7 +9196,7 @@ var powerbi;
                         var xOffset, yOffset, chartWidth, chartHeight, xFilter, xTickval;
                         if (this.orientation == 'vertical') {
                             xOffset = xT.Space + 15;
-                            yOffset = 60;
+                            yOffset = this.getYOffset(data);
                             chartWidth = vp.width - yOffset - ylegendOffset;
                             chartHeight = vp.height - xOffset - xlegendOffset;
                             xFilter = (xT.Rotate === true) ? Math.round((xDomain.length / chartWidth * 100) / 2) : 1;
@@ -9544,6 +9550,55 @@ var powerbi;
                     Visual.prototype.setFontSize = function (chartSvg) {
                         chartSvg.selectAll("text").style("font-size", this.fontSize + "px");
                     };
+                    Visual.prototype.getValueFormat = function (val) {
+                        var valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
+                        var iValueFormatter = valueFormatter.create({});
+                        switch (this.valFormat) {
+                            case 'thousand':
+                                iValueFormatter = valueFormatter.create({ value: 1001, precision: parseInt(this.valPrecision) });
+                                break;
+                            case 'million':
+                                iValueFormatter = valueFormatter.create({ value: 1e6, precision: parseInt(this.valPrecision) });
+                                break;
+                            case 'billion':
+                                iValueFormatter = valueFormatter.create({ value: 1e9, precision: parseInt(this.valPrecision) });
+                                break;
+                            case 'trillion':
+                                iValueFormatter = valueFormatter.create({ value: 1e12, precision: parseInt(this.valPrecision) });
+                                break;
+                            case 'default':
+                                iValueFormatter = valueFormatter.create({ format: val, precision: parseInt(this.valPrecision) });
+                                break;
+                        }
+                        return iValueFormatter;
+                    };
+                    Visual.prototype.getYOffset = function (data) {
+                        var retVal = 4.5 * this.fontSize;
+                        var max = d3.max(data.yAxis);
+                        switch (this.valFormat) {
+                            case 'thousand':
+                            case 'million':
+                            case 'billion':
+                            case 'trillion':
+                                retVal = (data.yFormat(max).length * this.fontSize / 1.5);
+                                break;
+                            case 'default':
+                                if (max < 1)
+                                    retVal = 4.5 * this.fontSize;
+                                if (max >= 1)
+                                    retVal = 1.5 * this.fontSize;
+                                if (max > 99)
+                                    retVal = 2.5 * this.fontSize;
+                                if (max > 999)
+                                    retVal = 3.5 * this.fontSize;
+                                if (max > 99999)
+                                    retVal = 4.5 * this.fontSize;
+                                if (max > 9999999)
+                                    retVal = 5.5 * this.fontSize;
+                                break;
+                        }
+                        return retVal;
+                    };
                     Visual.prototype.drawDumbellLines = function (data, chartSvg, dimension, xScale, yScale) {
                         var _this = this;
                         if (this.connectDots == true) {
@@ -9721,6 +9776,9 @@ var powerbi;
                             case 'Basic':
                                 objectEnumeration.push({ objectName: objectName, properties: { orientation: this.orientation }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { valFormat: this.valFormat }, selector: null });
+                                if (this.valFormat !== "default")
+                                    objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { connectDots: this.connectDots }, selector: null });
