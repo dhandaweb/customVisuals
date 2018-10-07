@@ -8930,6 +8930,13 @@ var powerbi;
                         this.colorTitle = '';
                         this.legendPosition = "right";
                         this.showAs = "default";
+                        this.showMean = false;
+                        this.showMedian = false;
+                        this.showMode = false;
+                        this.regressionLine = false;
+                        this.regressionLineType = "single";
+                        this.regressionCurveType = "linear";
+                        this.exponentialSmoothingLine = false;
                         this.valFormat = 'default';
                         this.valPrecision = 2;
                         this.yAxisMinValue = false;
@@ -8950,6 +8957,7 @@ var powerbi;
                         this.showLabel = false;
                         this.connectDots = false;
                         this.connectDotsBy = 'color';
+                        this.dumbbellSort = 'default';
                         this.dotRadius = 6;
                         this.circleOpacity = 100;
                         this.orientation = "vertical";
@@ -8980,6 +8988,90 @@ var powerbi;
                                 domain.Max = Max + ((Max * 10) / 100);
                             }
                             return domain;
+                        };
+                        this.getExponentialRegressionLine = function (data, type) {
+                            function regression(x, y) {
+                                var N = x.length;
+                                var slope;
+                                var intercept;
+                                var SX = 0;
+                                var SY = 0;
+                                var SXX = 0;
+                                var SXY = 0;
+                                var SYY = 0;
+                                var Y = [];
+                                var X = [];
+                                for (var i = 0; i < y.length; i++) {
+                                    if (y[i] <= 0) {
+                                        N--;
+                                    }
+                                    else {
+                                        X.push(x[i]);
+                                        Y.push(Math.log(y[i]));
+                                    }
+                                }
+                                for (var i = 0; i < N; i++) {
+                                    SX = SX + X[i];
+                                    SY = SY + Y[i];
+                                    SXY = SXY + X[i] * Y[i];
+                                    SXX = SXX + X[i] * X[i];
+                                    SYY = SYY + Y[i] * Y[i];
+                                }
+                                slope = (N * SXY - SX * SY) / (N * SXX - SX * SX);
+                                intercept = (SY - slope * SX) / N;
+                                return [slope, intercept];
+                            }
+                            function expRegression(X, Y) {
+                                var ret;
+                                var x = X;
+                                var y = Y;
+                                ret = regression(x, y);
+                                var base = Math.exp(ret[0]);
+                                var coeff = Math.exp(ret[1]);
+                                return [base, coeff];
+                            }
+                            var ret;
+                            var res;
+                            var x = [];
+                            var y = [];
+                            var ypred = [];
+                            if (type === "scatter") {
+                                for (i = 0; i < data.length; i++) {
+                                    x.push(data[i][0]);
+                                    y.push(data[i][1]);
+                                }
+                            }
+                            else {
+                                for (i = 0; i < data.length; i++) {
+                                    x.push(i);
+                                    y.push(data[i]);
+                                }
+                            }
+                            ret = expRegression(x, y);
+                            for (var i = 0; i < x.length; i++) {
+                                res = ret[1] * Math.pow(ret[0], x[i]);
+                                ypred.push([x[i], res]);
+                            }
+                            return {
+                                data: ypred,
+                                slope: ret[0],
+                                intercept: ret[1]
+                            };
+                        };
+                        this.getExponentialSmoothingLine = function (data, n) {
+                            var alpha = 0.5;
+                            var beta = 0.5;
+                            var n = n || 32;
+                            var forecasts = [data[0]];
+                            var i;
+                            for (i = 1; i <= data.length; i++) {
+                                var oldf = forecasts[i - 1];
+                                forecasts.push(oldf + alpha * (data[i - 1] - oldf));
+                            }
+                            for (i = data.length + 1; i < n; i++) {
+                                forecasts.push(forecasts[data.length]);
+                            }
+                            return forecasts;
                         };
                         this.element = d3.select(options.element);
                         this.host = options.host;
@@ -9029,6 +9121,7 @@ var powerbi;
                         this.drawCircles(xScale, yScale, chartSvg, data, dimension);
                         this.drawLegend(chartLegend, chartSvg, dimension, data);
                         this.setFontSize(chartSvg);
+                        this.drawStastics(xScale, yScale, chartSvg, data, dimension);
                     };
                     Visual.prototype.formatData = function (rawData) {
                         var _this = this;
@@ -9061,6 +9154,7 @@ var powerbi;
                                     valFormat = _this.getValueFormat(d.source.format);
                                     return {
                                         key: _this.colorFormat !== undefined ? colorFormat.format(d.source.groupName) : d.source.groupName,
+                                        color: _this.colorScale(d.source.groupName),
                                         values: d.values.map(function (t, i) {
                                             if (_this.hasSize)
                                                 sizeValues.push(sizeG[i]);
@@ -9082,6 +9176,7 @@ var powerbi;
                                     valFormat = _this.getValueFormat(d.source.format);
                                     return {
                                         key: d.source.displayName,
+                                        color: _this.colorScale(d.source.groupName),
                                         values: d.values.map(function (t, i) {
                                             if (_this.hasSize)
                                                 sizeValues.push(sizeG[i]);
@@ -9112,7 +9207,34 @@ var powerbi;
                             || this.showAs == "perGrandTotal"
                             || this.showAs == "perAxisValue")
                             valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: "0.00 %;-0.00 %;0.00 %" });
-                        return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat.format, data: retData, legend: legend, sizeValues: sizeValues };
+                        var dumbellData = [];
+                        if (this.connectDots == true) {
+                            if (this.connectDotsBy == 'axis') {
+                                xAxis.map(function (d, i) {
+                                    var t = { key: d, sortValue: 0, values: [] };
+                                    retData.map(function (g) {
+                                        t.values.push({
+                                            xValue: d,
+                                            yValue: g.values[i].yValue.value,
+                                        });
+                                    });
+                                    t.sortValue = Math.abs(t.values[0].yValue - t.values[t.values.length - 1].yValue);
+                                    dumbellData.push(t);
+                                });
+                                if (this.dumbbellSort == "ascending") {
+                                    dumbellData.sort(function (a, b) { return a.sortValue - b.sortValue; });
+                                    xAxis = dumbellData.map(function (d) { return d.key; });
+                                }
+                                else if (this.dumbbellSort == "descending") {
+                                    dumbellData.sort(function (a, b) { return b.sortValue - a.sortValue; });
+                                    xAxis = dumbellData.map(function (d) { return d.key; });
+                                }
+                            }
+                            else {
+                                dumbellData = retData;
+                            }
+                        }
+                        return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat.format, data: retData, legend: legend, sizeValues: sizeValues, dumbellData: dumbellData };
                     };
                     Visual.prototype.setProperties = function (options) {
                         if (options.dataViews[0].metadata.objects) {
@@ -9137,6 +9259,15 @@ var powerbi;
                                 if (basic.valPrecision !== undefined)
                                     this.valPrecision = basic["valPrecision"];
                             }
+                            if (options.dataViews[0].metadata.objects["Dumbbell"]) {
+                                var dumbbell = options.dataViews[0].metadata.objects["Dumbbell"];
+                                if (dumbbell.connectDots !== undefined)
+                                    this.connectDots = dumbbell["connectDots"];
+                                if (dumbbell.connectDotsBy !== undefined)
+                                    this.connectDotsBy = dumbbell["connectDotsBy"];
+                                if (dumbbell.dumbbellSort !== undefined)
+                                    this.dumbbellSort = dumbbell["dumbbellSort"];
+                            }
                             if (options.dataViews[0].metadata.objects["Legend"]) {
                                 var legend = options.dataViews[0].metadata.objects["Legend"];
                                 if (legend.legendPosition !== undefined)
@@ -9156,6 +9287,26 @@ var powerbi;
                                     this.fontSize = axis["fontSize"];
                                 if (axis.yAxisMinValue !== undefined)
                                     this.yAxisMinValue = axis["yAxisMinValue"];
+                            }
+                            if (options.dataViews[0].metadata.objects["Statistics"]) {
+                                var statistics = options.dataViews[0].metadata.objects["Statistics"];
+                                if (statistics.showMean !== undefined)
+                                    this.showMean = statistics["showMean"];
+                                if (statistics.showMedian !== undefined)
+                                    this.showMedian = statistics["showMedian"];
+                                if (statistics.showMode !== undefined)
+                                    this.showMode = statistics["showMode"];
+                            }
+                            if (options.dataViews[0].metadata.objects["Regression"]) {
+                                var regression = options.dataViews[0].metadata.objects["Regression"];
+                                if (regression.regressionLine !== undefined)
+                                    this.regressionLine = regression["regressionLine"];
+                                if (regression.regressionLineType !== undefined)
+                                    this.regressionLineType = regression["regressionLineType"];
+                                if (regression.regressionCurveType !== undefined)
+                                    this.regressionCurveType = regression["regressionCurveType"];
+                                if (regression.exponentialSmoothingLine !== undefined)
+                                    this.exponentialSmoothingLine = regression["exponentialSmoothingLine"];
                             }
                         }
                     };
@@ -9195,7 +9346,7 @@ var powerbi;
                         var xT = this.axisLabelArray(xDomain.slice(0), vp.width, this.element, this.orientation);
                         var xOffset, yOffset, chartWidth, chartHeight, xFilter, xTickval;
                         if (this.orientation == 'vertical') {
-                            xOffset = xT.Space + 15;
+                            xOffset = xT.Space + 20;
                             yOffset = this.getYOffset(data);
                             chartWidth = vp.width - yOffset - ylegendOffset;
                             chartHeight = vp.height - xOffset - xlegendOffset;
@@ -9299,7 +9450,7 @@ var powerbi;
                             circleG.attr("transform", "translate(0," + (xScale.rangeBand() / 2) + ")");
                             circle
                                 .attr("cy", function (d) { return xScale(d.xValue.value); })
-                                .attr("cx", function (d) { return yScale(d.yValue.value); });
+                                .attr("cx", function (d) { return dimension.yOffset + yScale(d.yValue.value); });
                         }
                         circle
                             .attr("r", this.dotRadius)
@@ -9324,7 +9475,6 @@ var powerbi;
                                 .text(function (d) { return d.yValue.caption; });
                         }
                         if (this.hasSize) {
-                            console.log(data.sizeValues);
                             var sizeScale = d3.scale.linear()
                                 .range([this.dotRadius, d3.min([25, (5 * this.dotRadius)])])
                                 .domain([d3.min(data.sizeValues), d3.max(data.sizeValues)]);
@@ -9583,9 +9733,9 @@ var powerbi;
                                 retVal = (data.yFormat(max).length * this.fontSize / 1.5);
                                 break;
                             case 'default':
-                                if (max < 1)
+                                if (max <= 1)
                                     retVal = 4.5 * this.fontSize;
-                                if (max >= 1)
+                                if (max > 1)
                                     retVal = 1.5 * this.fontSize;
                                 if (max > 99)
                                     retVal = 2.5 * this.fontSize;
@@ -9602,25 +9752,10 @@ var powerbi;
                     Visual.prototype.drawDumbellLines = function (data, chartSvg, dimension, xScale, yScale) {
                         var _this = this;
                         if (this.connectDots == true) {
-                            var dumbellData = [], line;
+                            var line;
                             line = d3.svg.line();
-                            if (this.connectDotsBy == 'axis') {
-                                data.xAxis.map(function (d, i) {
-                                    var t = { key: d, values: [] };
-                                    data.data.map(function (g) {
-                                        t.values.push({
-                                            xValue: d,
-                                            yValue: g.values[i].yValue.value,
-                                        });
-                                    });
-                                    dumbellData.push(t);
-                                });
-                            }
-                            else {
-                                dumbellData = data.data;
-                            }
                             var dumbellG = chartSvg.selectAll(".dots")
-                                .data(dumbellData)
+                                .data(data.dumbellData)
                                 .enter()
                                 .append("g");
                             if (this.orientation == 'vertical') {
@@ -9633,7 +9768,7 @@ var powerbi;
                                 line
                                     .x(function (d) { return yScale(_this.connectDotsBy == 'axis' ? d.yValue : d.yValue.value); })
                                     .y(function (d) { return xScale(_this.connectDotsBy == 'axis' ? d.xValue : d.xValue.value); });
-                                dumbellG.attr("transform", "translate(0," + (xScale.rangeBand() / 2) + ")");
+                                dumbellG.attr("transform", "translate(" + dimension.yOffset + "," + (xScale.rangeBand() / 2) + ")");
                             }
                             var dumbell = dumbellG.append("path")
                                 .attr("style", "fill:none;")
@@ -9769,6 +9904,233 @@ var powerbi;
                         }
                         return retData;
                     };
+                    Visual.prototype.drawStastics = function (xScale, yScale, chartSvg, data, dimension) {
+                        var _this = this;
+                        var statData = [];
+                        ;
+                        if (this.showMean === true) {
+                            var mean = d3.mean(data.yAxis);
+                            statData.push({
+                                title: 'Mean:' + data.yFormat(mean),
+                                x: this.orientation === 'vertical' ? dimension.yOffset : dimension.yOffset + yScale(mean),
+                                y: this.orientation === 'vertical' ? yScale(mean) : 0,
+                                dx: this.orientation === 'vertical' ? dimension.chartWidth - 5 : 5,
+                                dy: this.orientation === 'vertical' ? -5 : 15,
+                                color: "#ff6f69",
+                                width: this.orientation === 'vertical' ? dimension.chartWidth : 2,
+                                height: this.orientation === 'vertical' ? 2 : dimension.chartHeight,
+                            });
+                        }
+                        if (this.showMedian === true) {
+                            var median = d3.median(data.yAxis);
+                            statData.push({
+                                title: 'Median:' + data.yFormat(median),
+                                x: this.orientation === 'vertical' ? dimension.yOffset : dimension.yOffset + yScale(median),
+                                y: this.orientation === 'vertical' ? yScale(median) : 0,
+                                dx: this.orientation === 'vertical' ? dimension.chartWidth - 5 : 5,
+                                dy: this.orientation === 'vertical' ? -5 : dimension.chartHeight / 2,
+                                color: "#010c0e",
+                                width: this.orientation === 'vertical' ? dimension.chartWidth : 2,
+                                height: this.orientation === 'vertical' ? 2 : dimension.chartHeight,
+                            });
+                        }
+                        if (this.showMode === true) {
+                            var mode = data.yAxis[Math.ceil(data.yAxis.length / 2)];
+                            statData.push({
+                                title: 'Mode:' + data.yFormat(mode),
+                                x: this.orientation === 'vertical' ? dimension.yOffset : dimension.yOffset + yScale(mode),
+                                y: this.orientation === 'vertical' ? yScale(mode) : 0,
+                                dx: this.orientation === 'vertical' ? dimension.chartWidth - 5 : 5,
+                                dy: this.orientation === 'vertical' ? -5 : dimension.chartHeight - 15,
+                                color: "#74002f",
+                                width: this.orientation === 'vertical' ? dimension.chartWidth : 2,
+                                height: this.orientation === 'vertical' ? 2 : dimension.chartHeight,
+                            });
+                        }
+                        var statG = chartSvg.selectAll('.stat')
+                            .data(statData)
+                            .enter()
+                            .append("g");
+                        statG.append("rect")
+                            .style("fill", function (d) { return d.color; })
+                            .attr("width", function (d) { return d.width; })
+                            .attr("height", function (d) { return d.height; })
+                            .attr("x", function (d) { return d.x; })
+                            .attr("y", function (d) { return d.y; });
+                        statG.append("text")
+                            .style("fill", function (d) { return d.color; })
+                            .style("text-anchor", this.orientation === 'vertical' ? "end" : "start")
+                            .attr("x", function (d) { return d.x; })
+                            .attr("y", function (d) { return d.y; })
+                            .attr("dx", function (d) { return d.dx; })
+                            .attr("dy", function (d) { return d.dy; })
+                            .text(function (d) { return d.title; });
+                        if (this.exponentialSmoothingLine === true) {
+                            data.data.map(function (d) {
+                                _this.drawExponentialSmoothing(d, xScale, yScale, chartSvg, dimension);
+                            });
+                        }
+                        if (this.regressionLine === true) {
+                            this.buildRegression(data.data, xScale, yScale, chartSvg, dimension);
+                        }
+                    };
+                    Visual.prototype.buildRegression = function (data, xScale, yScale, chartSvg, dimension) {
+                        var _this = this;
+                        if (this.regressionCurveType === "linear") {
+                            var xLabels = xScale.domain();
+                            var xSeries = d3.range(1, xLabels.length - 1);
+                            var ySeries = [];
+                            var multipleRegressionData = [];
+                            data.map(function (d) {
+                                var regData = [];
+                                d.values.map(function (d) {
+                                    ySeries.push(d.yValue.value);
+                                    regData.push(d.yValue.value);
+                                });
+                                if (_this.regressionLineType === "multiple" && _this.hasColor)
+                                    multipleRegressionData.push({ data: regData, color: d.color });
+                            });
+                            if (this.regressionLineType === "multiple" && this.hasColor) {
+                                multipleRegressionData.map(function (d) {
+                                    var xSeries = d3.range(1, d.data.length + 1);
+                                    ySeries = d.data;
+                                    if (ySeries.length > 1) {
+                                        var regressionCoeff = _this.getRegression(xSeries, ySeries);
+                                        var x1 = xLabels[0];
+                                        var y1 = regressionCoeff[0] + regressionCoeff[1];
+                                        var x2 = xLabels[xLabels.length - 1];
+                                        var y2 = regressionCoeff[0] * xSeries.length + regressionCoeff[1];
+                                        var x1 = xLabels[0];
+                                        var y1 = regressionCoeff[0] + regressionCoeff[1];
+                                        var x2 = xLabels[xLabels.length - 1];
+                                        var y2 = regressionCoeff[0] * xSeries.length + regressionCoeff[1];
+                                        var trendData = [[x1, y1, x2, y2]];
+                                        _this.drawLinearRegression(trendData, d.color, xScale, yScale, chartSvg, dimension);
+                                    }
+                                });
+                            }
+                            else {
+                                var regressionCoeff = this.getRegression(xSeries, ySeries);
+                                var x1 = xLabels[0];
+                                var y1 = regressionCoeff[0] + regressionCoeff[1];
+                                var x2 = xLabels[xLabels.length - 1];
+                                var y2 = regressionCoeff[0] * xSeries.length + regressionCoeff[1];
+                                var x1 = xLabels[0];
+                                var y1 = regressionCoeff[0] + regressionCoeff[1];
+                                var x2 = xLabels[xLabels.length - 1];
+                                var y2 = regressionCoeff[0] * xSeries.length + regressionCoeff[1];
+                                var trendData = [[x1, y1, x2, y2]];
+                                var regressionLineColor = "#b4b6bd";
+                                this.drawLinearRegression(trendData, regressionLineColor, xScale, yScale, chartSvg, dimension);
+                            }
+                        }
+                        else {
+                            data.map(function (d) {
+                                _this.drawExponentialRegression(d, xScale, yScale, chartSvg, dimension);
+                            });
+                        }
+                    };
+                    Visual.prototype.drawLinearRegression = function (trendData, regressionLineColor, xScale, yScale, chartSvg, dimension) {
+                        var trendLine = chartSvg
+                            .selectAll(".trendline")
+                            .data(trendData)
+                            .enter()
+                            .append("line")
+                            .attr("class", "regression-line");
+                        if (this.orientation === 'vertical') {
+                            trendLine
+                                .attr("x1", function (d) { return xScale(d[0]) + dimension.yOffset; })
+                                .attr("y1", function (d) { return yScale(d[1]); })
+                                .attr("x2", function (d) { return xScale(d[2]) + dimension.yOffset + (xScale.rangeBand()); })
+                                .attr("y2", function (d) { return yScale(d[3]); });
+                        }
+                        else {
+                            trendLine
+                                .attr("y1", function (d) { return xScale(d[0]); })
+                                .attr("x1", function (d) { return yScale(d[1]) + dimension.xOffset; })
+                                .attr("y2", function (d) { return xScale(d[2]) + (xScale.rangeBand()); })
+                                .attr("x2", function (d) { return yScale(d[3]) + dimension.xOffset; });
+                        }
+                        trendLine.style("stroke", "#000")
+                            .style("stroke-width", 3)
+                            .style("stroke-dasharray", "3,3");
+                        if (this.regressionLineType === "multiple" && this.hasColor) {
+                            trendLine.style("stroke", regressionLineColor);
+                        }
+                    };
+                    Visual.prototype.drawExponentialRegression = function (data, xScale, yScale, chartSvg, dimension) {
+                        var ySeries = this.getYSeries(data, xScale).ySeries;
+                        var xSeries = this.getYSeries(data, xScale).xSeries;
+                        var expExpRegressionLineData = this.getExponentialRegressionLine(ySeries, '').data;
+                        if (this.orientation === 'vertical') {
+                            var expExpRegressionLine = d3.svg.line()
+                                .x(function (d, i) { return xScale(xSeries[i]) + dimension.yOffset; })
+                                .y(function (d) { return yScale(d[1]); })
+                                .interpolate('monotone');
+                        }
+                        else {
+                            var expExpRegressionLine = d3.svg.line()
+                                .y(function (d, i) { return xScale(xSeries[i]); })
+                                .x(function (d) { return yScale(d[1]) + dimension.xOffset; })
+                                .interpolate('monotone');
+                        }
+                        chartSvg.append("path")
+                            .attr("fill", "none")
+                            .style("stroke", data.color)
+                            .style("stroke-width", 3)
+                            .style("stroke-dasharray", "3,3")
+                            .attr("class", "ExponentialRegressionLine")
+                            .attr("d", expExpRegressionLine(expExpRegressionLineData));
+                    };
+                    Visual.prototype.drawExponentialSmoothing = function (data, xScale, yScale, chartSvg, dimension) {
+                        var ySeries = this.getYSeries(data, xScale).ySeries;
+                        var xSeries = this.getYSeries(data, xScale).xSeries;
+                        var expExpSmoothLine;
+                        var expExpSmoothLineData = this.getExponentialSmoothingLine(ySeries, ySeries.length);
+                        if (this.orientation === 'vertical') {
+                            expExpSmoothLine = d3.svg.line()
+                                .x(function (d, i) { return xScale(xSeries[i]) + dimension.yOffset; })
+                                .y(function (d) { return yScale(d); })
+                                .interpolate('monotone');
+                        }
+                        else {
+                            expExpSmoothLine = d3.svg.line()
+                                .y(function (d, i) { return xScale(xSeries[i]); })
+                                .x(function (d, i) { return yScale(d) + dimension.xOffset; })
+                                .interpolate('monotone');
+                        }
+                        chartSvg.append("path")
+                            .attr("fill", "none")
+                            .style("stroke", data.color)
+                            .style("stroke-width", 3)
+                            .style("stroke-dasharray", "3,3")
+                            .attr("class", "ExponentialSmoothingLine")
+                            .attr("d", expExpSmoothLine(expExpSmoothLineData.slice(0, -1)));
+                    };
+                    Visual.prototype.getYSeries = function (data, xScale) {
+                        var ySeries = [];
+                        var xSeries = [];
+                        data.values.map(function (d) {
+                            ySeries.push(d.yValue.value);
+                            xSeries.push(d.xValue.value);
+                        });
+                        return { ySeries: ySeries, xSeries: xSeries };
+                    };
+                    Visual.prototype.getRegression = function (xSeries, ySeries) {
+                        var reduceSumFunc = function (prev, cur) { return prev + cur; };
+                        var xBar = xSeries.reduce(reduceSumFunc) * 1.0 / xSeries.length;
+                        var yBar = ySeries.reduce(reduceSumFunc) * 1.0 / ySeries.length;
+                        var ssXX = xSeries.map(function (d) { return Math.pow(d - xBar, 2); })
+                            .reduce(reduceSumFunc);
+                        var ssYY = ySeries.map(function (d) { return Math.pow(d - yBar, 2); })
+                            .reduce(reduceSumFunc);
+                        var ssXY = xSeries.map(function (d, i) { return (d - xBar) * (ySeries[i] - yBar); })
+                            .reduce(reduceSumFunc);
+                        var slope = ssXY / ssXX;
+                        var intercept = yBar - (xBar * slope);
+                        var rSquare = Math.pow(ssXY, 2) / (ssXX * ssYY);
+                        return [slope, intercept, rSquare];
+                    };
                     Visual.prototype.enumerateObjectInstances = function (options) {
                         var objectName = options.objectName;
                         var objectEnumeration = [];
@@ -9781,9 +10143,15 @@ var powerbi;
                                     objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { connectDots: this.connectDots }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { connectDotsBy: this.connectDotsBy }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAs }, selector: null });
+                                break;
+                            case 'Dumbbell':
+                                objectEnumeration.push({ objectName: objectName, properties: { connectDots: this.connectDots }, selector: null });
+                                if (this.connectDots == true) {
+                                    objectEnumeration.push({ objectName: objectName, properties: { connectDotsBy: this.connectDotsBy }, selector: null });
+                                    if (this.connectDotsBy == "axis")
+                                        objectEnumeration.push({ objectName: objectName, properties: { dumbbellSort: this.dumbbellSort }, selector: null });
+                                }
                                 break;
                             case 'Legend':
                                 objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });
@@ -9791,10 +10159,22 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.legendFontSize }, selector: null });
                                 break;
                             case 'Axis':
-                                // objectEnumeration.push({ objectName: objectName, properties: { showXAxis: this.showAxis }, selector: null });
-                                //objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.fontSize }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { yAxisMinValue: this.yAxisMinValue }, selector: null });
+                                break;
+                            case 'Statistics':
+                                objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showMean }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showMedian }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showMode }, selector: null });
+                                break;
+                            case 'Regression':
+                                objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.regressionLine }, selector: null });
+                                if (this.regressionLine === true) {
+                                    objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.regressionCurveType }, selector: null });
+                                    if (this.regressionCurveType == 'linear')
+                                        objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.regressionLineType }, selector: null });
+                                }
+                                objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.exponentialSmoothingLine }, selector: null });
                                 break;
                         }
                         ;

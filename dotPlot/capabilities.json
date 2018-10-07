@@ -180,26 +180,6 @@
                     "displayName": "Data Labels",
                     "type": { "bool": true }
                 },
-                "connectDots": {
-                    "displayName": "Connect Dots",
-                    "type": { "bool": true }
-                },
-                "connectDotsBy": {
-                    "displayName": "Connect Dots By",
-                    "type": {
-                        "enumeration": [
-                            {
-                                "value": "axis",
-                                "displayName": "Axis"
-                            },
-                            {
-                                "value": "color",
-                                "displayName": "Color"
-                            }
-
-                        ]
-                    }
-                },
                 "showAs": {
                     "displayName": "Show Dots as",
                     "type": {
@@ -243,6 +223,50 @@
                             {
                                 "value": "movingAverage",
                                 "displayName": "Moving Average"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "Dumbbell": {
+            "displayName": "Dumbbell",
+            "properties": {
+                "connectDots": {
+                    "displayName": "Connect Dots",
+                    "type": { "bool": true }
+                },
+                "connectDotsBy": {
+                    "displayName": "Connect Dots By",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "axis",
+                                "displayName": "Axis"
+                            },
+                            {
+                                "value": "color",
+                                "displayName": "Color"
+                            }
+
+                        ]
+                    }
+                },
+                "dumbbellSort": {
+                    "displayName": "Sort",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "ascending",
+                                "displayName": "Ascending"
+                            },
+                            {
+                                "value": "descending",
+                                "displayName": "Descending"
                             }
                         ]
                     }
@@ -346,8 +370,69 @@
                     }
                 }
             }
-        }
+        },
+        "Statistics": {
+            "displayName": "Statistics",
+            "properties": {
+                "showMean": {
+                    "displayName": "Show Mean",
+                    "type": { "bool": true }
+                },
+                "showMedian": {
+                    "displayName": "Show Median",
+                    "type": { "bool": true }
+                },
+                "showMode": {
+                    "displayName": "Show Mode",
+                    "type": { "bool": true }
+                }
+            }
+        },
+        "Regression": {
+            "displayName": "Regression",
+            "properties": {
+                "exponentialSmoothingLine": {
+                    "displayName": "Exponential Smoothing Line",
+                    "type": { "bool": true }
+                },
+                "regressionLine": {
+                    "displayName": "Regression Line",
+                    "type": { "bool": true }
+                },
+                "regressionCurveType": {
+                    "displayName": "Regression Curve Type",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "linear",
+                                "displayName": "Linear"
+                            },
+                            {
+                                "value": "exponential",
+                                "displayName": "Exponential"
+                            }
 
+                        ]
+                    }
+                },
+                "regressionLineType": {
+                    "displayName": "Regression Line Type",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "single",
+                                "displayName": "Single"
+                            },
+                            {
+                                "value": "multiple",
+                                "displayName": "Multiple"
+                            }
+
+                        ]
+                    }
+                }
+            }
+        }
     }
 } 
 
