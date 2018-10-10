@@ -1,8 +1,8 @@
 {
     "visual": {
         "name": "dotPlot",
-        "displayName": "Dot Plot",
-        "guid": "dotPlotCCTC114D9885417F9AAF5BB8D45B007E",
+        "displayName": "DotPlot",
+        "guid": "dotPlotD9885417F9AAF5BB8D45B007E",
         "visualClassName": "Visual",
         "version": "1.0.0",
         "description": "",

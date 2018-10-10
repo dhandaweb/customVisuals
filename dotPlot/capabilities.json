@@ -179,52 +179,21 @@
                 "showLabel": {
                     "displayName": "Data Labels",
                     "type": { "bool": true }
-                },
-                "showAs": {
-                    "displayName": "Show Dots as",
+                }
+
+            }
+        },
+        "colorSelector": {
+            "displayName": "Data Colors",
+            "properties": {
+                "fill": {
+                    "displayName": "Color",
                     "type": {
-                        "enumeration": [
-                            {
-                                "value": "default",
-                                "displayName": "Default"
-                            },
-                            {
-                                "value": "runningTotal",
-                                "displayName": "Running Total"
-                            },
-                            {
-                                "value": "difference",
-                                "displayName": "Difference"
-                            },
-                            {
-                                "value": "perDifference",
-                                "displayName": "% Difference"
-                            },
-                            {
-                                "value": "differenceFromAverage",
-                                "displayName": "Difference From Average"
-                            },
-                            {
-                                "value": "perDifferenceFromAverage",
-                                "displayName": "% Difference From Average"
-                            },
-                            {
-                                "value": "perAxisValue",
-                                "displayName": "% of Axis Value"
-                            },
-                            {
-                                "value": "perTotal",
-                                "displayName": "% of Total"
-                            },
-                            {
-                                "value": "perGrandTotal",
-                                "displayName": "% of Grand Total"
-                            },
-                            {
-                                "value": "movingAverage",
-                                "displayName": "Moving Average"
+                        "fill": {
+                            "solid": {
+                                "color": true
                             }
-                        ]
+                        }
                     }
                 }
             }
@@ -372,8 +341,55 @@
             }
         },
         "Statistics": {
-            "displayName": "Statistics",
+            "displayName": "Analytics",
             "properties": {
+                "showAs": {
+                    "displayName": "Show Dots as",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "runningTotal",
+                                "displayName": "Running Total"
+                            },
+                            {
+                                "value": "difference",
+                                "displayName": "Difference"
+                            },
+                            {
+                                "value": "perDifference",
+                                "displayName": "% Difference"
+                            },
+                            {
+                                "value": "differenceFromAverage",
+                                "displayName": "Difference From Average"
+                            },
+                            {
+                                "value": "perDifferenceFromAverage",
+                                "displayName": "% Difference From Average"
+                            },
+                            {
+                                "value": "perAxisValue",
+                                "displayName": "% of Axis Value"
+                            },
+                            {
+                                "value": "perTotal",
+                                "displayName": "% of Total"
+                            },
+                            {
+                                "value": "perGrandTotal",
+                                "displayName": "% of Grand Total"
+                            },
+                            {
+                                "value": "movingAverage",
+                                "displayName": "Moving Average"
+                            }
+                        ]
+                    }
+                },
                 "showMean": {
                     "displayName": "Show Mean",
                     "type": { "bool": true }
@@ -385,12 +401,7 @@
                 "showMode": {
                     "displayName": "Show Mode",
                     "type": { "bool": true }
-                }
-            }
-        },
-        "Regression": {
-            "displayName": "Regression",
-            "properties": {
+                },
                 "exponentialSmoothingLine": {
                     "displayName": "Exponential Smoothing Line",
                     "type": { "bool": true }

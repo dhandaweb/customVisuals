@@ -26,7 +26,7 @@
  */
 
 
-module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
+module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
     "use strict";
    
     export class Visual implements IVisual {
@@ -58,7 +58,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
         private regressionCurveType: any = "linear";
         
         private exponentialSmoothingLine: any = false;
-
+        private formattedData: any = [];
         private axisFormat: any;
         private colorFormat: any;
         private circles: any;
@@ -67,14 +67,15 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
         private element: d3.Selection<SVGElement>;
         private container: d3.Selection<SVGElement>;
         private valFormat: any = 'default';
-        private valPrecision: any= 2;
+        private valPrecision: any= 1;
 
         private tooltipServiceWrapper: ITooltipServiceWrapper;
         private TooltipEventArgs: any;
         public  TooltipEnabledDataPoint: any;
 
         private yAxisMinValue: boolean = false;;
-        private legendColor: any = 'Category1'
+        private legendColor: any = 'Category1';
+        private colorPalette: IColorPalette;
         private colorOptions: any = {
             Category1: ["#26C6DA", "#EC407A", "#9CCC65", "#FFCA28", "#EF5350", "#78909C", "#42A5F5", "#FFA726", "#26A69A", "#AB47BC", "#BDBDBD", "#5C6BC0", "#8D6E63", "#D4E157", "#29B6F6", "#66BB6A", "#FF7043", "#7E57C2", "#FFEE58", "#9CCC64"],
             Category2: ["#C79A6B", "#737373", "#97C7C5", "#67B0E1", "#FEBC4A", "#A7D679", "#ED82B7", "#ADAEB5", "#C8B570", "#448EC9", "#F6B982", "#9DBE59", "#5BBE94", "#5884B3", "#CC6686", "#E68570"],
@@ -99,24 +100,26 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
         private circleOpacity: any = 100;
 
         private orientation: any = "vertical";
-        private fontSize: any = 14;
+        private fontSize: any = 11;
         private legendFontSize: any=10;
 
         constructor(options: VisualConstructorOptions) {
            
+           
            this.element = d3.select(options.element);
            this.host = options.host;
+          
            this.tooltipServiceWrapper = createTooltipServiceWrapper(this.host.tooltipService, options.element);
            this.selectionManager = options.host.createSelectionManager();
         }
 
         public update(options: VisualUpdateOptions) {
-
+            this.colorPalette = this.host.colorPalette;
+            console.log("updating", this.colorPalette);
             this.element.style("overflow", "hidden");
             this.element.select('.dotPlot').remove();
-            //console.log(options.dataViews[0].metadata.columns);
+            console.log(options.dataViews[0].metadata.columns);
             this.draw(options);
-
         }
 
         public draw(options) {
@@ -204,11 +207,12 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                     }
                   
                     formattedData = filteredValues.map((d, i) => {
-                        valFormat = this.getValueFormat(d.source.format);
-                     
+                        valFormat = this.getValueFormat(d.source.format,d3.max(d.values.map(d=>d)));
+                        console.log(this.colorPalette);
                         return {
                             key: this.colorFormat !== undefined ? colorFormat.format(d.source.groupName) : d.source.groupName,
-                            color: this.colorScale(d.source.groupName),
+                            //color: this.colorScale(d.source.groupName),
+                            color: this.colorPalette.getColor(d.source.groupName).value,
                             values: d.values.map((t, i) => {
                                 if (this.hasSize) sizeValues.push(sizeG[i]);
                                 return {
@@ -216,7 +220,8 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                                     yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
                                     legend: d.source.groupName,
                                     selectionId: this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).withSeries(rawData.categorical.values, rawData.categorical.values[i]).createSelectionId(),
-                                    color: this.colorScale(d.source.groupName),
+                                    //color: this.colorScale(d.source.groupName),
+                                    color: this.colorPalette.getColor(d.source.groupName).value,
                                     colorValue: { title: this.colorTitle, caption: d.source.groupName },
                                     size: this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeG[i] , caption: sizeFormat.format(sizeG[i]) } : null
                                 }
@@ -228,17 +233,20 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                 else {
                     
                     formattedData = valuesG.map((d, i) => {
-                        valFormat = this.getValueFormat(d.source.format);
+                      
+                        valFormat = this.getValueFormat(d.source.format, d3.max(d.values.map(d => d)));
+                      
                         return {
                             key: d.source.displayName,
-                            color: this.colorScale(d.source.groupName),
+                            color: this.colorPalette.getColor(d.source.displayName).value,
                             values: d.values.map((t, i) => {
                                 if (this.hasSize)sizeValues.push(sizeG[i]);
                                 return {
                                     xValue: { title: xMetadata.displayName, value: xAxis[i], caption: xAxis[i] },
                                     yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
                                     legend: d.source.displayName,
-                                    color: this.colorScale(d.source.displayName),
+                                    //color: this.colorScale(d.source.displayName),
+                                    color: this.colorPalette.getColor(d.source.displayName).value,
                                     selectionId: this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).createSelectionId(),
                                     size: this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeG[i], caption: sizeFormat.format(sizeG[i]) } : null
                                 }
@@ -249,7 +257,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                 }
             }
 
-            var legend = this.setLegendWidth(this.element, formattedData.map(d => d.key));
+            var legend = this.setLegendWidth(this.element, formattedData.map(d => { return { key: d.key, color: d.color } }));
        
             var retData = this.setUpAnalyticData(formattedData)
             var yAxis = [];
@@ -303,12 +311,12 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
 
 
             }
-
+            this.formattedData = retData;
             return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat.format, data: retData, legend: legend, sizeValues: sizeValues, dumbellData: dumbellData}
         }
 
         private setProperties(options) {
-
+            console.log(options.dataViews[0].metadata.objects);
             if (options.dataViews[0].metadata.objects) {
 
                 if (options.dataViews[0].metadata.objects["Basic"]) {
@@ -318,7 +326,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                     if (basic.showLabel !== undefined) this.showLabel = basic["showLabel"];
                     if (basic.connectDots !== undefined) this.connectDots = basic["connectDots"];
                     if (basic.connectDotsBy !== undefined) this.connectDotsBy = basic["connectDotsBy"];
-                    if (basic.showAs !== undefined) this.showAs = basic["showAs"];
+                   
                     if (basic.orientation !== undefined) this.orientation = basic["orientation"];
                     if (basic.valFormat !== undefined) this.valFormat = basic["valFormat"];
                     if (basic.valPrecision !== undefined) this.valPrecision = basic["valPrecision"];
@@ -331,6 +339,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                     if (dumbbell.dumbbellSort !== undefined) this.dumbbellSort = dumbbell["dumbbellSort"];
                    
                 }
+                
                 
                 if (options.dataViews[0].metadata.objects["Legend"]) {
                     var legend = options.dataViews[0].metadata.objects["Legend"];
@@ -350,19 +359,14 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                     if (statistics.showMean !== undefined) this.showMean = statistics["showMean"];
                     if (statistics.showMedian !== undefined) this.showMedian = statistics["showMedian"];
                     if (statistics.showMode !== undefined) this.showMode = statistics["showMode"];
-                   
+                    if (statistics.regressionLine !== undefined) this.regressionLine = statistics["regressionLine"];
+                    if (statistics.regressionLineType !== undefined) this.regressionLineType = statistics["regressionLineType"];
+                    if (statistics.regressionCurveType !== undefined) this.regressionCurveType = statistics["regressionCurveType"];
+                    if (statistics.exponentialSmoothingLine !== undefined) this.exponentialSmoothingLine = statistics["exponentialSmoothingLine"];
+                    if (statistics.showAs !== undefined) this.showAs = statistics["showAs"];
                 }
                 
-                if (options.dataViews[0].metadata.objects["Regression"]) {
-                    var regression = options.dataViews[0].metadata.objects["Regression"];
-                   
-                    if (regression.regressionLine !== undefined) this.regressionLine = regression["regressionLine"];
-                    if (regression.regressionLineType !== undefined) this.regressionLineType = regression["regressionLineType"];
-                    if (regression.regressionCurveType !== undefined) this.regressionCurveType = regression["regressionCurveType"];
-                    
-                    if (regression.exponentialSmoothingLine !== undefined) this.exponentialSmoothingLine = regression["exponentialSmoothingLine"];
-
-                }
+                
             }
         }
 
@@ -404,7 +408,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
             let xdata = data.xAxis;
             let xDomain = d3.scale.ordinal().domain(xdata).domain();
             
-            let xT: any = this.axisLabelArray(xDomain.slice(0), vp.width, this.element, this.orientation);
+            let xT: any = this.axisLabelArray(xDomain.slice(0), (vp.width - this.getYOffset(data) - ylegendOffset), this.element, this.orientation);
 
             let xOffset, yOffset, chartWidth, chartHeight, xFilter, xTickval;
             if (this.orientation == 'vertical') {
@@ -412,7 +416,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                  yOffset = this.getYOffset(data);
                  chartWidth = vp.width - yOffset - ylegendOffset;
                  chartHeight = vp.height - xOffset - xlegendOffset;
-                 xFilter = (xT.Rotate === true) ? Math.round((xDomain.length / chartWidth * 100) / 2) : 1;
+                 xFilter = (xT.Rotate === true) ? (chartWidth / xDomain.length < 12 ? (Math.ceil(xDomain.length / chartWidth * 20)) : 1) : 1;
                  xTickval = xDomain.filter((d, i) => (i % xFilter === 0));
 
             }
@@ -480,13 +484,15 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                 if (dimension.xRotate == true) {
                     xAxisG.attr("text-anchor", "start");
                     xAxisG.selectAll("text")
-                        .style("text-anchor", "start")
-                        .attr("dx", 6)
-                        .attr("dy", -1)
+                        .style("text-anchor", "end")
+                        .attr("dx", -7)
+                        .attr("dy", 0)
                         .attr("transform", function (d) {
-                            return "rotate(" + (75) + ")";
+                            return "rotate(" + (-45) + ")";
                         });
-                }
+            }
+
+            xAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
         }
 
         private drawYScale(yScale, chartSvg, dimension,data) {
@@ -502,11 +508,14 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                 .ticks(5)
                 .tickFormat(data.yFormat);
            
-                var yAxisG = chartSvg
-                    .append("g")
-                    .attr("transform", translate)
-                    .attr("class", "axis")
-                    .call(yaxis)
+            var yAxisG = chartSvg
+                .append("g")
+                .attr("fill", "rgb(119, 119, 119)")
+                .attr("transform", translate)
+                .attr("class", "axis")
+                .call(yaxis);
+
+            yAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
         }
 
         private drawCircles(xScale, yScale, chartSvg, data, dimension) {
@@ -696,9 +705,9 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
 
             var legend = legendData.map(d => {
                 return {
-                    width: this.getTextWidth(svg, d, this.legendFontSize) + 20,
-                    color: this.colorScale(d),
-                    text:d
+                    width: this.getTextWidth(svg, d.key, this.legendFontSize) + 20,
+                    color: d.color,
+                    text:d.key
                 }
             })
             svg.remove();
@@ -713,7 +722,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
             var wordsArray = [];
             var space = 0;
             var svg = el.append("svg").attr("width", 0).attr("height", 0);
-          
+           
             var scale = d3.scale.ordinal().domain(labels).rangeRoundBands([0, chartwidth]);
             var maxWidth = scale.rangeBand();
            
@@ -726,7 +735,8 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                     var word, line = [];
 
                 });
-                var longest = wordsArray.sort(function (a, b) { return b.length - a.length; })[0];
+                var longest = labels.sort(function (a, b) { return b.length - a.length; })[0];
+
                 if (this.getTextWidth(svg, longest, fontsize) > maxWidth) rotate = true;
                
                 if (rotate === true) {
@@ -867,57 +877,39 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
             chartSvg.selectAll("text").style("font-size", this.fontSize + "px");
         }
 
-        private getValueFormat(val) {
+        private getValueFormat(val, max) {
            
             let valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
             let iValueFormatter = valueFormatter.create({});
-           
+            let valF = null;
             switch (this.valFormat) {
                 case 'thousand':
-                    iValueFormatter = valueFormatter.create({ value: 1001, precision: parseInt(this.valPrecision) });
+                    valF = 1001;
                     break;
                 case 'million':
-                    iValueFormatter = valueFormatter.create({ value: 1e6, precision: parseInt(this.valPrecision) });
+                    valF = 1e6;
                     break;
                 case 'billion':
-                    iValueFormatter = valueFormatter.create({ value: 1e9, precision: parseInt(this.valPrecision) });
+                    valF = 1e9;
                     break;
                 case 'trillion':
-                    iValueFormatter = valueFormatter.create({ value: 1e12, precision: parseInt(this.valPrecision) });
+                    valF = 1e12;
                     break;
                 case 'default':
-                    iValueFormatter = valueFormatter.create({ format: val, precision: parseInt(this.valPrecision) });
+                    valF = max;
                     break;
             }
-           
+
+            iValueFormatter = valueFormatter.create({format: val, value: valF, precision: this.valPrecision });
+            
             return iValueFormatter;
         }
 
         private getYOffset(data) {
 
-            let retVal = 4.5 * this.fontSize;
             let max = d3.max(data.yAxis);
-            switch (this.valFormat) {
-                case 'thousand':
-                case 'million':
-                case 'billion':
-                case 'trillion':
-                    retVal = (data.yFormat(max).length * this.fontSize/1.5);
-                    break;
-                
-                case 'default':
-                   
-                    if (max <= 1) retVal = 4.5 * this.fontSize;
-                    if (max > 1) retVal = 1.5 * this.fontSize;
-                    if (max > 99) retVal = 2.5 * this.fontSize;
-                    if (max > 999) retVal = 3.5 * this.fontSize;
-                    if (max > 99999) retVal = 4.5 * this.fontSize;
-                    if (max > 9999999) retVal = 5.5 * this.fontSize;
 
-                    break;
-            }
-
-            return retVal;
+            return 2+ (data.yFormat(max).length + 1) * this.fontSize / 1.5;
         }
 
         private setValueDomain = function (Min, Max) {
@@ -1212,7 +1204,8 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
            
             if (this.regressionCurveType === "linear") {
                 var xLabels = xScale.domain();
-                var xSeries = d3.range(1, xLabels.length - 1);
+               
+                var xSeries = xLabels.map((d,i)=> i);
                 var ySeries = [];
                 var multipleRegressionData = [];
                
@@ -1256,6 +1249,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                 else {
 
                     var regressionCoeff = this.getRegression(xSeries, ySeries);
+                   
                     var x1 = xLabels[0];
                     var y1 = regressionCoeff[0] + regressionCoeff[1];
                     var x2 = xLabels[xLabels.length - 1];
@@ -1283,7 +1277,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
         }
 
         private drawLinearRegression(trendData, regressionLineColor, xScale, yScale, chartSvg, dimension) {
-
+           
             let trendLine = chartSvg
                 .selectAll(".trendline")
                 .data(trendData)
@@ -1301,9 +1295,9 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
             else {
                 trendLine
                     .attr("y1", d => xScale(d[0]))
-                    .attr("x1", d => yScale(d[1]) + dimension.xOffset)
+                    .attr("x1", d => yScale(d[1]) + dimension.yOffset)
                     .attr("y2", d => xScale(d[2]) + (xScale.rangeBand()))
-                    .attr("x2", d => yScale(d[3]) + dimension.xOffset);
+                    .attr("x2", d => yScale(d[3]) + dimension.yOffset);
             }
 
             trendLine.style("stroke", "#000")
@@ -1332,7 +1326,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
             else {
                 var expExpRegressionLine = d3.svg.line()
                     .y((d, i) => { return xScale(xSeries[i]); })
-                    .x(d => yScale(d[1]) + dimension.xOffset)
+                    .x(d => yScale(d[1]) + dimension.yOffset)
                     .interpolate('monotone');
             }
          
@@ -1362,7 +1356,7 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
             else {
                 expExpSmoothLine = d3.svg.line()
                     .y((d, i) => { return xScale(xSeries[i]); })
-                    .x((d, i) => { return yScale(d) + dimension.xOffset; })
+                    .x((d, i) => { return yScale(d) + dimension.yOffset; })
                     .interpolate('monotone');
             }
 
@@ -1491,10 +1485,10 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
 
         private getRegression(xSeries, ySeries) {
             var reduceSumFunc = function (prev, cur) { return prev + cur; };
-
+           
             var xBar = xSeries.reduce(reduceSumFunc) * 1.0 / xSeries.length;
             var yBar = ySeries.reduce(reduceSumFunc) * 1.0 / ySeries.length;
-
+           
             var ssXX = xSeries.map(function (d) { return Math.pow(d - xBar, 2); })
                 .reduce(reduceSumFunc);
 
@@ -1503,11 +1497,11 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
 
             var ssXY = xSeries.map(function (d, i) { return (d - xBar) * (ySeries[i] - yBar); })
                 .reduce(reduceSumFunc);
-
+           
             var slope = ssXY / ssXX;
             var intercept = yBar - (xBar * slope);
             var rSquare = Math.pow(ssXY, 2) / (ssXX * ssYY);
-
+           
             return [slope, intercept, rSquare];
         }
 
@@ -1522,11 +1516,29 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                     objectEnumeration.push({ objectName: objectName, properties: { orientation: this.orientation }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { valFormat: this.valFormat }, selector: null });
-                    if (this.valFormat !== "default") objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAs }, selector: null });
+                 
                        
+                    break;
+
+                case 'colorSelector':
+                    for (let barDataPoint of this.formattedData) {
+                        console.log(barDataPoint.values[0].selectionId);
+                        objectEnumeration.push({
+                            objectName: objectName,
+                            displayName: barDataPoint.key,
+                            properties: {
+                                fill: {
+                                    solid: {
+                                        color: barDataPoint.color
+                                    }
+                                }
+                            },
+                            selector: barDataPoint.values[0].selectionId.getSelector()
+                        });
+                    }
                     break;
 
                 case 'Dumbbell':
@@ -1548,21 +1560,22 @@ module powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E  {
                     break;
 
                 case 'Statistics':
+                    objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAs }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showMean }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showMedian }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showMode }, selector: null });
-                    break;
 
-                case 'Regression':
                     objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.regressionLine }, selector: null });
                     if (this.regressionLine === true) {
                         objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.regressionCurveType }, selector: null });
-                        if (this.regressionCurveType == 'linear')objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.regressionLineType }, selector: null });
-                       
+                        if (this.regressionCurveType == 'linear') objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.regressionLineType }, selector: null });
+
                     }
                     objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.exponentialSmoothingLine }, selector: null });
 
-                    break;  
+                    break;
+
+              
                     
 
             };

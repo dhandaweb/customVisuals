@@ -1,25 +1,25 @@
-.visual-dotPlotCCFC224D9885417F9AAF5BB8D45B007E_DEBUG {
+.visual-dotPlotD9885417F9AAF5BB8D45B007E_DEBUG {
   
 }
-.visual-dotPlotCCFC224D9885417F9AAF5BB8D45B007E_DEBUG .overflowingText {
+.visual-dotPlotD9885417F9AAF5BB8D45B007E_DEBUG .overflowingText {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   display: block;
 }
-.visual-dotPlotCCFC224D9885417F9AAF5BB8D45B007E_DEBUG p {
+.visual-dotPlotD9885417F9AAF5BB8D45B007E_DEBUG p {
   font-size: 20px;
   font-weight: bold;
 }
-.visual-dotPlotCCFC224D9885417F9AAF5BB8D45B007E_DEBUG p em {
+.visual-dotPlotD9885417F9AAF5BB8D45B007E_DEBUG p em {
   background: yellow;
   padding: 5px;
 }
-.visual-dotPlotCCFC224D9885417F9AAF5BB8D45B007E_DEBUG .axis path {
+.visual-dotPlotD9885417F9AAF5BB8D45B007E_DEBUG .axis path {
   fill: none;
   stroke: #cccccc;
   stroke-width: 1px;
 }
-.visual-dotPlotCCFC224D9885417F9AAF5BB8D45B007E_DEBUG .axis line {
+.visual-dotPlotD9885417F9AAF5BB8D45B007E_DEBUG .axis line {
   stroke: #cccccc;
 }

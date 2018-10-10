@@ -8659,8 +8659,8 @@ var powerbi;
     (function (extensibility) {
         var visual;
         (function (visual) {
-            var dotPlotCCFC224D9885417F9AAF5BB8D45B007E;
-            (function (dotPlotCCFC224D9885417F9AAF5BB8D45B007E) {
+            var dotPlotD9885417F9AAF5BB8D45B007E;
+            (function (dotPlotD9885417F9AAF5BB8D45B007E) {
                 "use strict";
                 var DataViewObjectsParser = powerbi.extensibility.utils.dataview.DataViewObjectsParser;
                 var VisualSettings = (function (_super) {
@@ -8676,7 +8676,7 @@ var powerbi;
                     }
                     return VisualSettings;
                 }(DataViewObjectsParser));
-                dotPlotCCFC224D9885417F9AAF5BB8D45B007E.VisualSettings = VisualSettings;
+                dotPlotD9885417F9AAF5BB8D45B007E.VisualSettings = VisualSettings;
                 var dataPointSettings = (function () {
                     function dataPointSettings() {
                         // Default color
@@ -8694,8 +8694,8 @@ var powerbi;
                     }
                     return dataPointSettings;
                 }());
-                dotPlotCCFC224D9885417F9AAF5BB8D45B007E.dataPointSettings = dataPointSettings;
-            })(dotPlotCCFC224D9885417F9AAF5BB8D45B007E = visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E || (visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E = {}));
+                dotPlotD9885417F9AAF5BB8D45B007E.dataPointSettings = dataPointSettings;
+            })(dotPlotD9885417F9AAF5BB8D45B007E = visual.dotPlotD9885417F9AAF5BB8D45B007E || (visual.dotPlotD9885417F9AAF5BB8D45B007E = {}));
         })(visual = extensibility.visual || (extensibility.visual = {}));
     })(extensibility = powerbi.extensibility || (powerbi.extensibility = {}));
 })(powerbi || (powerbi = {}));
@@ -8705,14 +8705,14 @@ var powerbi;
     (function (extensibility) {
         var visual;
         (function (visual) {
-            var dotPlotCCFC224D9885417F9AAF5BB8D45B007E;
-            (function (dotPlotCCFC224D9885417F9AAF5BB8D45B007E) {
+            var dotPlotD9885417F9AAF5BB8D45B007E;
+            (function (dotPlotD9885417F9AAF5BB8D45B007E) {
                 var DefaultHandleTouchDelay = 1000;
                 function createTooltipServiceWrapper(tooltipService, rootElement, handleTouchDelay) {
                     if (handleTouchDelay === void 0) { handleTouchDelay = DefaultHandleTouchDelay; }
                     return new TooltipServiceWrapper(tooltipService, rootElement, handleTouchDelay);
                 }
-                dotPlotCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper = createTooltipServiceWrapper;
+                dotPlotD9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper = createTooltipServiceWrapper;
                 var TooltipServiceWrapper = (function () {
                     function TooltipServiceWrapper(tooltipService, rootElement, handleTouchDelay) {
                         this.visualHostTooltipService = tooltipService;
@@ -8883,7 +8883,7 @@ var powerbi;
                     };
                     return TooltipServiceWrapper;
                 }());
-            })(dotPlotCCFC224D9885417F9AAF5BB8D45B007E = visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E || (visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E = {}));
+            })(dotPlotD9885417F9AAF5BB8D45B007E = visual.dotPlotD9885417F9AAF5BB8D45B007E || (visual.dotPlotD9885417F9AAF5BB8D45B007E = {}));
         })(visual = extensibility.visual || (extensibility.visual = {}));
     })(extensibility = powerbi.extensibility || (powerbi.extensibility = {}));
 })(powerbi || (powerbi = {}));
@@ -8918,8 +8918,8 @@ var powerbi;
     (function (extensibility) {
         var visual;
         (function (visual) {
-            var dotPlotCCFC224D9885417F9AAF5BB8D45B007E;
-            (function (dotPlotCCFC224D9885417F9AAF5BB8D45B007E) {
+            var dotPlotD9885417F9AAF5BB8D45B007E;
+            (function (dotPlotD9885417F9AAF5BB8D45B007E) {
                 "use strict";
                 var Visual = (function () {
                     function Visual(options) {
@@ -8937,8 +8937,9 @@ var powerbi;
                         this.regressionLineType = "single";
                         this.regressionCurveType = "linear";
                         this.exponentialSmoothingLine = false;
+                        this.formattedData = [];
                         this.valFormat = 'default';
-                        this.valPrecision = 2;
+                        this.valPrecision = 1;
                         this.yAxisMinValue = false;
                         this.legendColor = 'Category1';
                         this.colorOptions = {
@@ -8961,7 +8962,7 @@ var powerbi;
                         this.dotRadius = 6;
                         this.circleOpacity = 100;
                         this.orientation = "vertical";
-                        this.fontSize = 14;
+                        this.fontSize = 11;
                         this.legendFontSize = 10;
                         this.setValueDomain = function (Min, Max) {
                             var domain = {};
@@ -9075,14 +9076,16 @@ var powerbi;
                         };
                         this.element = d3.select(options.element);
                         this.host = options.host;
-                        this.tooltipServiceWrapper = dotPlotCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
+                        this.tooltipServiceWrapper = dotPlotD9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
                         this.selectionManager = options.host.createSelectionManager();
                     }
                     ;
                     Visual.prototype.update = function (options) {
+                        this.colorPalette = this.host.colorPalette;
+                        console.log("updating", this.colorPalette);
                         this.element.style("overflow", "hidden");
                         this.element.select('.dotPlot').remove();
-                        //console.log(options.dataViews[0].metadata.columns);
+                        console.log(options.dataViews[0].metadata.columns);
                         this.draw(options);
                     };
                     Visual.prototype.draw = function (options) {
@@ -9151,10 +9154,12 @@ var powerbi;
                                     var colorFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.colorFormat });
                                 }
                                 formattedData = filteredValues.map(function (d, i) {
-                                    valFormat = _this.getValueFormat(d.source.format);
+                                    valFormat = _this.getValueFormat(d.source.format, d3.max(d.values.map(function (d) { return d; })));
+                                    console.log(_this.colorPalette);
                                     return {
                                         key: _this.colorFormat !== undefined ? colorFormat.format(d.source.groupName) : d.source.groupName,
-                                        color: _this.colorScale(d.source.groupName),
+                                        //color: this.colorScale(d.source.groupName),
+                                        color: _this.colorPalette.getColor(d.source.groupName).value,
                                         values: d.values.map(function (t, i) {
                                             if (_this.hasSize)
                                                 sizeValues.push(sizeG[i]);
@@ -9163,7 +9168,8 @@ var powerbi;
                                                 yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
                                                 legend: d.source.groupName,
                                                 selectionId: _this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).withSeries(rawData.categorical.values, rawData.categorical.values[i]).createSelectionId(),
-                                                color: _this.colorScale(d.source.groupName),
+                                                //color: this.colorScale(d.source.groupName),
+                                                color: _this.colorPalette.getColor(d.source.groupName).value,
                                                 colorValue: { title: _this.colorTitle, caption: d.source.groupName },
                                                 size: _this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeG[i], caption: sizeFormat.format(sizeG[i]) } : null
                                             };
@@ -9173,10 +9179,10 @@ var powerbi;
                             }
                             else {
                                 formattedData = valuesG.map(function (d, i) {
-                                    valFormat = _this.getValueFormat(d.source.format);
+                                    valFormat = _this.getValueFormat(d.source.format, d3.max(d.values.map(function (d) { return d; })));
                                     return {
                                         key: d.source.displayName,
-                                        color: _this.colorScale(d.source.groupName),
+                                        color: _this.colorPalette.getColor(d.source.displayName).value,
                                         values: d.values.map(function (t, i) {
                                             if (_this.hasSize)
                                                 sizeValues.push(sizeG[i]);
@@ -9184,7 +9190,8 @@ var powerbi;
                                                 xValue: { title: xMetadata.displayName, value: xAxis[i], caption: xAxis[i] },
                                                 yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
                                                 legend: d.source.displayName,
-                                                color: _this.colorScale(d.source.displayName),
+                                                //color: this.colorScale(d.source.displayName),
+                                                color: _this.colorPalette.getColor(d.source.displayName).value,
                                                 selectionId: _this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).createSelectionId(),
                                                 size: _this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeG[i], caption: sizeFormat.format(sizeG[i]) } : null
                                             };
@@ -9193,7 +9200,7 @@ var powerbi;
                                 });
                             }
                         }
-                        var legend = this.setLegendWidth(this.element, formattedData.map(function (d) { return d.key; }));
+                        var legend = this.setLegendWidth(this.element, formattedData.map(function (d) { return { key: d.key, color: d.color }; }));
                         var retData = this.setUpAnalyticData(formattedData);
                         var yAxis = [];
                         retData.map(function (d) {
@@ -9234,9 +9241,11 @@ var powerbi;
                                 dumbellData = retData;
                             }
                         }
+                        this.formattedData = retData;
                         return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat.format, data: retData, legend: legend, sizeValues: sizeValues, dumbellData: dumbellData };
                     };
                     Visual.prototype.setProperties = function (options) {
+                        console.log(options.dataViews[0].metadata.objects);
                         if (options.dataViews[0].metadata.objects) {
                             if (options.dataViews[0].metadata.objects["Basic"]) {
                                 var basic = options.dataViews[0].metadata.objects["Basic"];
@@ -9250,8 +9259,6 @@ var powerbi;
                                     this.connectDots = basic["connectDots"];
                                 if (basic.connectDotsBy !== undefined)
                                     this.connectDotsBy = basic["connectDotsBy"];
-                                if (basic.showAs !== undefined)
-                                    this.showAs = basic["showAs"];
                                 if (basic.orientation !== undefined)
                                     this.orientation = basic["orientation"];
                                 if (basic.valFormat !== undefined)
@@ -9296,17 +9303,16 @@ var powerbi;
                                     this.showMedian = statistics["showMedian"];
                                 if (statistics.showMode !== undefined)
                                     this.showMode = statistics["showMode"];
-                            }
-                            if (options.dataViews[0].metadata.objects["Regression"]) {
-                                var regression = options.dataViews[0].metadata.objects["Regression"];
-                                if (regression.regressionLine !== undefined)
-                                    this.regressionLine = regression["regressionLine"];
-                                if (regression.regressionLineType !== undefined)
-                                    this.regressionLineType = regression["regressionLineType"];
-                                if (regression.regressionCurveType !== undefined)
-                                    this.regressionCurveType = regression["regressionCurveType"];
-                                if (regression.exponentialSmoothingLine !== undefined)
-                                    this.exponentialSmoothingLine = regression["exponentialSmoothingLine"];
+                                if (statistics.regressionLine !== undefined)
+                                    this.regressionLine = statistics["regressionLine"];
+                                if (statistics.regressionLineType !== undefined)
+                                    this.regressionLineType = statistics["regressionLineType"];
+                                if (statistics.regressionCurveType !== undefined)
+                                    this.regressionCurveType = statistics["regressionCurveType"];
+                                if (statistics.exponentialSmoothingLine !== undefined)
+                                    this.exponentialSmoothingLine = statistics["exponentialSmoothingLine"];
+                                if (statistics.showAs !== undefined)
+                                    this.showAs = statistics["showAs"];
                             }
                         }
                     };
@@ -9343,14 +9349,14 @@ var powerbi;
                             xlegendOffset = this.legendFontSize * 3;
                         var xdata = data.xAxis;
                         var xDomain = d3.scale.ordinal().domain(xdata).domain();
-                        var xT = this.axisLabelArray(xDomain.slice(0), vp.width, this.element, this.orientation);
+                        var xT = this.axisLabelArray(xDomain.slice(0), (vp.width - this.getYOffset(data) - ylegendOffset), this.element, this.orientation);
                         var xOffset, yOffset, chartWidth, chartHeight, xFilter, xTickval;
                         if (this.orientation == 'vertical') {
                             xOffset = xT.Space + 20;
                             yOffset = this.getYOffset(data);
                             chartWidth = vp.width - yOffset - ylegendOffset;
                             chartHeight = vp.height - xOffset - xlegendOffset;
-                            xFilter = (xT.Rotate === true) ? Math.round((xDomain.length / chartWidth * 100) / 2) : 1;
+                            xFilter = (xT.Rotate === true) ? (chartWidth / xDomain.length < 12 ? (Math.ceil(xDomain.length / chartWidth * 20)) : 1) : 1;
                             xTickval = xDomain.filter(function (d, i) { return (i % xFilter === 0); });
                         }
                         else {
@@ -9404,13 +9410,14 @@ var powerbi;
                         if (dimension.xRotate == true) {
                             xAxisG.attr("text-anchor", "start");
                             xAxisG.selectAll("text")
-                                .style("text-anchor", "start")
-                                .attr("dx", 6)
-                                .attr("dy", -1)
+                                .style("text-anchor", "end")
+                                .attr("dx", -7)
+                                .attr("dy", 0)
                                 .attr("transform", function (d) {
-                                return "rotate(" + (75) + ")";
+                                return "rotate(" + (-45) + ")";
                             });
                         }
+                        xAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
                     };
                     Visual.prototype.drawYScale = function (yScale, chartSvg, dimension, data) {
                         var self = this;
@@ -9425,9 +9432,11 @@ var powerbi;
                             .tickFormat(data.yFormat);
                         var yAxisG = chartSvg
                             .append("g")
+                            .attr("fill", "rgb(119, 119, 119)")
                             .attr("transform", translate)
                             .attr("class", "axis")
                             .call(yaxis);
+                        yAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
                     };
                     Visual.prototype.drawCircles = function (xScale, yScale, chartSvg, data, dimension) {
                         var _this = this;
@@ -9536,7 +9545,7 @@ var powerbi;
                     };
                     ;
                     Visual.parseSettings = function (dataView) {
-                        return dotPlotCCFC224D9885417F9AAF5BB8D45B007E.VisualSettings.parse(dataView);
+                        return dotPlotD9885417F9AAF5BB8D45B007E.VisualSettings.parse(dataView);
                     };
                     Visual.prototype.getTooltipData = function (data) {
                         var retData = [];
@@ -9576,9 +9585,9 @@ var powerbi;
                         var svg = el.append("svg").attr("width", 0).attr("height", 0);
                         var legend = legendData.map(function (d) {
                             return {
-                                width: _this.getTextWidth(svg, d, _this.legendFontSize) + 20,
-                                color: _this.colorScale(d),
-                                text: d
+                                width: _this.getTextWidth(svg, d.key, _this.legendFontSize) + 20,
+                                color: d.color,
+                                text: d.key
                             };
                         });
                         svg.remove();
@@ -9599,7 +9608,7 @@ var powerbi;
                                 words.map(function (d) { wordsArray.push(d); });
                                 var word, line = [];
                             });
-                            var longest = wordsArray.sort(function (a, b) { return b.length - a.length; })[0];
+                            var longest = labels.sort(function (a, b) { return b.length - a.length; })[0];
                             if (this.getTextWidth(svg, longest, fontsize) > maxWidth)
                                 rotate = true;
                             if (rotate === true) {
@@ -9700,54 +9709,33 @@ var powerbi;
                     Visual.prototype.setFontSize = function (chartSvg) {
                         chartSvg.selectAll("text").style("font-size", this.fontSize + "px");
                     };
-                    Visual.prototype.getValueFormat = function (val) {
+                    Visual.prototype.getValueFormat = function (val, max) {
                         var valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
                         var iValueFormatter = valueFormatter.create({});
+                        var valF = null;
                         switch (this.valFormat) {
                             case 'thousand':
-                                iValueFormatter = valueFormatter.create({ value: 1001, precision: parseInt(this.valPrecision) });
+                                valF = 1001;
                                 break;
                             case 'million':
-                                iValueFormatter = valueFormatter.create({ value: 1e6, precision: parseInt(this.valPrecision) });
+                                valF = 1e6;
                                 break;
                             case 'billion':
-                                iValueFormatter = valueFormatter.create({ value: 1e9, precision: parseInt(this.valPrecision) });
+                                valF = 1e9;
                                 break;
                             case 'trillion':
-                                iValueFormatter = valueFormatter.create({ value: 1e12, precision: parseInt(this.valPrecision) });
+                                valF = 1e12;
                                 break;
                             case 'default':
-                                iValueFormatter = valueFormatter.create({ format: val, precision: parseInt(this.valPrecision) });
+                                valF = max;
                                 break;
                         }
+                        iValueFormatter = valueFormatter.create({ format: val, value: valF, precision: this.valPrecision });
                         return iValueFormatter;
                     };
                     Visual.prototype.getYOffset = function (data) {
-                        var retVal = 4.5 * this.fontSize;
                         var max = d3.max(data.yAxis);
-                        switch (this.valFormat) {
-                            case 'thousand':
-                            case 'million':
-                            case 'billion':
-                            case 'trillion':
-                                retVal = (data.yFormat(max).length * this.fontSize / 1.5);
-                                break;
-                            case 'default':
-                                if (max <= 1)
-                                    retVal = 4.5 * this.fontSize;
-                                if (max > 1)
-                                    retVal = 1.5 * this.fontSize;
-                                if (max > 99)
-                                    retVal = 2.5 * this.fontSize;
-                                if (max > 999)
-                                    retVal = 3.5 * this.fontSize;
-                                if (max > 99999)
-                                    retVal = 4.5 * this.fontSize;
-                                if (max > 9999999)
-                                    retVal = 5.5 * this.fontSize;
-                                break;
-                        }
-                        return retVal;
+                        return 2 + (data.yFormat(max).length + 1) * this.fontSize / 1.5;
                     };
                     Visual.prototype.drawDumbellLines = function (data, chartSvg, dimension, xScale, yScale) {
                         var _this = this;
@@ -9978,7 +9966,7 @@ var powerbi;
                         var _this = this;
                         if (this.regressionCurveType === "linear") {
                             var xLabels = xScale.domain();
-                            var xSeries = d3.range(1, xLabels.length - 1);
+                            var xSeries = xLabels.map(function (d, i) { return i; });
                             var ySeries = [];
                             var multipleRegressionData = [];
                             data.map(function (d) {
@@ -10047,9 +10035,9 @@ var powerbi;
                         else {
                             trendLine
                                 .attr("y1", function (d) { return xScale(d[0]); })
-                                .attr("x1", function (d) { return yScale(d[1]) + dimension.xOffset; })
+                                .attr("x1", function (d) { return yScale(d[1]) + dimension.yOffset; })
                                 .attr("y2", function (d) { return xScale(d[2]) + (xScale.rangeBand()); })
-                                .attr("x2", function (d) { return yScale(d[3]) + dimension.xOffset; });
+                                .attr("x2", function (d) { return yScale(d[3]) + dimension.yOffset; });
                         }
                         trendLine.style("stroke", "#000")
                             .style("stroke-width", 3)
@@ -10071,7 +10059,7 @@ var powerbi;
                         else {
                             var expExpRegressionLine = d3.svg.line()
                                 .y(function (d, i) { return xScale(xSeries[i]); })
-                                .x(function (d) { return yScale(d[1]) + dimension.xOffset; })
+                                .x(function (d) { return yScale(d[1]) + dimension.yOffset; })
                                 .interpolate('monotone');
                         }
                         chartSvg.append("path")
@@ -10096,7 +10084,7 @@ var powerbi;
                         else {
                             expExpSmoothLine = d3.svg.line()
                                 .y(function (d, i) { return xScale(xSeries[i]); })
-                                .x(function (d, i) { return yScale(d) + dimension.xOffset; })
+                                .x(function (d, i) { return yScale(d) + dimension.yOffset; })
                                 .interpolate('monotone');
                         }
                         chartSvg.append("path")
@@ -10139,11 +10127,27 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { orientation: this.orientation }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { valFormat: this.valFormat }, selector: null });
-                                if (this.valFormat !== "default")
-                                    objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAs }, selector: null });
+                                break;
+                            case 'colorSelector':
+                                for (var _i = 0, _a = this.formattedData; _i < _a.length; _i++) {
+                                    var barDataPoint = _a[_i];
+                                    console.log(barDataPoint.values[0].selectionId);
+                                    objectEnumeration.push({
+                                        objectName: objectName,
+                                        displayName: barDataPoint.key,
+                                        properties: {
+                                            fill: {
+                                                solid: {
+                                                    color: barDataPoint.color
+                                                }
+                                            }
+                                        },
+                                        selector: barDataPoint.values[0].selectionId.getSelector()
+                                    });
+                                }
                                 break;
                             case 'Dumbbell':
                                 objectEnumeration.push({ objectName: objectName, properties: { connectDots: this.connectDots }, selector: null });
@@ -10163,11 +10167,10 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { yAxisMinValue: this.yAxisMinValue }, selector: null });
                                 break;
                             case 'Statistics':
+                                objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAs }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showMean }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showMedian }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showMode }, selector: null });
-                                break;
-                            case 'Regression':
                                 objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.regressionLine }, selector: null });
                                 if (this.regressionLine === true) {
                                     objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.regressionCurveType }, selector: null });
@@ -10183,8 +10186,8 @@ var powerbi;
                     };
                     return Visual;
                 }());
-                dotPlotCCFC224D9885417F9AAF5BB8D45B007E.Visual = Visual;
-            })(dotPlotCCFC224D9885417F9AAF5BB8D45B007E = visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E || (visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E = {}));
+                dotPlotD9885417F9AAF5BB8D45B007E.Visual = Visual;
+            })(dotPlotD9885417F9AAF5BB8D45B007E = visual.dotPlotD9885417F9AAF5BB8D45B007E || (visual.dotPlotD9885417F9AAF5BB8D45B007E = {}));
         })(visual = extensibility.visual || (extensibility.visual = {}));
     })(extensibility = powerbi.extensibility || (powerbi.extensibility = {}));
 })(powerbi || (powerbi = {}));
@@ -10194,13 +10197,13 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.dotPlotCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
-                name: 'dotPlotCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
-                displayName: 'Dot Plot',
+            plugins.dotPlotD9885417F9AAF5BB8D45B007E_DEBUG = {
+                name: 'dotPlotD9885417F9AAF5BB8D45B007E_DEBUG',
+                displayName: 'DotPlot',
                 class: 'Visual',
                 version: '1.0.0',
                 apiVersion: '1.11.0',
-                create: function (options) { return new powerbi.extensibility.visual.dotPlotCCFC224D9885417F9AAF5BB8D45B007E.Visual(options); },
+                create: function (options) { return new powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E.Visual(options); },
                 custom: true
             };
         })(plugins = visuals.plugins || (visuals.plugins = {}));
