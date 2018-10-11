@@ -1,11 +1,12 @@
 {
   "ExpandedNodes": [
     "",
-    "\\dotPlot",
     "\\dotPlot\\src",
+    "\\dotPlot\\style",
     "\\heatMap",
-    "\\heatMap\\src"
+    "\\heatMap\\src",
+    "\\kpiCard"
   ],
-  "SelectedNode": "\\heatMap\\capabilities.json",
+  "SelectedNode": "\\heatMap\\src\\visual.ts",
   "PreviewInSolutionExplorer": false
 }

@@ -441,6 +441,29 @@
 
                         ]
                     }
+                },
+                "standardDeviation": {
+                    "displayName": "StandardDeviation",
+                    "type": { "bool": true }
+                },
+                "noOfStandardDeviation": {
+                    "displayName": "No of Standard Deviation",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "1",
+                                "displayName": "1"
+                            },
+                            {
+                                "value": "2",
+                                "displayName": "2"
+                            },
+                            {
+                                "value": "3",
+                                "displayName": "3"
+                            }
+                        ]
+                    }
                 }
             }
         }

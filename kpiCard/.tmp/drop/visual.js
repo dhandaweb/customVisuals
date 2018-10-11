@@ -9037,11 +9037,18 @@ var powerbi;
                         else if (this.hasTarget)
                             this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.targetIndex].format });
                         var data = [];
+                        var dateformat;
+                        if (this.dateFormat !== undefined)
+                            dateformat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.dateFormat });
                         options.dataViews[0].table.rows.forEach(function (d, i) {
                             d.identity = options.dataViews[0].table.identity[i];
                             d.actual = d[_this.actualIndex];
                             d.target = d[_this.targetIndex];
                             d.period = d[_this.periodIndex];
+                            if (_this.dateFormat != undefined) {
+                                var dateformat_1 = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: _this.dateFormat });
+                                d.period = dateformat_1.format(d[_this.periodIndex]);
+                            }
                             data.push(d);
                         });
                         var trend = data[data.length - 1].actual > data[data.length - 2].actual ? 180 : 0;
@@ -9193,7 +9200,7 @@ var powerbi;
                                     .call(xaxis)
                                     .selectAll("text").each(function (d, i) {
                                     if (i === 0 || i === xScale.domain().length - 1) {
-                                        d3.select(this).attr("text-anchor", i === 0 ? "start" : "end");
+                                        d3.select(this).style("text-anchor", i === 0 ? "start" : "end");
                                     }
                                     else {
                                         d3.select(this).text("");
@@ -9354,10 +9361,6 @@ var powerbi;
                                 hoverVal = _this.iValueFormatter.format(d.actual);
                             }
                         });
-                        if (this.dateFormat != undefined) {
-                            var dateformat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.dateFormat });
-                            hoverXValue = dateformat.format(hoverXValue);
-                        }
                         this.sparklineCaptionName.text(hoverXValue);
                         this.sparklineCaptionValue.text(hoverVal);
                         if (xPos > 60) {

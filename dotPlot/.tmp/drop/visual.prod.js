@@ -8936,6 +8936,8 @@ var powerbi;
                         this.regressionLine = false;
                         this.regressionLineType = "single";
                         this.regressionCurveType = "linear";
+                        this.standardDeviation = false;
+                        this.noOfStandardDeviation = "1";
                         this.exponentialSmoothingLine = false;
                         this.formattedData = [];
                         this.valFormat = 'default';
@@ -9076,16 +9078,17 @@ var powerbi;
                         };
                         this.element = d3.select(options.element);
                         this.host = options.host;
+                        this.colorPalette = this.host.colorPalette;
                         this.tooltipServiceWrapper = dotPlotD9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
                         this.selectionManager = options.host.createSelectionManager();
                     }
                     ;
                     Visual.prototype.update = function (options) {
-                        this.colorPalette = this.host.colorPalette;
                         console.log("updating", this.colorPalette);
                         this.element.style("overflow", "hidden");
                         this.element.select('.dotPlot').remove();
-                        console.log(options.dataViews[0].metadata.columns);
+                        console.log(options.dataViews[0].categorical.categories);
+                        //  console.log(options.dataViews[0].categorical.categories[0].objects[0]);
                         this.draw(options);
                     };
                     Visual.prototype.draw = function (options) {
@@ -9183,6 +9186,7 @@ var powerbi;
                                     return {
                                         key: d.source.displayName,
                                         color: _this.colorPalette.getColor(d.source.displayName).value,
+                                        iden: identityData[i],
                                         values: d.values.map(function (t, i) {
                                             if (_this.hasSize)
                                                 sizeValues.push(sizeG[i]);
@@ -9245,7 +9249,6 @@ var powerbi;
                         return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat.format, data: retData, legend: legend, sizeValues: sizeValues, dumbellData: dumbellData };
                     };
                     Visual.prototype.setProperties = function (options) {
-                        console.log(options.dataViews[0].metadata.objects);
                         if (options.dataViews[0].metadata.objects) {
                             if (options.dataViews[0].metadata.objects["Basic"]) {
                                 var basic = options.dataViews[0].metadata.objects["Basic"];
@@ -9297,6 +9300,8 @@ var powerbi;
                             }
                             if (options.dataViews[0].metadata.objects["Statistics"]) {
                                 var statistics = options.dataViews[0].metadata.objects["Statistics"];
+                                if (statistics.showAs !== undefined)
+                                    this.showAs = statistics["showAs"];
                                 if (statistics.showMean !== undefined)
                                     this.showMean = statistics["showMean"];
                                 if (statistics.showMedian !== undefined)
@@ -9311,8 +9316,10 @@ var powerbi;
                                     this.regressionCurveType = statistics["regressionCurveType"];
                                 if (statistics.exponentialSmoothingLine !== undefined)
                                     this.exponentialSmoothingLine = statistics["exponentialSmoothingLine"];
-                                if (statistics.showAs !== undefined)
-                                    this.showAs = statistics["showAs"];
+                                if (statistics.standardDeviation !== undefined)
+                                    this.standardDeviation = statistics["standardDeviation"];
+                                if (statistics.noOfStandardDeviation !== undefined)
+                                    this.noOfStandardDeviation = statistics["noOfStandardDeviation"];
                             }
                         }
                     };
@@ -9762,6 +9769,8 @@ var powerbi;
                                 .attr("style", "fill:none;")
                                 .style("stroke", "#b3b3b3")
                                 .attr("d", function (d) { return line(d.values); });
+                            if (this.connectDotsBy === "color")
+                                dumbell.style("stroke", function (d) { return d.color; });
                         }
                     };
                     ;
@@ -9961,6 +9970,9 @@ var powerbi;
                         if (this.regressionLine === true) {
                             this.buildRegression(data.data, xScale, yScale, chartSvg, dimension);
                         }
+                        if (this.standardDeviation === true) {
+                            this.drawStandardDeviation(data, xScale, yScale, chartSvg, dimension, data.yFormat);
+                        }
                     };
                     Visual.prototype.buildRegression = function (data, xScale, yScale, chartSvg, dimension) {
                         var _this = this;
@@ -10119,6 +10131,87 @@ var powerbi;
                         var rSquare = Math.pow(ssXY, 2) / (ssXX * ssYY);
                         return [slope, intercept, rSquare];
                     };
+                    Visual.prototype.drawStandardDeviation = function (data, xScale, yScale, chartSvg, dimension, format) {
+                        var valuesArray = [];
+                        data.data.map(function (d) {
+                            d.values.map(function (d) {
+                                valuesArray.push(d.yValue.value);
+                            });
+                        });
+                        var mean = d3.mean(valuesArray);
+                        var sd = d3.deviation(valuesArray) !== undefined ? (d3.deviation(valuesArray) * parseInt(this.noOfStandardDeviation)) : 0;
+                        var stdDevG = chartSvg.append("g");
+                        var stdDevGMeanLine = stdDevG
+                            .append("rect")
+                            .attr("fill", "red");
+                        var stdDevGRect = stdDevG
+                            .append("rect")
+                            .attr("fill", "#b3b3b3")
+                            .attr("style", "stroke: #b3b3b3; stroke-width: .5;fill-opacity:.2");
+                        var stdDevGText = stdDevG.append("text").style("fill", "#000000");
+                        if (this.orientation === "vertical") {
+                            var upper = yScale(mean - sd) > yScale.range()[0] ? yScale.range()[0] : yScale(mean - sd);
+                            var lower = yScale(mean + sd) < yScale.range()[1] ? yScale.range()[1] : yScale(mean + sd);
+                            console.log(upper);
+                            stdDevGMeanLine
+                                .attr("x", dimension.yOffset)
+                                .attr("width", dimension.chartWidth)
+                                .attr("height", 2)
+                                .attr("y", yScale(mean));
+                            stdDevGRect
+                                .attr("x", dimension.yOffset)
+                                .attr("width", dimension.chartWidth)
+                                .attr("y", lower)
+                                .attr("height", upper - lower);
+                            stdDevGText
+                                .attr("y", yScale(mean) - 5)
+                                .append("tspan")
+                                .attr("x", dimension.yOffset + 5)
+                                .text("Std dev: " + format(sd));
+                            stdDevGText.append("tspan")
+                                .attr("text-anchor", "end")
+                                .attr("x", dimension.chartWidth + dimension.yOffset - 5)
+                                .text("Mean + Std dev: " + format(mean + sd));
+                            stdDevGText.append("tspan")
+                                .attr("x", dimension.yOffset + 5)
+                                .attr("dy", 20)
+                                .text("Mean: " + format(mean));
+                            stdDevGText.append("tspan")
+                                .attr("x", dimension.chartWidth + dimension.yOffset - 5)
+                                .attr("text-anchor", "end")
+                                .text("Mean - Std dev: " + format(mean - sd));
+                        }
+                        else {
+                            var lower = yScale(mean - sd) < yScale.range()[0] ? yScale.range()[0] : yScale(mean - sd);
+                            var upper = yScale(mean + sd) > yScale.range()[1] ? yScale.range()[1] : yScale(mean + sd);
+                            stdDevGMeanLine
+                                .attr("width", 2)
+                                .attr("height", dimension.chartHeight - dimension.xOffset)
+                                .attr("x", yScale(mean) + dimension.yOffset);
+                            stdDevGRect
+                                .attr("height", dimension.chartHeight - dimension.xOffset)
+                                .attr("x", lower + dimension.yOffset)
+                                .attr("width", Math.abs(upper - lower));
+                            var xpos = yScale(mean) + dimension.xOffset + 5;
+                            stdDevGText
+                                .attr("y", 15)
+                                .append("tspan")
+                                .attr("x", xpos)
+                                .text("Std dev: " + format(sd));
+                            stdDevGText.append("tspan")
+                                .attr("dy", 15)
+                                .attr("x", xpos)
+                                .text("Mean + Std dev: " + format(mean + sd));
+                            stdDevGText.append("tspan")
+                                .attr("x", xpos)
+                                .attr("dy", 15)
+                                .text("Mean: " + format(mean));
+                            stdDevGText.append("tspan")
+                                .attr("dy", 15)
+                                .attr("x", xpos)
+                                .text("Mean - Std dev: " + format(mean - sd));
+                        }
+                    };
                     Visual.prototype.enumerateObjectInstances = function (options) {
                         var objectName = options.objectName;
                         var objectEnumeration = [];
@@ -10134,7 +10227,7 @@ var powerbi;
                             case 'colorSelector':
                                 for (var _i = 0, _a = this.formattedData; _i < _a.length; _i++) {
                                     var barDataPoint = _a[_i];
-                                    console.log(barDataPoint.values[0].selectionId);
+                                    console.log(barDataPoint.values[0].selectionId.getSelector());
                                     objectEnumeration.push({
                                         objectName: objectName,
                                         displayName: barDataPoint.key,
@@ -10178,6 +10271,9 @@ var powerbi;
                                         objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.regressionLineType }, selector: null });
                                 }
                                 objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.exponentialSmoothingLine }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.standardDeviation }, selector: null });
+                                if (this.standardDeviation == true)
+                                    objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.noOfStandardDeviation }, selector: null });
                                 break;
                         }
                         ;

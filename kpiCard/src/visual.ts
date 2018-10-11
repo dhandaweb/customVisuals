@@ -163,7 +163,9 @@ module powerbi.extensibility.visual {
                if (d.roles["period"]) {
                    this.hasPeriod = true;
                    this.periodIndex = i;
+                  
                    this.dateFormat = d.format;
+                   
                }
            });
 
@@ -191,11 +193,21 @@ module powerbi.extensibility.visual {
            else if (this.hasTarget) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.targetIndex].format });
           
             var data = [];
+            let dateformat;
+
+            if (this.dateFormat !== undefined )dateformat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.dateFormat });
+
             options.dataViews[0].table.rows.forEach((d: any,i) => {
                        d.identity = options.dataViews[0].table.identity[i];
-                       d.actual = d[this.actualIndex];
-                       d.target = d[this.targetIndex];
-                       d.period = d[this.periodIndex];
+                d.actual = d[this.actualIndex];
+                d.target = d[this.targetIndex];
+                d.period = d[this.periodIndex];
+
+                if (this.dateFormat != undefined) {
+                    let dateformat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.dateFormat });
+                    d.period = dateformat.format(d[this.periodIndex]);
+                }
+                      
                 data.push(d);
             });
           
@@ -391,7 +403,7 @@ module powerbi.extensibility.visual {
                        .call(xaxis)
                        .selectAll("text").each(function (d, i) {
                            if (i === 0 || i === xScale.domain().length - 1) {
-                               d3.select(this).attr("text-anchor", i === 0 ? "start" : "end")
+                               d3.select(this).style("text-anchor", i === 0 ? "start" : "end")
                            }
                            else {
                                d3.select(this).text("");
@@ -608,11 +620,6 @@ module powerbi.extensibility.visual {
                     hoverVal = this.iValueFormatter.format(d.actual);
                 }
             });
-            if (this.dateFormat != undefined) {
-                let dateformat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.dateFormat });
-                hoverXValue = dateformat.format(hoverXValue);
-
-            }
 
             this.sparklineCaptionName.text(hoverXValue);
             this.sparklineCaptionValue.text(hoverVal);
