@@ -86,7 +86,7 @@ module powerbi.extensibility.visual {
         private showYAxis: any = true;
         private showLabel: any = false;
         private rectRadius: any = 0;
-        private fontSize: any = 16;
+        private fontSize: any = 11;
         private minLegendText: any;
         private maxLegendText: any;
 
@@ -184,6 +184,7 @@ module powerbi.extensibility.visual {
             this.drawLegend(chartLegend, chartSvg, dimension, data);
             this.setFontSize(chartSvg);
         }
+
         private setProperties(options) {
             this.middleBinValue = undefined;
 
@@ -262,6 +263,9 @@ module powerbi.extensibility.visual {
             let xOffset = this.showYAxis ? yT.Space + 22 : 0;
             let yOffset = this.showXAxis ? xT.Space + 15 : 0;
 
+            if (yOffset > vp.height / 4) yOffset = vp.height / 4 > 100 ? 100 : vp.height / 4;
+            if (xOffset > vp.width / 4) xOffset = vp.width / 4 > 100 ? 100 : vp.width / 4;
+
             if (this.xAxisLabel === "firstLast" || this.xAxisLabel === "firstMiddleLast") yOffset = 25;
             if (this.xAxisLabel === "firstLast" || this.xAxisLabel === "firstMiddleLast") xT.Rotate = false;
 
@@ -270,15 +274,17 @@ module powerbi.extensibility.visual {
 
             yScale.rangeRoundBands([0, chartHeight]);
          
-            let xFilter = (xT.Rotate === true) ? Math.round((xDomain.length / chartWidth * 100) / 2) : 1;
-            let yFilter = ((chartHeight / yDomain.length) < 15) ? Math.round((yDomain.length / chartHeight * 100) / 4) : 1;
+            //let xFilter = (xT.Rotate === true) ? Math.round((xDomain.length / chartWidth * 100) / 8) : 1;
+            let xFilter = (xT.Rotate === true) ? (chartWidth / xDomain.length < 12 ? (Math.ceil(xDomain.length / chartWidth * 20)) : 1) : 1;
+            let yFilter = ((chartHeight / yDomain.length) < 15) ? Math.ceil((yDomain.length / chartHeight * 20)) : 1;
            
             let xTickval = xDomain.filter((d, i) => (i % xFilter === 0));
             let yTickval = yDomain.filter((d, i) => (i % yFilter === 0));
 
             if (this.xAxisLabel === "firstLast") xTickval = [xTickval[0], xDomain[xDomain.length - 1]];
-            if (this.xAxisLabel === "firstMiddleLast") xTickval = [xTickval[0], xTickval[Math.ceil(xTickval.length / 2)], xDomain[xDomain.length - 1]];
+            else if (this.xAxisLabel === "firstMiddleLast") xTickval = [xTickval[0], xTickval[Math.ceil(xTickval.length / 2)], xDomain[xDomain.length - 1]];
            
+
             return {
                 width: vp.width,
                 height: vp.height,
@@ -312,11 +318,19 @@ module powerbi.extensibility.visual {
                 .orient("top")
                 .tickValues(dimension.xTickval);
             if (this.showXAxis === true) {
+
                 var xAxisG = chartSvg
                     .append("g")
                     .attr("transform", "translate(" + dimension.xOffset + "," + dimension.yOffset + ")")
                     .attr("class", "axis")
                     .call(xaxis)
+                xAxisG.selectAll("text").text(d => {
+                    if (this.getTextWidth(chartSvg, d) > dimension.yOffset - this.fontSize && dimension.xRotate == true) return (d.substring(0, Math.floor(dimension.yOffset / (this.fontSize/2))) + "..");
+                    else return d;
+                })
+                    .attr("fill", "rgb(119, 119, 119)")
+                    .append("title")
+                    .text(d=>d);
 
                 if (this.xAxisLabel === "firstLast" || this.xAxisLabel === "firstMiddleLast") {
                     xAxisG.selectAll("text").style("text-anchor", function (d, i) {
@@ -351,7 +365,15 @@ module powerbi.extensibility.visual {
                     .append("g")
                     .attr("transform", "translate(" + dimension.xOffset + "," + dimension.yOffset + ")")
                     .attr("class", "axis")
-                    .call(yaxis)
+                    .call(yaxis);
+                yAxisG.selectAll("text")
+                yAxisG.selectAll("text").text(d => {
+                    if (this.getTextWidth(chartSvg, d) > dimension.xOffset - this.fontSize) return (d.substring(0, Math.floor(dimension.xOffset / (this.fontSize / 1.6))) + "..");
+                    else return d;
+                })
+                    .attr("fill", "rgb(119, 119, 119)")
+                    .append("title")
+                    .text(d => d);
             }
             //yAxisG.selectAll(".tick text").each(function (d, i) {
             //    d3.select(this).call(self.axisWrap, dimension.yOffet, "Horizontal", "Right");
@@ -590,6 +612,8 @@ module powerbi.extensibility.visual {
                     .data(this.colorRange)
                     .enter()
                     .append("text")
+                    .attr("font-size", this.fontSize + "px")
+                    .attr("style", d => 'fill:rgb(102, 102, 102);font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif')
                     .text((d, i) => {
                         if (i == 0) {
                             return (this.minLegendText !== undefined && this.minLegendText.length > 0) ? this.minLegendText : "";
@@ -630,12 +654,16 @@ module powerbi.extensibility.visual {
                     .data(legendData)
                     .enter()
                     .append("text")
+                    .attr("font-size", this.fontSize + "px")
+                    .attr("style", d => 'fill:rgb(102, 102, 102);font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif')
                     .text((d, i) => {
                         if (i == 0) {
-                            return (this.minLegendText !== undefined && this.minLegendText.length > 0) ? this.minLegendText : this.iValueFormatter.format(d);
+                            if (this.minLegendText !== undefined && this.minLegendText.length > 0) return this.minLegendText;
+                            else return d % 1 != 0 ? this.iValueFormatter.format(parseFloat(d.toFixed(2))) : this.iValueFormatter.format(d);
                         }
                         if (i == legendData.length - 1) {
-                            return (this.maxLegendText !== undefined && this.maxLegendText.length > 0) ? this.maxLegendText : this.iValueFormatter.format(d);
+                            if (this.maxLegendText !== undefined && this.maxLegendText.length > 0) return this.maxLegendText;
+                            else return d % 1 != 0 ? this.iValueFormatter.format(parseFloat(d.toFixed(2))) : this.iValueFormatter.format(d);
                         }
                         else return "";
                     });

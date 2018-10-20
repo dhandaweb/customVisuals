@@ -176,7 +176,8 @@ module powerbi.extensibility.visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E  {
             var container = this.element
                 .append("div")
                 .attr("class", "kpiCard")
-                .attr("style", "width:100%;text-align:left;border-spacing:0");
+                .attr("style", "width:100%;text-align:left;border-spacing:0")
+                .attr("style",'color:rgb(102, 102, 102);font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif');
 
             if (this.hasActual === false || this.hasTarget === false || this.hasPeriod === false) {
                 container
@@ -272,7 +273,9 @@ module powerbi.extensibility.visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E  {
 
             }
             else {
-                var titleContainer = tbody.append("tr").append("td").attr("colspan", "6");
+                var titleRow = tbody.append("tr");
+                var titleContainer = titleRow.append("td").attr("colspan", "3");
+                var titleVal = titleRow.append("td").attr("colspan", "3");
                 var bulletContainer = tbody.append("tr").append("td").attr("colspan", "6");
 
                 var thirdRow = tbody.append("tr");
@@ -282,6 +285,7 @@ module powerbi.extensibility.visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E  {
                 var sparklineContainer = tbody.append("tr").append("td");
 
                 this.drawTitle(titleContainer);
+                this.drawGroupActual(titleVal);
                 this.drawBullet(data, bulletContainer, options.viewport.width);
 
                 var height = options.viewport.height - 140;
@@ -294,6 +298,32 @@ module powerbi.extensibility.visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E  {
                 this.showTrendIndicator(titleContainer);
 
             }
+        }
+
+        public drawGroupActual(container: any) {
+
+            var actual = container
+                .append("span")
+                .attr("style", "display:block;font-size:18px;text-align:right")
+                .style("margin-right" , this.trendIndicator === true ? "15px" : "0px")
+                .text((d) => this.iValueFormatter.format(this.chartData.actual.value));
+
+
+            this.tooltipServiceWrapper.addTooltip(actual,
+                (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data, 'Actual'),
+                (tooltipEvent: TooltipEventArgs<any>) => null
+            );
+
+            var target = container
+                .append("span")
+                .attr("style", "display:block;font-size:14px;text-align:right")
+                .text((d) => this.iValueFormatter.format(this.chartData.target.value));
+
+
+            this.tooltipServiceWrapper.addTooltip(target,
+                (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data, 'Target'),
+                (tooltipEvent: TooltipEventArgs<any>) => null
+            );
         }
 
         public drawTitle(container) {
@@ -395,6 +425,7 @@ module powerbi.extensibility.visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E  {
                        .attr("transform", "translate(0,0)")
                        .attr("class", "kpiAxis")
                        .call(yaxis)
+                  
 
                    sparklineSelectionG
                        .append("g")
@@ -409,7 +440,7 @@ module powerbi.extensibility.visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E  {
                                d3.select(this).text("");
                            }
                        });
-
+                   sparklineSelectionG.selectAll("text").attr("fill", "rgb(119, 119, 119)").attr("font-size", "12px");
                }
 
                sparklineSelectionG.append("path")
@@ -507,7 +538,7 @@ module powerbi.extensibility.visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E  {
                     .attr("width", 18)
                     .attr("height", 18);
 
-                if (this.selectedTemplate === "group")trendIndicator.attr("style","position: absolute;top: 0;right: 0;")  
+                if (this.selectedTemplate === "group")trendIndicator.attr("style","position: absolute;top: 3;right: 0;")  
 
                 var triangleDirection = this.flipTrendDirection == false ? 'triangle-down' : 'triangle-up';
                 var triangle = d3.svg.symbol().type(triangleDirection).size(50);

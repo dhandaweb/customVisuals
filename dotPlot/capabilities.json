@@ -283,6 +283,10 @@
                         ]
                     }
                 },
+                "legendName": {
+                    "displayName": "Legend Name",
+                    "type": { "text": true }
+                },
                 "legendColor": {
                     "displayName": "Legend Color",
                     "type": {

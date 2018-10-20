@@ -110,7 +110,7 @@ module powerbi.extensibility.visual {
         private TooltipEventArgs: any;
         public  TooltipEnabledDataPoint: any;
 
-        private fontSize: any = 14;
+        private fontSize: any = 12;
         private HeaderTextColor: any;
         private BoldHeaderText: any;
         private RowBanding: any;
@@ -314,8 +314,8 @@ module powerbi.extensibility.visual {
                return;
            }
 
-           var thead = table.append("thead")
-           var tbody = table.append("tbody");
+            var thead = table.append("thead").attr("style", 'color:rgb(102, 102, 102);font-family: "Segoe UI Semibold", wf_segoe-ui_semibold, helvetica, arial, sans-serif;');
+            var tbody = table.append("tbody");
 
            var rows = tbody.selectAll(".rows")
                            .data(data)
@@ -773,7 +773,7 @@ module powerbi.extensibility.visual {
        }
 
         private setFontSize(chartSvg) {
-            chartSvg.style("font-size", this.fontSize + "px");
+            chartSvg.style("font-size", this.fontSize + "px").style("color", "rgb(119, 119, 119)");
         }
         //#region Tooltip
        public drawBisectorToolTip() {

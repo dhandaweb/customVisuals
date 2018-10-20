@@ -8961,7 +8961,7 @@ var powerbi;
                         this.belowThreshold2Color = { solid: { color: "#ffbd01" } };
                         this.belowThreshold3Color = { solid: { color: "#ff7601" } };
                         this.belowThreshold4Color = { solid: { color: "#ff4701" } };
-                        this.fontSize = 14;
+                        this.fontSize = 12;
                         this.element = d3.select(options.element);
                         this.host = options.host;
                         this.tooltipServiceWrapper = multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
@@ -9157,7 +9157,7 @@ var powerbi;
                                 .html("Actual is required to draw the visual");
                             return;
                         }
-                        var thead = table.append("thead");
+                        var thead = table.append("thead").attr("style", 'color:rgb(102, 102, 102);font-family: "Segoe UI Semibold", wf_segoe-ui_semibold, helvetica, arial, sans-serif;');
                         var tbody = table.append("tbody");
                         var rows = tbody.selectAll(".rows")
                             .data(data)
@@ -9495,7 +9495,7 @@ var powerbi;
                         });
                     };
                     Visual.prototype.setFontSize = function (chartSvg) {
-                        chartSvg.style("font-size", this.fontSize + "px");
+                        chartSvg.style("font-size", this.fontSize + "px").style("color", "rgb(119, 119, 119)");
                     };
                     //#region Tooltip
                     Visual.prototype.drawBisectorToolTip = function () {
@@ -9696,8 +9696,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
-                name: 'multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
+            plugins.multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E = {
+                name: 'multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E',
                 displayName: 'MultipleSparkline',
                 class: 'Visual',
                 version: '1.0.0',

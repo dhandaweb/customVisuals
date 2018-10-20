@@ -8945,7 +8945,7 @@ var powerbi;
                         this.showYAxis = true;
                         this.showLabel = false;
                         this.rectRadius = 0;
-                        this.fontSize = 14;
+                        this.fontSize = 11;
                         this.element = d3.select(options.element);
                         this.host = options.host;
                         this.tooltipServiceWrapper = heatMapCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
@@ -9101,6 +9101,10 @@ var powerbi;
                         var yT = this.axisLabelArray(yDomain.slice(0), vp.height, this.element, "Horizontal");
                         var xOffset = this.showYAxis ? yT.Space + 22 : 0;
                         var yOffset = this.showXAxis ? xT.Space + 15 : 0;
+                        if (yOffset > vp.height / 4)
+                            yOffset = vp.height / 4 > 100 ? 100 : vp.height / 4;
+                        if (xOffset > vp.width / 4)
+                            xOffset = vp.width / 4 > 100 ? 100 : vp.width / 4;
                         if (this.xAxisLabel === "firstLast" || this.xAxisLabel === "firstMiddleLast")
                             yOffset = 25;
                         if (this.xAxisLabel === "firstLast" || this.xAxisLabel === "firstMiddleLast")
@@ -9108,13 +9112,14 @@ var powerbi;
                         var chartWidth = vp.width - xOffset - xlegendOffset;
                         var chartHeight = vp.height - yOffset - ylegendOffset;
                         yScale.rangeRoundBands([0, chartHeight]);
-                        var xFilter = (xT.Rotate === true) ? Math.round((xDomain.length / chartWidth * 100) / 2) : 1;
-                        var yFilter = ((chartHeight / yDomain.length) < 15) ? Math.round((yDomain.length / chartHeight * 100) / 4) : 1;
+                        //let xFilter = (xT.Rotate === true) ? Math.round((xDomain.length / chartWidth * 100) / 8) : 1;
+                        var xFilter = (xT.Rotate === true) ? (chartWidth / xDomain.length < 12 ? (Math.ceil(xDomain.length / chartWidth * 20)) : 1) : 1;
+                        var yFilter = ((chartHeight / yDomain.length) < 15) ? Math.ceil((yDomain.length / chartHeight * 20)) : 1;
                         var xTickval = xDomain.filter(function (d, i) { return (i % xFilter === 0); });
                         var yTickval = yDomain.filter(function (d, i) { return (i % yFilter === 0); });
                         if (this.xAxisLabel === "firstLast")
                             xTickval = [xTickval[0], xDomain[xDomain.length - 1]];
-                        if (this.xAxisLabel === "firstMiddleLast")
+                        else if (this.xAxisLabel === "firstMiddleLast")
                             xTickval = [xTickval[0], xTickval[Math.ceil(xTickval.length / 2)], xDomain[xDomain.length - 1]];
                         return {
                             width: vp.width,
@@ -9140,6 +9145,7 @@ var powerbi;
                         return scale;
                     };
                     Visual.prototype.drawXScale = function (xScale, chartSvg, dimension) {
+                        var _this = this;
                         var xaxis = d3.svg.axis()
                             .scale(xScale)
                             .orient("top")
@@ -9150,6 +9156,15 @@ var powerbi;
                                 .attr("transform", "translate(" + dimension.xOffset + "," + dimension.yOffset + ")")
                                 .attr("class", "axis")
                                 .call(xaxis);
+                            xAxisG.selectAll("text").text(function (d) {
+                                if (_this.getTextWidth(chartSvg, d) > dimension.yOffset - _this.fontSize && dimension.xRotate == true)
+                                    return (d.substring(0, Math.floor(dimension.yOffset / (_this.fontSize / 2))) + "..");
+                                else
+                                    return d;
+                            })
+                                .attr("fill", "rgb(119, 119, 119)")
+                                .append("title")
+                                .text(function (d) { return d; });
                             if (this.xAxisLabel === "firstLast" || this.xAxisLabel === "firstMiddleLast") {
                                 xAxisG.selectAll("text").style("text-anchor", function (d, i) {
                                     if (i == 0)
@@ -9173,6 +9188,7 @@ var powerbi;
                         }
                     };
                     Visual.prototype.drawYScale = function (yScale, chartSvg, dimension) {
+                        var _this = this;
                         var self = this;
                         var yaxis = d3.svg.axis()
                             .scale(yScale)
@@ -9184,6 +9200,16 @@ var powerbi;
                                 .attr("transform", "translate(" + dimension.xOffset + "," + dimension.yOffset + ")")
                                 .attr("class", "axis")
                                 .call(yaxis);
+                            yAxisG.selectAll("text");
+                            yAxisG.selectAll("text").text(function (d) {
+                                if (_this.getTextWidth(chartSvg, d) > dimension.xOffset - _this.fontSize)
+                                    return (d.substring(0, Math.floor(dimension.xOffset / (_this.fontSize / 1.6))) + "..");
+                                else
+                                    return d;
+                            })
+                                .attr("fill", "rgb(119, 119, 119)")
+                                .append("title")
+                                .text(function (d) { return d; });
                         }
                         //yAxisG.selectAll(".tick text").each(function (d, i) {
                         //    d3.select(this).call(self.axisWrap, dimension.yOffet, "Horizontal", "Right");
@@ -9375,6 +9401,8 @@ var powerbi;
                                 .data(this.colorRange)
                                 .enter()
                                 .append("text")
+                                .attr("font-size", this.fontSize + "px")
+                                .attr("style", function (d) { return 'fill:rgb(102, 102, 102);font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif'; })
                                 .text(function (d, i) {
                                 if (i == 0) {
                                     return (_this.minLegendText !== undefined && _this.minLegendText.length > 0) ? _this.minLegendText : "";
@@ -9409,12 +9437,20 @@ var powerbi;
                                 .data(legendData_1)
                                 .enter()
                                 .append("text")
+                                .attr("font-size", this.fontSize + "px")
+                                .attr("style", function (d) { return 'fill:rgb(102, 102, 102);font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif'; })
                                 .text(function (d, i) {
                                 if (i == 0) {
-                                    return (_this.minLegendText !== undefined && _this.minLegendText.length > 0) ? _this.minLegendText : _this.iValueFormatter.format(d);
+                                    if (_this.minLegendText !== undefined && _this.minLegendText.length > 0)
+                                        return _this.minLegendText;
+                                    else
+                                        return d % 1 != 0 ? _this.iValueFormatter.format(parseFloat(d.toFixed(2))) : _this.iValueFormatter.format(d);
                                 }
                                 if (i == legendData_1.length - 1) {
-                                    return (_this.maxLegendText !== undefined && _this.maxLegendText.length > 0) ? _this.maxLegendText : _this.iValueFormatter.format(d);
+                                    if (_this.maxLegendText !== undefined && _this.maxLegendText.length > 0)
+                                        return _this.maxLegendText;
+                                    else
+                                        return d % 1 != 0 ? _this.iValueFormatter.format(parseFloat(d.toFixed(2))) : _this.iValueFormatter.format(d);
                                 }
                                 else
                                     return "";

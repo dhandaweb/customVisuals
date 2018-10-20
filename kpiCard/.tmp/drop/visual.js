@@ -9023,7 +9023,8 @@ var powerbi;
                         var container = this.element
                             .append("div")
                             .attr("class", "kpiCard")
-                            .attr("style", "width:100%;text-align:left;border-spacing:0");
+                            .attr("style", "width:100%;text-align:left;border-spacing:0")
+                            .attr("style", 'color:rgb(102, 102, 102);font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif');
                         if (this.hasActual === false || this.hasTarget === false || this.hasPeriod === false) {
                             container
                                 .append("html")
@@ -9097,13 +9098,16 @@ var powerbi;
                             this.showTrendIndicator(titleContainer);
                         }
                         else {
-                            var titleContainer = tbody.append("tr").append("td").attr("colspan", "6");
+                            var titleRow = tbody.append("tr");
+                            var titleContainer = titleRow.append("td").attr("colspan", "3");
+                            var titleVal = titleRow.append("td").attr("colspan", "3");
                             var bulletContainer = tbody.append("tr").append("td").attr("colspan", "6");
                             var thirdRow = tbody.append("tr");
                             var priorContainer = tbody.append("td").attr("colspan", "3");
                             var growthContainer = tbody.append("td").attr("colspan", "3");
                             var sparklineContainer = tbody.append("tr").append("td");
                             this.drawTitle(titleContainer);
+                            this.drawGroupActual(titleVal);
                             this.drawBullet(data, bulletContainer, options.viewport.width);
                             var height = options.viewport.height - 140;
                             if (height < 70)
@@ -9114,6 +9118,20 @@ var powerbi;
                             this.drawGrowth(growthContainer);
                             this.showTrendIndicator(titleContainer);
                         }
+                    };
+                    Visual.prototype.drawGroupActual = function (container) {
+                        var _this = this;
+                        var actual = container
+                            .append("span")
+                            .attr("style", "display:block;font-size:18px;text-align:right")
+                            .style("margin-right", this.trendIndicator === true ? "15px" : "0px")
+                            .text(function (d) { return _this.iValueFormatter.format(_this.chartData.actual.value); });
+                        this.tooltipServiceWrapper.addTooltip(actual, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data, 'Actual'); }, function (tooltipEvent) { return null; });
+                        var target = container
+                            .append("span")
+                            .attr("style", "display:block;font-size:14px;text-align:right")
+                            .text(function (d) { return _this.iValueFormatter.format(_this.chartData.target.value); });
+                        this.tooltipServiceWrapper.addTooltip(target, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data, 'Target'); }, function (tooltipEvent) { return null; });
                     };
                     Visual.prototype.drawTitle = function (container) {
                         var val = container.append("span").text(this.chartData.actual.display).attr("style", "font-size:18px;");
@@ -9206,6 +9224,7 @@ var powerbi;
                                         d3.select(this).text("");
                                     }
                                 });
+                                sparklineSelectionG.selectAll("text").attr("fill", "rgb(119, 119, 119)").attr("font-size", "12px");
                             }
                             sparklineSelectionG.append("path")
                                 .attr("class", "line")
@@ -9275,7 +9294,7 @@ var powerbi;
                                 .attr("width", 18)
                                 .attr("height", 18);
                             if (this.selectedTemplate === "group")
-                                trendIndicator.attr("style", "position: absolute;top: 0;right: 0;");
+                                trendIndicator.attr("style", "position: absolute;top: 3;right: 0;");
                             var triangleDirection = this.flipTrendDirection == false ? 'triangle-down' : 'triangle-up';
                             var triangle = d3.svg.symbol().type(triangleDirection).size(50);
                             trendIndicator

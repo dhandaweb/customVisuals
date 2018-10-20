@@ -8941,7 +8941,7 @@ var powerbi;
                         this.exponentialSmoothingLine = false;
                         this.formattedData = [];
                         this.valFormat = 'default';
-                        this.valPrecision = 1;
+                        this.valPrecision = 0;
                         this.yAxisMinValue = false;
                         this.legendColor = 'Category1';
                         this.colorOptions = {
@@ -9084,11 +9084,8 @@ var powerbi;
                     }
                     ;
                     Visual.prototype.update = function (options) {
-                        console.log("updating", this.colorPalette);
                         this.element.style("overflow", "hidden");
                         this.element.select('.dotPlot').remove();
-                        console.log(options.dataViews[0].categorical.categories);
-                        //  console.log(options.dataViews[0].categorical.categories[0].objects[0]);
                         this.draw(options);
                     };
                     Visual.prototype.draw = function (options) {
@@ -9138,6 +9135,7 @@ var powerbi;
                             var xAxis = rawData.categorical.categories[0].values;
                             var xMetadata = rawData.categorical.categories[0].source;
                             var identityData = rawData.categorical.categories[0].identity;
+                            var grouped = rawData.categorical.values.grouped();
                             if (this.axisFormat !== undefined) {
                                 var axisFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.axisFormat });
                                 xAxis = xAxis.map(function (d) { return axisFormat.format(d); });
@@ -9149,6 +9147,7 @@ var powerbi;
                                 var sizeMetadata = rawData.categorical.values.filter(function (d) { return d.source.roles.size; })[0];
                                 var sizeG = sizeMetadata.values;
                                 var sizeFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: sizeMetadata.source.format });
+                                var sizeV = rawData.categorical.values.filter(function (d) { return d.source.roles.size; });
                             }
                             if (this.hasColor) {
                                 var valuesMetadata = metadata.filter(function (d) { return d.roles["values"]; })[0].displayName;
@@ -9158,23 +9157,25 @@ var powerbi;
                                 }
                                 formattedData = filteredValues.map(function (d, i) {
                                     valFormat = _this.getValueFormat(d.source.format, d3.max(d.values.map(function (d) { return d; })));
-                                    console.log(_this.colorPalette);
+                                    var color = _this.colorPalette.getColor(d.source.groupName).value;
+                                    if (grouped[i].objects)
+                                        color = grouped[i].objects.colorSelector.fill.solid.color;
                                     return {
                                         key: _this.colorFormat !== undefined ? colorFormat.format(d.source.groupName) : d.source.groupName,
-                                        //color: this.colorScale(d.source.groupName),
-                                        color: _this.colorPalette.getColor(d.source.groupName).value,
-                                        values: d.values.map(function (t, i) {
+                                        iden: _this.host.createSelectionIdBuilder().withSeries(rawData.categorical.values, rawData.categorical.values[i]).createSelectionId(),
+                                        color: color,
+                                        values: d.values.map(function (t, j) {
                                             if (_this.hasSize)
-                                                sizeValues.push(sizeG[i]);
+                                                if (sizeV[i].values[j] !== null)
+                                                    sizeValues.push(sizeV[i].values[j]);
                                             return {
                                                 xValue: { title: xMetadata.displayName, value: xAxis[i], caption: xAxis[i] },
                                                 yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
                                                 legend: d.source.groupName,
                                                 selectionId: _this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).withSeries(rawData.categorical.values, rawData.categorical.values[i]).createSelectionId(),
-                                                //color: this.colorScale(d.source.groupName),
-                                                color: _this.colorPalette.getColor(d.source.groupName).value,
+                                                color: color,
                                                 colorValue: { title: _this.colorTitle, caption: d.source.groupName },
-                                                size: _this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeG[i], caption: sizeFormat.format(sizeG[i]) } : null
+                                                size: _this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeV[i].values[j], caption: sizeFormat.format(sizeV[i].values[j]) } : null
                                             };
                                         })
                                     };
@@ -9183,10 +9184,14 @@ var powerbi;
                             else {
                                 formattedData = valuesG.map(function (d, i) {
                                     valFormat = _this.getValueFormat(d.source.format, d3.max(d.values.map(function (d) { return d; })));
+                                    var color = _this.colorPalette.getColor(d.source.displayName).value;
+                                    if (grouped[0].values[i].source.objects) {
+                                        color = grouped[0].values[i].source.objects.colorSelector.fill.solid.color;
+                                    }
                                     return {
                                         key: d.source.displayName,
-                                        color: _this.colorPalette.getColor(d.source.displayName).value,
-                                        iden: identityData[i],
+                                        color: color,
+                                        iden: _this.host.createSelectionIdBuilder().withMeasure(d.source.queryName).createSelectionId(),
                                         values: d.values.map(function (t, i) {
                                             if (_this.hasSize)
                                                 sizeValues.push(sizeG[i]);
@@ -9194,8 +9199,7 @@ var powerbi;
                                                 xValue: { title: xMetadata.displayName, value: xAxis[i], caption: xAxis[i] },
                                                 yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
                                                 legend: d.source.displayName,
-                                                //color: this.colorScale(d.source.displayName),
-                                                color: _this.colorPalette.getColor(d.source.displayName).value,
+                                                color: color,
                                                 selectionId: _this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).createSelectionId(),
                                                 size: _this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeG[i], caption: sizeFormat.format(sizeG[i]) } : null
                                             };
@@ -9204,7 +9208,11 @@ var powerbi;
                                 });
                             }
                         }
-                        var legend = this.setLegendWidth(this.element, formattedData.map(function (d) { return { key: d.key, color: d.color }; }));
+                        var legendD = formattedData.map(function (d) { return { key: d.key, color: d.color }; });
+                        var nm = (this.legendName !== undefined) ? this.legendName.length > 0 ? this.legendName : this.colorTitle : this.colorTitle;
+                        if (this.hasColor)
+                            legendD.unshift({ key: nm, color: "transparent" });
+                        var legend = this.setLegendWidth(this.element, legendD);
                         var retData = this.setUpAnalyticData(formattedData);
                         var yAxis = [];
                         retData.map(function (d) {
@@ -9286,6 +9294,8 @@ var powerbi;
                                     this.legendColor = legend["legendColor"];
                                 if (legend.fontSize !== undefined)
                                     this.legendFontSize = legend["fontSize"];
+                                if (legend.legendName !== undefined)
+                                    this.legendName = legend["legendName"];
                             }
                             if (options.dataViews[0].metadata.objects["Axis"]) {
                                 var axis = options.dataViews[0].metadata.objects["Axis"];
@@ -9360,6 +9370,8 @@ var powerbi;
                         var xOffset, yOffset, chartWidth, chartHeight, xFilter, xTickval;
                         if (this.orientation == 'vertical') {
                             xOffset = xT.Space + 20;
+                            if (xOffset > vp.height / 4)
+                                xOffset = vp.height / 4 > 100 ? 100 : vp.height / 4;
                             yOffset = this.getYOffset(data);
                             chartWidth = vp.width - yOffset - ylegendOffset;
                             chartHeight = vp.height - xOffset - xlegendOffset;
@@ -9368,10 +9380,12 @@ var powerbi;
                         }
                         else {
                             yOffset = xT.Space + 15;
+                            if (yOffset > vp.width / 4)
+                                yOffset = vp.width / 4 > 100 ? 100 : vp.width / 4;
                             xOffset = 30;
                             chartWidth = vp.width - yOffset - ylegendOffset;
                             chartHeight = vp.height - xOffset - xlegendOffset;
-                            xFilter = chartHeight / xDomain.length < this.fontSize ? Math.round((xDomain.length / chartHeight * 100) / 2) : 1;
+                            xFilter = chartHeight / xDomain.length < this.fontSize ? Math.round((xDomain.length / chartHeight * 20)) : 1;
                             xTickval = xDomain.filter(function (d, i) { return (i % xFilter === 0); });
                         }
                         return {
@@ -9401,6 +9415,7 @@ var powerbi;
                         return scale;
                     };
                     Visual.prototype.drawXScale = function (xScale, chartSvg, dimension) {
+                        var _this = this;
                         var direction = this.orientation == 'vertical' ? "bottom" : "left";
                         var translate = this.orientation == 'vertical' ?
                             "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight) + ")" :
@@ -9414,6 +9429,23 @@ var powerbi;
                             .attr("transform", translate)
                             .attr("class", "axis")
                             .call(xaxis);
+                        xAxisG.selectAll("text").text(function (d) {
+                            if (_this.orientation == 'vertical') {
+                                if (_this.getTextWidth(chartSvg, d, _this.fontSize) > dimension.xOffset - _this.fontSize && dimension.xRotate == true)
+                                    return (d.substring(0, Math.floor(dimension.xOffset / (_this.fontSize / 2))) + "..");
+                                else
+                                    return d;
+                            }
+                            else {
+                                if (_this.getTextWidth(chartSvg, d, _this.fontSize) > dimension.yOffset - _this.fontSize)
+                                    return (d.substring(0, Math.floor(dimension.yOffset / (_this.fontSize / 1.6))) + "..");
+                                else
+                                    return d;
+                            }
+                        })
+                            .attr("fill", "rgb(119, 119, 119)")
+                            .append("title")
+                            .text(function (d) { return d; });
                         if (dimension.xRotate == true) {
                             xAxisG.attr("text-anchor", "start");
                             xAxisG.selectAll("text")
@@ -9421,7 +9453,7 @@ var powerbi;
                                 .attr("dx", -7)
                                 .attr("dy", 0)
                                 .attr("transform", function (d) {
-                                return "rotate(" + (-45) + ")";
+                                return "rotate(" + (-55) + ")";
                             });
                         }
                         xAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
@@ -9484,11 +9516,19 @@ var powerbi;
                                 .data(function (d) { return d.values.filter(function (d) { return d.yValue.value !== null; }); })
                                 .enter()
                                 .append("text");
-                            text.attr("x", function (d) { return xScale(d.xValue.value) + 2; })
-                                .attr("dx", this.dotRadius)
-                                .attr("dy", this.dotRadius / 2)
-                                .attr("y", function (d) { return yScale(d.yValue.value); })
-                                .text(function (d) { return d.yValue.caption; });
+                            text.text(function (d) { return d.yValue.caption; });
+                            if (this.orientation == 'vertical') {
+                                text.attr("x", function (d) { return xScale(d.xValue.value) + 2; })
+                                    .attr("dx", this.dotRadius)
+                                    .attr("dy", this.dotRadius / 2)
+                                    .attr("y", function (d) { return yScale(d.yValue.value); });
+                            }
+                            else {
+                                text.attr("y", function (d) { return xScale(d.xValue.value) + 2; })
+                                    .attr("dy", -this.dotRadius * 2)
+                                    .style("text-anchor", "middle")
+                                    .attr("x", function (d) { return dimension.yOffset + yScale(d.yValue.value); });
+                            }
                         }
                         if (this.hasSize) {
                             var sizeScale = d3.scale.linear()
@@ -9545,7 +9585,14 @@ var powerbi;
                             .attr("fill", function (d) { return d.color; });
                         legengG
                             .append("text")
-                            .attr("x", fontSize)
+                            .attr("x", function (d) { return d.color === "transparent" ? -5 : fontSize; })
+                            .attr("font-weight", function (d) { return d.color === "transparent" ? "bold" : "normal"; })
+                            .attr("style", function (d) {
+                            if (d.color === "transparent")
+                                return 'fill:rgb(102, 102, 102);font-family: "Segoe UI Semibold", wf_segoe-ui_semibold, helvetica, arial, sans-serif;';
+                            else
+                                return 'fill:rgb(102, 102, 102);font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif';
+                        })
                             .attr("y", fontSize / 2)
                             .text(function (d) { return d.text; });
                         legengG.style("font-size", fontSize);
@@ -9647,25 +9694,7 @@ var powerbi;
                             var long = labels.sort(function (a, b) { return b.length - a.length; })[0];
                             var longest_1 = String(long);
                             var needWarpping = false;
-                            labels.map(function (d) {
-                                var words = String(d).split(/\s+/).reverse();
-                                if (words.length > 1)
-                                    needWarpping = true;
-                            });
-                            if (longest_1.length < 25 || needWarpping == false) {
-                                rotate = false;
-                                space = this.getTextWidth(svg, longest_1, fontsize);
-                            }
-                            else {
-                                var noOfLines = d3.max([1, Math.ceil(maxWidth / 20)]);
-                                if (noOfLines > 5)
-                                    noOfLines = 4;
-                                var words = longest_1.split(/\s+/).reverse();
-                                longest_1 = words.sort(function (a, b) { return b.length - a.length; }).join(" ");
-                                var maxWord = longest_1.substring(0, (longest_1.length / noOfLines));
-                                var maxText = longest_1.split(/\s+/).slice(0, maxWord.split(/\s+/).length).join(" ");
-                                space = this.getTextWidth(svg, maxText, fontsize);
-                            }
+                            space = this.getTextWidth(svg, longest_1, fontsize);
                         }
                         svg.remove();
                         return { Rotate: rotate, Space: space };
@@ -10152,7 +10181,6 @@ var powerbi;
                         if (this.orientation === "vertical") {
                             var upper = yScale(mean - sd) > yScale.range()[0] ? yScale.range()[0] : yScale(mean - sd);
                             var lower = yScale(mean + sd) < yScale.range()[1] ? yScale.range()[1] : yScale(mean + sd);
-                            console.log(upper);
                             stdDevGMeanLine
                                 .attr("x", dimension.yOffset)
                                 .attr("width", dimension.chartWidth)
@@ -10227,7 +10255,6 @@ var powerbi;
                             case 'colorSelector':
                                 for (var _i = 0, _a = this.formattedData; _i < _a.length; _i++) {
                                     var barDataPoint = _a[_i];
-                                    console.log(barDataPoint.values[0].selectionId.getSelector());
                                     objectEnumeration.push({
                                         objectName: objectName,
                                         displayName: barDataPoint.key,
@@ -10238,7 +10265,7 @@ var powerbi;
                                                 }
                                             }
                                         },
-                                        selector: barDataPoint.values[0].selectionId.getSelector()
+                                        selector: barDataPoint.iden.getSelector()
                                     });
                                 }
                                 break;
@@ -10252,7 +10279,9 @@ var powerbi;
                                 break;
                             case 'Legend':
                                 objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { legendColor: this.legendColor }, selector: null });
+                                if (this.hasColor)
+                                    objectEnumeration.push({ objectName: objectName, properties: { legendName: this.legendName }, selector: null });
+                                //objectEnumeration.push({ objectName: objectName, properties: { legendColor: this.legendColor }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.legendFontSize }, selector: null });
                                 break;
                             case 'Axis':
@@ -10293,8 +10322,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.dotPlotD9885417F9AAF5BB8D45B007E_DEBUG = {
-                name: 'dotPlotD9885417F9AAF5BB8D45B007E_DEBUG',
+            plugins.dotPlotD9885417F9AAF5BB8D45B007E = {
+                name: 'dotPlotD9885417F9AAF5BB8D45B007E',
                 displayName: 'DotPlot',
                 class: 'Visual',
                 version: '1.0.0',
