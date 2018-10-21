@@ -9086,6 +9086,9 @@ var powerbi;
                     Visual.prototype.update = function (options) {
                         this.element.style("overflow", "hidden");
                         this.element.select('.dotPlot').remove();
+                        console.log(this.colorPalette);
+                        this.colorPalette.reset();
+                        console.log(this.colorPalette);
                         this.draw(options);
                     };
                     Visual.prototype.draw = function (options) {
@@ -9169,7 +9172,7 @@ var powerbi;
                                                 if (sizeV[i].values[j] !== null)
                                                     sizeValues.push(sizeV[i].values[j]);
                                             return {
-                                                xValue: { title: xMetadata.displayName, value: xAxis[i], caption: xAxis[i] },
+                                                xValue: { title: xMetadata.displayName, value: xAxis[j], caption: xAxis[j] },
                                                 yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
                                                 legend: d.source.groupName,
                                                 selectionId: _this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).withSeries(rawData.categorical.values, rawData.categorical.values[i]).createSelectionId(),
@@ -9183,25 +9186,29 @@ var powerbi;
                             }
                             else {
                                 formattedData = valuesG.map(function (d, i) {
+                                    console.log(d.source.displayName);
                                     valFormat = _this.getValueFormat(d.source.format, d3.max(d.values.map(function (d) { return d; })));
-                                    var color = _this.colorPalette.getColor(d.source.displayName).value;
+                                    //this.colorPalette.getColor(d.source.groupName).value
+                                    var color = _this.colorPalette.colors[i].value;
+                                    console.log(color);
                                     if (grouped[0].values[i].source.objects) {
                                         color = grouped[0].values[i].source.objects.colorSelector.fill.solid.color;
+                                        console.log(color);
                                     }
                                     return {
                                         key: d.source.displayName,
                                         color: color,
                                         iden: _this.host.createSelectionIdBuilder().withMeasure(d.source.queryName).createSelectionId(),
-                                        values: d.values.map(function (t, i) {
+                                        values: d.values.map(function (t, j) {
                                             if (_this.hasSize)
                                                 sizeValues.push(sizeG[i]);
                                             return {
-                                                xValue: { title: xMetadata.displayName, value: xAxis[i], caption: xAxis[i] },
+                                                xValue: { title: xMetadata.displayName, value: xAxis[j], caption: xAxis[j] },
                                                 yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
                                                 legend: d.source.displayName,
                                                 color: color,
-                                                selectionId: _this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).createSelectionId(),
-                                                size: _this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeG[i], caption: sizeFormat.format(sizeG[i]) } : null
+                                                selectionId: _this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], j).createSelectionId(),
+                                                size: _this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeG[j], caption: sizeFormat.format(sizeG[j]) } : null
                                             };
                                         })
                                     };

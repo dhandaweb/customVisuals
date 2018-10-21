@@ -78,7 +78,7 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
 
         private yAxisMinValue: boolean = false;;
         private legendColor: any = 'Category1';
-        private colorPalette: IColorPalette;
+        private colorPalette: any;
         private colorOptions: any = {
             Category1: ["#26C6DA", "#EC407A", "#9CCC65", "#FFCA28", "#EF5350", "#78909C", "#42A5F5", "#FFA726", "#26A69A", "#AB47BC", "#BDBDBD", "#5C6BC0", "#8D6E63", "#D4E157", "#29B6F6", "#66BB6A", "#FF7043", "#7E57C2", "#FFEE58", "#9CCC64"],
             Category2: ["#C79A6B", "#737373", "#97C7C5", "#67B0E1", "#FEBC4A", "#A7D679", "#ED82B7", "#ADAEB5", "#C8B570", "#448EC9", "#F6B982", "#9DBE59", "#5BBE94", "#5884B3", "#CC6686", "#E68570"],
@@ -107,7 +107,7 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
         private legendFontSize: any = 10;
 
         constructor(options: VisualConstructorOptions) {
-
+          
             this.element = d3.select(options.element);
             this.host = options.host;
             this.colorPalette = this.host.colorPalette;
@@ -116,11 +116,12 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
         }
 
         public update(options: VisualUpdateOptions) {
-
-
+           
             this.element.style("overflow", "hidden");
             this.element.select('.dotPlot').remove();
-
+            console.log(this.colorPalette);
+            this.colorPalette.reset();
+            console.log(this.colorPalette);
             this.draw(options);
         }
 
@@ -228,7 +229,7 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
 
                                 if (this.hasSize) if (sizeV[i].values[j] !== null) sizeValues.push(sizeV[i].values[j]);
                                 return {
-                                    xValue: { title: xMetadata.displayName, value: xAxis[i], caption: xAxis[i] },
+                                    xValue: { title: xMetadata.displayName, value: xAxis[j], caption: xAxis[j] },
                                     yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
                                     legend: d.source.groupName,
                                     selectionId: this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).withSeries(rawData.categorical.values, rawData.categorical.values[i]).createSelectionId(),
@@ -244,27 +245,30 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
                 else {
 
                     formattedData = valuesG.map((d, i) => {
-
+                        console.log(d.source.displayName);
                         valFormat = this.getValueFormat(d.source.format, d3.max(d.values.map(d => d)));
-                        let color: any = this.colorPalette.getColor(d.source.displayName).value;
-
+                       
+                        //this.colorPalette.getColor(d.source.groupName).value
+                        var color = this.colorPalette.colors[i].value;
+                        console.log(color);
                         if (grouped[0].values[i].source.objects) {
                             color = grouped[0].values[i].source.objects.colorSelector.fill.solid.color;
+                            console.log(color);
                         }
-
+                        
                         return {
                             key: d.source.displayName,
                             color: color,
                             iden: this.host.createSelectionIdBuilder().withMeasure(d.source.queryName).createSelectionId(),
-                            values: d.values.map((t, i) => {
+                            values: d.values.map((t, j) => {
                                 if (this.hasSize) sizeValues.push(sizeG[i]);
                                 return {
-                                    xValue: { title: xMetadata.displayName, value: xAxis[i], caption: xAxis[i] },
+                                    xValue: { title: xMetadata.displayName, value: xAxis[j], caption: xAxis[j] },
                                     yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
                                     legend: d.source.displayName,
                                     color: color,
-                                    selectionId: this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).createSelectionId(),
-                                    size: this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeG[i], caption: sizeFormat.format(sizeG[i]) } : null
+                                    selectionId: this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], j).createSelectionId(),
+                                    size: this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeG[j], caption: sizeFormat.format(sizeG[j]) } : null
                                 }
                             })
                         }
