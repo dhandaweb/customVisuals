@@ -52,7 +52,7 @@ module powerbi.extensibility.visual {
 
         private trendIndicator: any = true;
         private flipTrendDirection: any = false;
-        private trendColor: any = "RedGreen";
+        private trendColor: any = "GreenRed";
         private trendColorOptions: any = {
             "RedGreen": ["#ff4701", "#00ad00"],
             "GreenRed": ["#00ad00", "#ff4701"]
@@ -542,14 +542,14 @@ module powerbi.extensibility.visual {
 
                 var triangleDirection = this.flipTrendDirection == false ? 'triangle-down' : 'triangle-up';
                 var triangle = d3.svg.symbol().type(triangleDirection).size(50);
-
+               
                 trendIndicator
                     .append("path")
                     .attr('d', triangle)
                     .attr('transform', d => {
                         return "translate(10,12), rotate(" + this.chartData.trend.value + ")";
                     })
-                    .style("fill", d => this.chartData.trend === 0 ? color[0] : color[1]);
+                    .style("fill", this.chartData.trend.value == 180 ? color[0] : color[1]);
 
             }
             

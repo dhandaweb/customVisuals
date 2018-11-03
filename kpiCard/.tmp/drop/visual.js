@@ -8931,7 +8931,7 @@ var powerbi;
                         this.bulletScaleMinZero = true;
                         this.trendIndicator = true;
                         this.flipTrendDirection = false;
-                        this.trendColor = "RedGreen";
+                        this.trendColor = "GreenRed";
                         this.trendColorOptions = {
                             "RedGreen": ["#ff4701", "#00ad00"],
                             "GreenRed": ["#00ad00", "#ff4701"]
@@ -9303,7 +9303,7 @@ var powerbi;
                                 .attr('transform', function (d) {
                                 return "translate(10,12), rotate(" + _this.chartData.trend.value + ")";
                             })
-                                .style("fill", function (d) { return _this.chartData.trend === 0 ? color[0] : color[1]; });
+                                .style("fill", this.chartData.trend.value == 180 ? color[0] : color[1]);
                         }
                     };
                     Visual.prototype.drawTarget = function (container) {

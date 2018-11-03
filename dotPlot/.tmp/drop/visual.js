@@ -9186,14 +9186,11 @@ var powerbi;
                             }
                             else {
                                 formattedData = valuesG.map(function (d, i) {
-                                    console.log(d.source.displayName);
                                     valFormat = _this.getValueFormat(d.source.format, d3.max(d.values.map(function (d) { return d; })));
                                     //this.colorPalette.getColor(d.source.groupName).value
                                     var color = _this.colorPalette.colors[i].value;
-                                    console.log(color);
                                     if (grouped[0].values[i].source.objects) {
                                         color = grouped[0].values[i].source.objects.colorSelector.fill.solid.color;
-                                        console.log(color);
                                     }
                                     return {
                                         key: d.source.displayName,
@@ -10329,8 +10326,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.dotPlotD9885417F9AAF5BB8D45B007E = {
-                name: 'dotPlotD9885417F9AAF5BB8D45B007E',
+            plugins.dotPlotD9885417F9AAF5BB8D45B007E_DEBUG = {
+                name: 'dotPlotD9885417F9AAF5BB8D45B007E_DEBUG',
                 displayName: 'DotPlot',
                 class: 'Visual',
                 version: '1.0.0',

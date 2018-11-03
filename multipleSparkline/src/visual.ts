@@ -226,7 +226,7 @@ module powerbi.extensibility.visual {
         
            if (this.hasActual) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.actualIndex].format });
            else if (this.hasTarget) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.targetIndex].format });
-
+           
            var nestedData, data = [], identityData;
            options.dataViews[0].table.rows = options.dataViews[0].table.rows.map((d:any,i) => {
                         d.identity = options.dataViews[0].table.identity[i]
@@ -337,7 +337,7 @@ module powerbi.extensibility.visual {
                    var id = this.host.createSelectionIdBuilder()
                        .withCategory(categoryColumn, 0)
                        .createSelectionId();
-
+                   
                    this.selectionManager.select(id, true);
                    
                });

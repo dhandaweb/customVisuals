@@ -245,15 +245,15 @@ module powerbi.extensibility.visual {
                 else {
 
                     formattedData = valuesG.map((d, i) => {
-                        console.log(d.source.displayName);
+                       
                         valFormat = this.getValueFormat(d.source.format, d3.max(d.values.map(d => d)));
                        
                         //this.colorPalette.getColor(d.source.groupName).value
                         var color = this.colorPalette.colors[i].value;
-                        console.log(color);
+                       
                         if (grouped[0].values[i].source.objects) {
                             color = grouped[0].values[i].source.objects.colorSelector.fill.solid.color;
-                            console.log(color);
+                           
                         }
                         
                         return {
