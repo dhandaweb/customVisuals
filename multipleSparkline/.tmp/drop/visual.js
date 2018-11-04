@@ -8923,6 +8923,7 @@ var powerbi;
                 "use strict";
                 var Visual = (function () {
                     function Visual(options) {
+                        this.additionalValues = [];
                         this.showActual = false;
                         this.actualHeader = "Actual";
                         this.showChange = true;
@@ -8970,7 +8971,6 @@ var powerbi;
                     Visual.prototype.update = function (options) {
                         var _this = this;
                         this.columns = options.dataViews[0].metadata.columns;
-                        //console.log(options.dataViews[0]);
                         this.selectionManager.registerOnSelectCallback(function () {
                             rows.style("opacity", 1);
                         });
@@ -9086,40 +9086,44 @@ var powerbi;
                         else if (this.hasTarget)
                             this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.targetIndex].format });
                         var nestedData, data = [], identityData;
-                        options.dataViews[0].table.rows = options.dataViews[0].table.rows.map(function (d, i) {
-                            d.identity = options.dataViews[0].table.identity[i];
-                            return d;
-                        });
-                        if (this.hasGroup && this.hasPeriod) {
-                            nestedData = d3.nest()
-                                .key(function (d) { return d[_this.groupIndex]; })
-                                .entries(options.dataViews[0].table.rows);
-                        }
-                        else if (this.hasPeriod) {
-                            nestedData = [{
-                                    key: options.dataViews[0].metadata.columns[this.actualIndex].displayName,
-                                    values: options.dataViews[0].table.rows
-                                }];
-                        }
+                        //options.dataViews[0].table.rows = options.dataViews[0].table.rows.map((d:any,i) => {
+                        //             d.identity = options.dataViews[0].table.identity[i]
+                        //        return d;
+                        //});
+                        nestedData = this.formatData(options.dataViews[0]);
+                        //if (this.hasGroup && this.hasPeriod) {
+                        //    //nestedData  = d3.nest()
+                        //    //    .key((d) => d[this.groupIndex])
+                        //    //    .entries(options.dataViews[0].table.rows);
+                        //    nestedData = this.formatData(options.dataViews[0]);
+                        //}
+                        //else if (this.hasPeriod){
+                        //    //nestedData = [{
+                        //    //    key: options.dataViews[0].metadata.columns[this.actualIndex].displayName,
+                        //    //    values: options.dataViews[0].table.rows
+                        //    //}];
+                        //}
                         nestedData.map(function (d, i) {
-                            var actual = _this.hasActual ? d.values[d.values.length - 1][_this.actualIndex] : 0;
-                            var secondLastActual = _this.hasActual ? d.values[d.values.length - 2][_this.actualIndex] : 0;
-                            var firstActual = _this.hasActual ? d.values[0][_this.actualIndex] : 0;
-                            var target = _this.hasTarget ? d.values[d.values.length - 1][_this.targetIndex] : 0;
+                            var actual = _this.hasActual ? d.values[d.values.length - 1].actual : 0;
+                            var secondLastActual = 0;
+                            if (d.values[d.values.length - 2])
+                                secondLastActual = _this.hasActual ? d.values[d.values.length - 2].actual : 0;
+                            var firstActual = _this.hasActual ? d.values[0].actual : 0;
+                            var target = _this.hasTarget ? d.values[d.values.length - 1].target : 0;
                             d.values.map(function (d) {
-                                d.yValue = _this.hasActual ? d[_this.actualIndex] : 0;
-                                d.xValue = _this.hasPeriod ? d[_this.periodIndex] : "";
+                                d.yValue = _this.hasActual ? d.actual : 0;
+                                d.xValue = _this.hasPeriod ? d.period : "";
                             });
                             var VP = 0;
                             if (_this.hasActual && _this.hasTarget) {
-                                var current = d.values[d.values.length - 1][_this.actualIndex];
-                                var target = d.values[d.values.length - 1][_this.targetIndex];
+                                var current = d.values[d.values.length - 1].actual;
+                                var target = d.values[d.values.length - 1].target;
                                 VP = ((current - target) / Math.abs(target)) * 100;
                             }
                             var percentage, last, secondlast, retVal;
                             if (d.values.length > 1) {
-                                var last = d.values[d.values.length - 1][_this.actualIndex];
-                                var secondlast = d.values[d.values.length - 2][_this.targetIndex];
+                                var last = d.values[d.values.length - 1].actual;
+                                var secondlast = d.values[d.values.length - 2].target;
                                 percentage = ((last - secondlast) / Math.abs(secondlast)) * 100;
                                 if (last === null || secondlast === null)
                                     percentage = 0;
@@ -9139,7 +9143,7 @@ var powerbi;
                                 variancePer: (VP).toFixed(2),
                                 values: d.values,
                                 percentage: Math.abs(percentage),
-                                identity: d.values[0].identity
+                                identity: d.identity
                             });
                         });
                         this.element.style("overflow", "auto");
@@ -9157,6 +9161,13 @@ var powerbi;
                                 .html("Actual is required to draw the visual");
                             return;
                         }
+                        if (nestedData.length === 0) {
+                            table
+                                .append("html")
+                                .attr("style", "")
+                                .html("Data is required to draw visual");
+                            return;
+                        }
                         var thead = table.append("thead").attr("style", 'color:rgb(102, 102, 102);font-family: "Segoe UI Semibold", wf_segoe-ui_semibold, helvetica, arial, sans-serif;');
                         var tbody = table.append("tbody");
                         var rows = tbody.selectAll(".rows")
@@ -9166,17 +9177,18 @@ var powerbi;
                             .style("background", function (d, i) { return i % 2 === 0 ? "#fff" : "#ececec"; });
                         rows.on("click", function (d, i) {
                             d.isFiltered = !d.isFiltered;
-                            d.values.forEach(function (d) {
-                                var categoryColumn = {
-                                    source: options.dataViews[0].table.columns[_this.groupIndex],
-                                    values: null,
-                                    identity: [d.identity]
-                                };
-                                var id = _this.host.createSelectionIdBuilder()
-                                    .withCategory(categoryColumn, 0)
-                                    .createSelectionId();
-                                _this.selectionManager.select(id, true);
-                            });
+                            _this.selectionManager.select(d.identity, true);
+                            //d.values.forEach(d => {
+                            //    const categoryColumn: DataViewCategoryColumn = {
+                            //        source: options.dataViews[0].table.columns[this.groupIndex],
+                            //        values: null,
+                            //        identity: [d.identity]
+                            //    };
+                            //    var id = this.host.createSelectionIdBuilder()
+                            //        .withCategory(categoryColumn, 0)
+                            //        .createSelectionId();
+                            //    this.selectionManager.select(d.iden, true);
+                            //});
                             _this.setFilterOpacity(rows);
                         });
                         this.showIntensityCircle(rows, thead);
@@ -9479,19 +9491,17 @@ var powerbi;
                         }
                     };
                     Visual.prototype.drawAdditionalFields = function (rows, thead) {
-                        var additional = this.columns.filter(function (d, i) {
-                            d.Index = i;
-                            return d.roles["additional"] == true;
-                        });
-                        additional.map(function (d) {
+                        this.additionalValues.map(function (d, i) {
                             var format = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.format });
                             thead.append("th")
                                 .append("span")
-                                .html(d.displayName);
+                                .html(d.key);
                             rows
                                 .append("td")
                                 .append("html")
-                                .text(function (e) { return format.format(e.values[e.values.length - 1][d.Index]); });
+                                .text(function (e) {
+                                return (e.values[e.values.length - 1].additional[i].caption);
+                            });
                         });
                     };
                     Visual.prototype.setFontSize = function (chartSvg) {
@@ -9618,6 +9628,63 @@ var powerbi;
                         });
                         return retData;
                     };
+                    Visual.prototype.formatData = function (rawData) {
+                        var _this = this;
+                        var metadata = rawData.metadata.columns;
+                        var formattedData = [], group = [], period = [], actual = [], target = [];
+                        if (this.hasGroup)
+                            group = rawData.categorical.categories[0].values;
+                        var measures = rawData.categorical.values;
+                        var actualValues = measures.filter(function (d) { return d.source.roles.actual; });
+                        if (this.hasTarget) {
+                            var targetValues = measures.filter(function (d) { return d.source.roles.target; });
+                        }
+                        var additionalValues = measures.filter(function (d) { return d.source.roles.additional; });
+                        var addVal = d3.nest()
+                            .key(function (d) { return d.source.displayName; })
+                            .entries(additionalValues);
+                        this.additionalValues = addVal;
+                        if (this.hasGroup && this.hasPeriod) {
+                            formattedData = group.map(function (t, i) {
+                                return {
+                                    key: t,
+                                    identity: _this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).createSelectionId(),
+                                    values: actualValues.map(function (d, j) {
+                                        return {
+                                            actual: d.values[i],
+                                            target: _this.hasTarget ? targetValues[j].values[i] : 0,
+                                            group: t,
+                                            period: d.source.groupName,
+                                            additional: addVal.map(function (d) {
+                                                var format = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.values[j].source.format });
+                                                return { key: d.key, val: d.values[j].values[i], caption: format.format(d.values[j].values[i]) };
+                                            })
+                                        };
+                                    })
+                                };
+                            });
+                        }
+                        else {
+                            formattedData = [{
+                                    key: "Measure",
+                                    values: measures.map(function (d, j) {
+                                        return {
+                                            actual: d.values[0],
+                                            target: _this.hasTarget ? targetValues[j].values[0] : 0,
+                                            group: "Measure",
+                                            period: d.source.groupName,
+                                            additional: addVal.map(function (d) {
+                                                var format = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.values[j].source.format });
+                                                return { key: d.key, val: d.values[j].values[0], caption: format.format(d.values[j].values[0]) };
+                                            })
+                                        };
+                                    })
+                                }
+                            ];
+                        }
+                        ;
+                        return formattedData;
+                    };
                     Visual.prototype.enumerateObjectInstances = function (options) {
                         var objectName = options.objectName;
                         var objectEnumeration = [];
@@ -9696,8 +9763,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
-                name: 'multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
+            plugins.multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E = {
+                name: 'multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E',
                 displayName: 'MultipleSparkline',
                 class: 'Visual',
                 version: '1.0.0',

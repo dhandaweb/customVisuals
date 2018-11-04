@@ -119,9 +119,9 @@ module powerbi.extensibility.visual {
            
             this.element.style("overflow", "hidden");
             this.element.select('.dotPlot').remove();
-            console.log(this.colorPalette);
+         
             this.colorPalette.reset();
-            console.log(this.colorPalette);
+           
             this.draw(options);
         }
 

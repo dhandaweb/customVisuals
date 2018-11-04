@@ -3,38 +3,14 @@
         {
             "displayName": "Actual",
             "name": "actual",
-            "kind": "Measure",
-            "requiredTypes": [
-                {
-                    "integer": true
-                },
-                {
-                    "numeric": true
-                }
-            ],
-            "preferredTypes": [
-                {
-                    "numeric": true
-                }
-            ]
+            "kind": "Measure"
+            
         },
         {
             "displayName": "Target",
             "name": "target",
-            "kind": "Measure",
-            "requiredTypes": [
-                {
-                    "integer": true
-                },
-                {
-                    "numeric": true
-                }
-            ],
-            "preferredTypes": [
-                {
-                    "numeric": true
-                }
-            ]
+            "kind": "Measure"
+           
         }
 
     ],
@@ -77,16 +53,16 @@
                     "type": {
                         "enumeration": [
                             {
-                                "value": "actualTarget",
-                                "displayName": "Actual Target"
+                                "value": "textCard",
+                                "displayName": "Text card"
                             },
                             {
-                                "value": "targetActual",
-                                "displayName": "Target Actual"
+                                "value": "textCard2",
+                                "displayName": "Text card 2"
                             },
                             {
                                 "value": "status",
-                                "displayName": "Status Card"
+                                "displayName": "Status card"
                             },
                             {
                                 "value": "leftIcon",
@@ -127,6 +103,60 @@
                             "fontSize": true
                         }
                     }
+                },
+                "actualValFormat": {
+                    "displayName": "Value Format",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "thousand",
+                                "displayName": "Thousand"
+                            },
+                            {
+                                "value": "million",
+                                "displayName": "Million"
+                            },
+                            {
+                                "value": "billion",
+                                "displayName": "Billion"
+                            },
+                            {
+                                "value": "trillion",
+                                "displayName": "Trillion"
+                            }
+                        ]
+                    }
+                },
+                "actualValPrecision": {
+                    "displayName": "Value Precision",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "0",
+                                "displayName": "0"
+                            },
+                            {
+                                "value": "1",
+                                "displayName": "1"
+                            },
+                            {
+                                "value": "2",
+                                "displayName": "2"
+                            },
+                            {
+                                "value": "3",
+                                "displayName": "3"
+                            },
+                            {
+                                "value": "4",
+                                "displayName": "4"
+                            }
+                        ]
+                    }
                 }
             }
         },
@@ -143,6 +173,60 @@
                         "formatting": {
                             "fontSize": true
                         }
+                    }
+                },
+                "targetValFormat": {
+                    "displayName": "Value Format",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "thousand",
+                                "displayName": "Thousand"
+                            },
+                            {
+                                "value": "million",
+                                "displayName": "Million"
+                            },
+                            {
+                                "value": "billion",
+                                "displayName": "Billion"
+                            },
+                            {
+                                "value": "trillion",
+                                "displayName": "Trillion"
+                            }
+                        ]
+                    }
+                },
+                "targetValPrecision": {
+                    "displayName": "Value Precision",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "0",
+                                "displayName": "0"
+                            },
+                            {
+                                "value": "1",
+                                "displayName": "1"
+                            },
+                            {
+                                "value": "2",
+                                "displayName": "2"
+                            },
+                            {
+                                "value": "3",
+                                "displayName": "3"
+                            },
+                            {
+                                "value": "4",
+                                "displayName": "4"
+                            }
+                        ]
                     }
                 }
 

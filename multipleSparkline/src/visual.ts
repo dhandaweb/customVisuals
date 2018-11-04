@@ -37,6 +37,7 @@ module powerbi.extensibility.visual {
         private updateCount: number;
         private settings: VisualSettings;
         private textNode: Text;
+        private additionalValues: any = [];
 
         private columns: any;
         private showActual: any = false;
@@ -128,7 +129,7 @@ module powerbi.extensibility.visual {
 
         public update(options: VisualUpdateOptions) {
            this.columns = options.dataViews[0].metadata.columns;
-            //console.log(options.dataViews[0]);
+         
            this.selectionManager.registerOnSelectCallback(() => {
                rows.style("opacity", 1);
            });
@@ -201,7 +202,8 @@ module powerbi.extensibility.visual {
            this.hasPeriod = false;
            this.hasGroup = false;
           
-           this.columns.map((d,i) => {
+            this.columns.map((d, i) => {
+              
                if (d.roles["target"]) {
                    this.hasTarget = true;
                    this.targetIndex = i;
@@ -228,47 +230,51 @@ module powerbi.extensibility.visual {
            else if (this.hasTarget) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.targetIndex].format });
            
            var nestedData, data = [], identityData;
-           options.dataViews[0].table.rows = options.dataViews[0].table.rows.map((d:any,i) => {
-                        d.identity = options.dataViews[0].table.identity[i]
-                   return d;
-           });
+           //options.dataViews[0].table.rows = options.dataViews[0].table.rows.map((d:any,i) => {
+           //             d.identity = options.dataViews[0].table.identity[i]
+           //        return d;
+           //});
+            nestedData = this.formatData(options.dataViews[0]);
+          
+           //if (this.hasGroup && this.hasPeriod) {
+           //    //nestedData  = d3.nest()
+           //    //    .key((d) => d[this.groupIndex])
+           //    //    .entries(options.dataViews[0].table.rows);
 
-           if (this.hasGroup && this.hasPeriod) {
-               nestedData  = d3.nest()
-                   .key((d) => d[this.groupIndex])
-                   .entries(options.dataViews[0].table.rows);
+           //    nestedData = this.formatData(options.dataViews[0]);
 
-           }
-           else if (this.hasPeriod){
-               nestedData = [{
-                   key: options.dataViews[0].metadata.columns[this.actualIndex].displayName,
-                   values: options.dataViews[0].table.rows
-               }];
-           }
+           //}
+           //else if (this.hasPeriod){
+           //    //nestedData = [{
+           //    //    key: options.dataViews[0].metadata.columns[this.actualIndex].displayName,
+           //    //    values: options.dataViews[0].table.rows
+           //    //}];
+           //}
 
            nestedData.map((d,i)=> {
-               var actual = this.hasActual ? d.values[d.values.length - 1][this.actualIndex] : 0;
-              
-               var secondLastActual = this.hasActual ? d.values[d.values.length - 2][this.actualIndex] : 0;
-               var firstActual = this.hasActual ? d.values[0][this.actualIndex] : 0;
-               var target = this.hasTarget ? d.values[d.values.length - 1][this.targetIndex] : 0;
+               var actual = this.hasActual ? d.values[d.values.length - 1].actual : 0;
+               var secondLastActual = 0;
+               if (d.values[d.values.length - 2]) secondLastActual = this.hasActual ? d.values[d.values.length - 2].actual : 0;
+               
+               var firstActual = this.hasActual ? d.values[0].actual : 0;
+               var target = this.hasTarget ? d.values[d.values.length - 1].target : 0;
 
                d.values.map((d) => {
-                   d.yValue = this.hasActual ? d[this.actualIndex] : 0;
-                   d.xValue = this.hasPeriod ? d[this.periodIndex] : "";
+                   d.yValue = this.hasActual ? d.actual : 0;
+                   d.xValue = this.hasPeriod ? d.period : "";
                });
                
                var VP = 0;
 
                if (this.hasActual && this.hasTarget) {
-                   var current = d.values[d.values.length - 1][this.actualIndex];
-                   var target = d.values[d.values.length - 1][this.targetIndex];
+                   var current = d.values[d.values.length - 1].actual;
+                   var target = d.values[d.values.length - 1].target;
                    VP = ((current - target) / Math.abs(target)) * 100;
                }
                var percentage, last, secondlast, retVal;
                if (d.values.length > 1) {
-                   var last = d.values[d.values.length - 1][this.actualIndex];
-                   var secondlast = d.values[d.values.length - 2][this.targetIndex];
+                   var last = d.values[d.values.length - 1].actual;
+                   var secondlast = d.values[d.values.length - 2].target;
                   
                    percentage = ((last - secondlast) / Math.abs(secondlast)) * 100;
 
@@ -290,11 +296,11 @@ module powerbi.extensibility.visual {
                    variancePer: (VP).toFixed(2),
                    values: d.values,
                    percentage: Math.abs(percentage),
-                   identity: d.values[0].identity
+                   identity: d.identity
                });
               
            });
-
+           
            this.element.style("overflow", "auto");
            this.element.select('.multipleSparkline').remove();
 
@@ -314,6 +320,15 @@ module powerbi.extensibility.visual {
                return;
            }
 
+            if (nestedData.length === 0) {
+                table
+                    .append("html")
+                    .attr("style", "")
+                    .html("Data is required to draw visual");
+
+                return;
+            }
+
             var thead = table.append("thead").attr("style", 'color:rgb(102, 102, 102);font-family: "Segoe UI Semibold", wf_segoe-ui_semibold, helvetica, arial, sans-serif;');
             var tbody = table.append("tbody");
 
@@ -325,35 +340,36 @@ module powerbi.extensibility.visual {
 
            rows.on("click", (d, i) => {
                d.isFiltered = !d.isFiltered;
-             
-               d.values.forEach(d => {
+            
+               this.selectionManager.select(d.identity, true);
+               //d.values.forEach(d => {
 
-                   const categoryColumn: DataViewCategoryColumn = {
-                       source: options.dataViews[0].table.columns[this.groupIndex],
-                       values: null,
-                       identity: [d.identity]
-                   };
+               //    const categoryColumn: DataViewCategoryColumn = {
+               //        source: options.dataViews[0].table.columns[this.groupIndex],
+               //        values: null,
+               //        identity: [d.identity]
+               //    };
 
-                   var id = this.host.createSelectionIdBuilder()
-                       .withCategory(categoryColumn, 0)
-                       .createSelectionId();
+               //    var id = this.host.createSelectionIdBuilder()
+               //        .withCategory(categoryColumn, 0)
+               //        .createSelectionId();
                    
-                   this.selectionManager.select(id, true);
+               //    this.selectionManager.select(d.iden, true);
                    
-               });
+               //});
 
                
 
 
                this.setFilterOpacity(rows);
            })
-
+           
            this.showIntensityCircle(rows, thead);
            this.drawMetric(rows, thead);
 
            this.drawSparkline(data, rows, thead);
            this.drawBisectorToolTip();
-
+            
            this.drawCurrent(rows, thead);
            this.drawPrior(rows, thead);
            this.drawChange(rows, thead);
@@ -752,22 +768,19 @@ module powerbi.extensibility.visual {
 
         public drawAdditionalFields(rows: any, thead: any) {
            
-            var additional = this.columns.filter((d,i) => {
-                d.Index = i;
-                return d.roles["additional"] == true
-            });
-           
-            additional.map((d) => {
+            this.additionalValues.map((d,i) => {
                 var format = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.format });
 
                 thead.append("th")
                         .append("span")
-                        .html(d.displayName);
+                        .html(d.key);
 
                 rows
                     .append("td")
                     .append("html")
-                    .text((e) => format.format(e.values[e.values.length - 1][d.Index]));
+                    .text((e) => {
+                        return (e.values[e.values.length - 1].additional[i].caption);
+                    });
             });
            
        }
@@ -926,6 +939,73 @@ module powerbi.extensibility.visual {
             });
            
             return retData;
+        }
+
+        public formatData(rawData) {
+          
+            var metadata = rawData.metadata.columns;
+            var formattedData = [],group=[],period=[],actual=[],target=[];
+         
+           if (this.hasGroup) group = rawData.categorical.categories[0].values;
+         
+            var measures = rawData.categorical.values;
+         
+           var actualValues = measures.filter(d => d.source.roles.actual);
+          
+           if (this.hasTarget) {
+               var targetValues = measures.filter(d => d.source.roles.target);
+           }
+
+            var additionalValues = measures.filter(d => d.source.roles.additional);
+
+            var addVal = d3.nest()
+                            .key((d:any) => d.source.displayName)
+                              .entries(additionalValues);
+
+           this.additionalValues = addVal;
+          
+           if (this.hasGroup && this.hasPeriod) {
+               formattedData = group.map((t, i) => {
+                   
+                   return {
+                       key: t,
+                       identity: this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).createSelectionId(),
+                       values: actualValues.map((d, j) => {
+                           return {
+                               actual: d.values[i],
+                               target: this.hasTarget ? targetValues[j].values[i] : 0,
+                               group: t,
+                               period: d.source.groupName,
+                               additional: addVal.map(d => {
+                                   var format = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.values[j].source.format });
+                                   return { key: d.key, val: d.values[j].values[i], caption: format.format(d.values[j].values[i]) }
+                               })
+                           }
+                       })
+                   }
+               });
+           }
+           else {
+              
+               formattedData = [{
+                   key: "Measure",
+                   values: measures.map((d, j) => {
+                       return {
+                           actual: d.values[0],
+                           target: this.hasTarget ? targetValues[j].values[0] : 0,
+                           group: "Measure",
+                           period: d.source.groupName,
+                           additional: addVal.map(d => {
+                               var format = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.values[j].source.format });
+                               return { key: d.key, val: d.values[j].values[0], caption: format.format(d.values[j].values[0]) }
+                           })
+                       }
+                   })
+               }
+               ]
+            };
+          
+           return formattedData;
         }
 
        public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {

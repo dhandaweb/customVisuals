@@ -8923,12 +8923,16 @@ var powerbi;
                 "use strict";
                 var Visual = (function () {
                     function Visual(options) {
-                        this.selectedTemplate = "actualTarget";
+                        this.selectedTemplate = "textCard";
                         this.actualHeader = "";
                         this.actualCaptionFontSize = 16;
                         this.actualValFontSize = 36;
+                        this.actualValFormat = "default";
+                        this.actualValPrecision = 0;
                         this.targetHeader = "";
                         this.targetFontSize = 11;
+                        this.targetValFormat = "default";
+                        this.targetValPrecision = 0;
                         this.stausIcon = 'arrow';
                         this.stausFontSize = 70;
                         this.bulletFill = { solid: { color: "#01b8aa" } };
@@ -8961,6 +8965,10 @@ var powerbi;
                                     this.actualCaptionFontSize = actualObj["actualCaptionFontSize"];
                                 if (actualObj["fontSize"] !== undefined)
                                     this.actualValFontSize = actualObj["fontSize"];
+                                if (actualObj["actualValFormat"] !== undefined)
+                                    this.actualValFormat = actualObj["actualValFormat"];
+                                if (actualObj["actualValPrecision"] !== undefined)
+                                    this.actualValPrecision = actualObj["actualValPrecision"];
                             }
                             if (options.dataViews[0].metadata.objects["target"]) {
                                 var targetObj = options.dataViews[0].metadata.objects["target"];
@@ -8968,6 +8976,10 @@ var powerbi;
                                     this.targetHeader = targetObj["targetHeader"];
                                 if (targetObj["fontSize"] !== undefined)
                                     this.targetFontSize = targetObj["fontSize"];
+                                if (targetObj["targetValFormat"] !== undefined)
+                                    this.targetValFormat = targetObj["targetValFormat"];
+                                if (targetObj["targetValPrecision"] !== undefined)
+                                    this.targetValPrecision = targetObj["targetValPrecision"];
                             }
                             if (options.dataViews[0].metadata.objects["status"]) {
                                 var statusObj = options.dataViews[0].metadata.objects["status"];
@@ -8996,12 +9008,10 @@ var powerbi;
                             if (d.roles["target"]) {
                                 _this.hasTarget = true;
                                 _this.targetIndex = i;
-                                _this.actValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.format });
                             }
                             if (d.roles["actual"]) {
                                 _this.hasActual = true;
                                 _this.actualIndex = i;
-                                _this.targetValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.format });
                             }
                         });
                         this.element.style("overflow", "auto");
@@ -9011,7 +9021,7 @@ var powerbi;
                             .attr("class", "iconCard")
                             .attr("style", "width:100%;text-align:left;border-spacing:0")
                             .attr("style", 'color:rgb(102, 102, 102);font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif');
-                        if (this.hasActual === false || this.hasTarget === false) {
+                        if (this.hasActual === false) {
                             container
                                 .append("html")
                                 .attr("style", "")
@@ -9023,26 +9033,40 @@ var powerbi;
                         var target;
                         options.dataViews[0].table.rows.forEach(function (d, i) {
                             act = d[_this.actualIndex];
-                            target = d[_this.targetIndex];
+                            if (d[_this.targetIndex] !== undefined)
+                                target = d[_this.targetIndex];
                         });
                         var actHeader = this.actualHeader.length === 0 ? this.columns[this.actualIndex].displayName : this.actualHeader;
-                        var targetHeader = this.targetHeader.length === 0 ? this.columns[this.targetIndex].displayName : this.targetHeader;
+                        this.columns.forEach(function (d, i) {
+                            if (d.roles["target"])
+                                _this.targetValueFormatter = _this.getValueFormat(d.format, target, _this.targetValFormat, _this.targetValPrecision);
+                            if (d.roles["actual"])
+                                _this.actValueFormatter = _this.getValueFormat(d.format, act, _this.actualValFormat, _this.actualValPrecision);
+                        });
                         this.chartData = [{
                                 actual: { header: actHeader, value: act, caption: this.actValueFormatter.format(act) },
-                                target: { header: targetHeader, value: target, caption: this.targetValueFormatter.format(target) },
                                 height: options.viewport.height,
                                 width: options.viewport.width,
                             }];
+                        if (this.hasTarget) {
+                            var targetHeader = this.targetHeader.length === 0 ? this.columns[this.targetIndex].displayName : this.targetHeader;
+                            this.chartData = [{
+                                    actual: { header: actHeader, value: act, caption: this.actValueFormatter.format(act) },
+                                    target: { header: targetHeader, value: target, caption: this.targetValueFormatter.format(target) },
+                                    height: options.viewport.height,
+                                    width: options.viewport.width,
+                                }];
+                        }
                         var table = container
                             .data(this.chartData)
                             .append("table")
                             .attr("style", "width:100%;padding:4px;height:" + options.viewport.height + "px;");
                         var tbody = table.append("tbody");
                         switch (this.selectedTemplate) {
-                            case "actualTarget":
+                            case "textCard":
                                 this.drawActualTarget(tbody);
                                 break;
-                            case "targetActual":
+                            case "textCard2":
                                 this.drawTargetActual(tbody);
                                 break;
                             case "status":
@@ -9062,28 +9086,37 @@ var powerbi;
                     Visual.prototype.drawActualTarget = function (container) {
                         var row1 = container.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
                         var row2 = container.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
-                        var row3 = container.append("tr").append("td").attr("style", "text-align:right;vertical-align:bottom;");
                         this.drawActualHeader(row1);
                         this.drawActual(row2);
-                        this.drawTarget(row3);
+                        if (this.hasTarget) {
+                            var row3 = container.append("tr").append("td").attr("style", "text-align:right;vertical-align:bottom;");
+                            this.drawTarget(row3);
+                        }
                     };
                     Visual.prototype.drawTargetActual = function (container) {
                         var row1 = container.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
                         var row2 = container.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
-                        var row3 = container.append("tr").append("td").attr("style", "text-align:right;vertical-align:bottom;");
                         this.drawActual(row1);
                         this.drawActualHeader(row2);
-                        this.drawTarget(row3);
+                        if (this.hasTarget) {
+                            var row3 = container.append("tr").append("td").attr("style", "text-align:right;vertical-align:bottom;");
+                            this.drawTarget(row3);
+                        }
                     };
                     Visual.prototype.status = function (container) {
-                        var row1 = container.append("tr").append("td").attr("style", "text-align:left;vertical-align:middle;");
-                        var row2 = container.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
-                        var row3 = container.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
-                        var row4 = container.append("tr").append("td").attr("style", "text-align:right;vertical-align:bottom;");
-                        this.drawActualHeader(row1);
-                        this.drawStatusIcon(row2);
-                        this.drawActual(row3);
-                        this.drawStatus(row4);
+                        if (this.hasTarget) {
+                            var row1 = container.append("tr").append("td").attr("style", "text-align:left;vertical-align:middle;");
+                            var row2 = container.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
+                            var row3 = container.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
+                            var row4 = container.append("tr").append("td").attr("style", "text-align:right;vertical-align:bottom;");
+                            this.drawActualHeader(row1);
+                            this.drawStatusIcon(row2);
+                            this.drawActual(row3);
+                            this.drawStatus(row4);
+                        }
+                        else {
+                            container.append("span").html("Actual and target is required to draw status card.");
+                        }
                     };
                     Visual.prototype.leftIcon = function (container) {
                         var row1 = container.append("tr");
@@ -9091,23 +9124,27 @@ var powerbi;
                         var actTable = row1.append("td").append("table").attr("style", "height:100%;width:100%");
                         var actualHeader = actTable.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
                         var actualCon = actTable.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
-                        var row2 = actTable.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
                         this.drawIcon(iconCon);
                         this.drawActualHeader(actualHeader);
                         this.drawActual(actualCon);
-                        this.drawTarget(row2);
+                        if (this.hasTarget) {
+                            var row2 = actTable.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
+                            this.drawTarget(row2);
+                        }
                     };
                     Visual.prototype.rightIcon = function (container) {
                         var row1 = container.append("tr");
                         var actTable = row1.append("td").append("table").attr("style", "height:100%;width:100%");
                         var actualHeader = actTable.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
                         var actualCon = actTable.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
-                        var row2 = actTable.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
                         var iconCon = row1.append("td").attr("style", "text-align:center;vertical-align:middle;background:" + this.iconBgColor.solid.color + ";");
                         this.drawIcon(iconCon);
                         this.drawActualHeader(actualHeader);
                         this.drawActual(actualCon);
-                        this.drawTarget(row2);
+                        if (this.hasTarget) {
+                            var row2 = actTable.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
+                            this.drawTarget(row2);
+                        }
                     };
                     Visual.prototype.backgroundIcon = function (container) {
                         container.append("html").html(function (d) { return d.actual.display; });
@@ -9168,23 +9205,23 @@ var powerbi;
                         var bullet = container
                             .append("svg")
                             .attr("width", width)
-                            .attr("height", 15)
+                            .attr("height", 9)
                             .attr("class", "bullet");
                         bullet.append("rect")
                             .attr("y", 2)
                             .attr("width", width)
-                            .attr("height", 7)
+                            .attr("height", 5)
                             .attr("style", "fill:#d0cece;");
                         var bulletRect = bullet
                             .append("rect")
                             .attr("y", 2)
                             .attr("width", barScale(actualMax))
-                            .attr("height", 7)
+                            .attr("height", 5)
                             .attr("fill", this.bulletFill.solid.color);
                         bullet.append("rect")
                             .attr("width", 2)
                             .attr("x", barScale(targetMax))
-                            .attr("height", 10)
+                            .attr("height", 9)
                             .attr("style", "fill:#000;");
                     };
                     Visual.prototype.setBorder = function (table) {
@@ -9216,6 +9253,30 @@ var powerbi;
                         });
                         return retData;
                     };
+                    Visual.prototype.getValueFormat = function (val, max, format, precision) {
+                        var valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
+                        var iValueFormatter = valueFormatter.create({});
+                        var valF = null;
+                        switch (format) {
+                            case 'thousand':
+                                valF = 1001;
+                                break;
+                            case 'million':
+                                valF = 1e6;
+                                break;
+                            case 'billion':
+                                valF = 1e9;
+                                break;
+                            case 'trillion':
+                                valF = 1e12;
+                                break;
+                            case 'default':
+                                valF = max;
+                                break;
+                        }
+                        iValueFormatter = valueFormatter.create({ format: val, value: valF, precision: precision });
+                        return iValueFormatter;
+                    };
                     Visual.prototype.enumerateObjectInstances = function (options) {
                         var objectName = options.objectName;
                         var objectEnumeration = [];
@@ -9228,21 +9289,31 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { actualHeader: this.actualHeader }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { actualCaptionFontSize: this.actualCaptionFontSize }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.actualValFontSize }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { actualValFormat: this.actualValFormat }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { actualValPrecision: this.actualValPrecision }, selector: null });
                                 break;
                             case 'target':
-                                objectEnumeration.push({ objectName: objectName, properties: { targetHeader: this.targetHeader }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.targetFontSize }, selector: null });
+                                if (this.hasTarget) {
+                                    objectEnumeration.push({ objectName: objectName, properties: { targetHeader: this.targetHeader }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.targetFontSize }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { targetValFormat: this.targetValFormat }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { targetValPrecision: this.targetValPrecision }, selector: null });
+                                }
                                 break;
                             case 'status':
-                                objectEnumeration.push({ objectName: objectName, properties: { stausIcon: this.stausIcon }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { bulletFill: this.bulletFill }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { stausFontSize: this.stausFontSize }, selector: null });
+                                if (this.selectedTemplate === 'status') {
+                                    objectEnumeration.push({ objectName: objectName, properties: { stausIcon: this.stausIcon }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { bulletFill: this.bulletFill }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { stausFontSize: this.stausFontSize }, selector: null });
+                                }
                                 break;
                             case 'icon':
-                                objectEnumeration.push({ objectName: objectName, properties: { icon: this.icon }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { iconColor: this.iconColor }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { iconBgColor: this.iconBgColor }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { iconSize: this.iconSize }, selector: null });
+                                if (this.selectedTemplate === 'leftIcon' || this.selectedTemplate === 'rightIcon') {
+                                    objectEnumeration.push({ objectName: objectName, properties: { icon: this.icon }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { iconColor: this.iconColor }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { iconBgColor: this.iconBgColor }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { iconSize: this.iconSize }, selector: null });
+                                }
                                 break;
                         }
                         ;
@@ -9262,8 +9333,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.iconCardCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
-                name: 'iconCardCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
+            plugins.iconCardCCFC224D9885417F9AAF5BB8D45B007E = {
+                name: 'iconCardCCFC224D9885417F9AAF5BB8D45B007E',
                 displayName: 'Icon Card',
                 class: 'Visual',
                 version: '1.0.0',
