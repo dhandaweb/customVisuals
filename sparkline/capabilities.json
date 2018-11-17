@@ -1,0 +1,209 @@
+{
+    "dataRoles": [
+        {
+            "displayName": "Actual",
+            "name": "actual",
+            "kind": "Measure",
+            "requiredTypes": [
+                {
+                    "integer": true
+                },
+                {
+                    "numeric": true
+                }
+            ],
+            "preferredTypes": [
+                {
+                    "numeric": true
+                }
+            ]
+        },
+        {
+            "displayName": "Target",
+            "name": "target",
+            "kind": "Measure",
+            "requiredTypes": [
+                {
+                    "integer": true
+                },
+                {
+                    "numeric": true
+                }
+            ],
+            "preferredTypes": [
+                {
+                    "numeric": true
+                }
+            ]
+        },
+        {
+            "displayName": "Period",
+            "name": "period",
+            "kind": "Grouping"
+
+        }
+    ],
+    "dataViewMappings": [
+        {
+            "table": {
+                "rows": {
+                    "select": [
+                        {
+                            "for": {
+                                "in": "period"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "actual"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "target"
+                            }
+                        }
+                    ]
+                }
+            },
+            "conditions": [
+                {
+                    "actual": {
+                        "max": 1
+                    },
+                    "target": {
+                        "max": 1
+                    },
+                    "period": {
+                        "max": 1
+                    }
+                }
+            ]
+        }
+    ],
+    "objects": {
+        "displayTemplate": {
+            "displayName": "Display & Template",
+            "properties": {
+                "selectedTemplate": {
+                    "displayName": "Template",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "maxmin",
+                                "displayName": "Max Min"
+                            }
+                        ]
+                    }
+                },
+                "displayAs": {
+                    "displayName": "Display as",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "bar",
+                                "displayName": "Bar"
+                            },
+                            {
+                                "value": "line",
+                                "displayName": "Line"
+                            },
+                            {
+                                "value": "area",
+                                "displayName": "Area"
+                            },
+                            {
+                                "value": "barline",
+                                "displayName": "Bar Line"
+                            }
+                        ]
+                    }
+                },
+                "showBorder": {
+                    "displayName": "Show Border",
+                    "type": { "bool": true }
+                }
+            }
+        },
+        "Actual": {
+            "displayName": "Actual",
+            "properties": {
+                "actualHeader": {
+                    "displayName": "Actual Display Name",
+                    "type": { "text": true }
+                },
+                "actualColor": {
+                    "displayName": "Target color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "Target": {
+            "displayName": "Target",
+            "properties": {
+                "targetHeader": {
+                    "displayName": "Target Display Name",
+                    "type": { "text": true }
+                },
+                "targetColor": {
+                    "displayName": "Target color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "Line": {
+            "displayName": "Line",
+            "properties": {
+                "transparency": {
+                    "displayName": "Line Width",
+                    "type": { "text": true }
+                }
+            }
+        },
+        "Trend": {
+            "displayName": "Trend",
+            "properties": {
+                "show": {
+                    "displayName": "Trend",
+                    "type": { "bool": true }
+                },
+                "flipTrendDirection": {
+                    "displayName": "Flip Trend Direction",
+                    "type": { "bool": true }
+                },
+                "trendColor": {
+                    "displayName": "Trend Color Scheme",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "RedGreen",
+                                "displayName": "Red Green"
+                            },
+                            {
+                                "value": "GreenRed",
+                                "displayName": "Green Red"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+
+    }
+} 

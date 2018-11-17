@@ -75,6 +75,16 @@
                         ]
                     }
                 },
+                "textColor": {
+                    "displayName": "Text colour",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
                 "showBorder": {
                     "displayName": "Show Border",
                     "type": { "bool": true }
@@ -258,6 +268,25 @@
                         ]
                     }
                 },
+                "conditionalBullet": {
+                    "displayName": "Conditional Color",
+                    "type": { "bool": true }
+                },
+                "conditionalBulletColor": {
+                    "displayName": "Conditional Color Scheme",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "RedGreen",
+                                "displayName": "Red Green"
+                            },
+                            {
+                                "value": "GreenRed",
+                                "displayName": "Green Red"
+                            }
+                        ]
+                    }
+                },
                 "bulletFill": {
                     "displayName": "Bullet colour",
                     "type": {
@@ -268,8 +297,17 @@
                         }
                     }
                 },
+
                 "stausFontSize": {
-                    "displayName": "Font Size",
+                    "displayName": "Icon Font Size",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                },
+                "stausActualTargetFontSize": {
+                    "displayName": "Value font Size",
                     "type": {
                         "formatting": {
                             "fontSize": true
@@ -285,6 +323,46 @@
                     "displayName": "Icon",
                     "type": {
                         "enumeration": [
+                            {
+                                "value": "directions",
+                                "displayName": "directions"
+                            },
+                            {
+                                "value": "directions_bike",
+                                "displayName": "directions bike"
+                            },
+                            {
+                                "value": "directions_boat",
+                                "displayName": "directions boat"
+                            },
+                            {
+                                "value": "directions_bus",
+                                "displayName": "directions bus"
+                            },
+                            {
+                                "value": "directions_car",
+                                "displayName": "directions car"
+                            },
+                            {
+                                "value": "directions_railway",
+                                "displayName": "directions railway"
+                            },
+                            {
+                                "value": "directions_run",
+                                "displayName": "directions run"
+                            },
+                            {
+                                "value": "directions_subway",
+                                "displayName": "directions subway"
+                            },
+                            {
+                                "value": "directions_transit",
+                                "displayName": "directions transit"
+                            },
+                            {
+                                "value": "directions_walk",
+                                "displayName": "directions walk"
+                            },
                             {
                                 "value": "3d_rotation",
                                 "displayName": "3d rotation"
@@ -3082,46 +3160,7 @@
                                 "value": "beenhere",
                                 "displayName": "beenhere"
                             },
-                            {
-                                "value": "directions",
-                                "displayName": "directions"
-                            },
-                            {
-                                "value": "directions_bike",
-                                "displayName": "directions bike"
-                            },
-                            {
-                                "value": "directions_boat",
-                                "displayName": "directions boat"
-                            },
-                            {
-                                "value": "directions_bus",
-                                "displayName": "directions bus"
-                            },
-                            {
-                                "value": "directions_car",
-                                "displayName": "directions car"
-                            },
-                            {
-                                "value": "directions_railway",
-                                "displayName": "directions railway"
-                            },
-                            {
-                                "value": "directions_run",
-                                "displayName": "directions run"
-                            },
-                            {
-                                "value": "directions_subway",
-                                "displayName": "directions subway"
-                            },
-                            {
-                                "value": "directions_transit",
-                                "displayName": "directions transit"
-                            },
-                            {
-                                "value": "directions_walk",
-                                "displayName": "directions walk"
-                            },
+
                             {
                                 "value": "edit_location",
                                 "displayName": "edit location"
@@ -3840,6 +3879,21 @@
                                 "color": true
                             }
                         }
+                    }
+                },
+                "iconBgType": {
+                    "displayName": "Icon background type",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "full",
+                                "displayName": "Full"
+                            },
+                            {
+                                "value": "circle",
+                                "displayName": "Circle"
+                            }
+                        ]
                     }
                 },
                 "iconSize": {

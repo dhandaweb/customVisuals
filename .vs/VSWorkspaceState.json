@@ -2,11 +2,10 @@
   "ExpandedNodes": [
     "",
     "\\iconCard",
-    "\\iconCard\\src",
     "\\kpiCard",
     "\\kpiCard\\src",
     "\\multipleSparkline\\src"
   ],
-  "SelectedNode": "\\kpiCard\\capabilities.json",
+  "SelectedNode": "\\kpiCard\\src\\visual.ts",
   "PreviewInSolutionExplorer": false
 }

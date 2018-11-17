@@ -63,9 +63,18 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
         private container: d3.Selection<SVGElement>;
 
         private stausIcon: any = 'arrow';
-        private stausFontSize: any = 70;
+        private stausFontSize: any = 40;
+
+        private conditionalBullet: any = false;
+        private conditionalBulletColorOptions: any = {
+            "RedGreen": ["#ff4701", "#00ad00"],
+            "GreenRed": ["#00ad00", "#ff4701"]
+        };
+        private conditionalBulletColor: any = "GreenRed";
         private bulletFill: any = { solid: { color: "#01b8aa" } };
 
+        private stausActualTargetFontSize: any = 12;
+        
         private chartData: any;
         private tooltipServiceWrapper: ITooltipServiceWrapper;
         private TooltipEventArgs: any;
@@ -76,9 +85,10 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
         private icon: any = 'send';
         private iconColor: any = { solid: { color: "#ffffff" } };
         private iconBgColor: any = { solid: { color: "#01b8aa" } };
-        
-        private iconSize: any = 70;
+        private iconBgType: any = 'full';
 
+        private iconSize: any = 70;
+        private textColor: any = { solid: { color: "#666666" } };
         constructor(options: VisualConstructorOptions) {
 
             this.element = d3.select(options.element);
@@ -94,8 +104,9 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
                 if (options.dataViews[0].metadata.objects["displayTemplate"]) {
                     var displayTemplateObj = options.dataViews[0].metadata.objects["displayTemplate"];
                     if (displayTemplateObj["selectedTemplate"] !== undefined) this.selectedTemplate = displayTemplateObj["selectedTemplate"];
+                    if (displayTemplateObj["textColor"] !== undefined) this.textColor = displayTemplateObj["textColor"];
                     if (displayTemplateObj["showBorder"] !== undefined) this.showBorder = displayTemplateObj["showBorder"];
-
+                    
                 }
                 if (options.dataViews[0].metadata.objects["actual"]) {
                     var actualObj = options.dataViews[0].metadata.objects["actual"];
@@ -117,7 +128,11 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
                     var statusObj = options.dataViews[0].metadata.objects["status"];
                     if (statusObj["stausIcon"] !== undefined) this.stausIcon = statusObj["stausIcon"];
                     if (statusObj["bulletFill"] !== undefined) this.bulletFill = statusObj["bulletFill"];
+                    if (statusObj["conditionalBullet"] !== undefined) this.conditionalBullet = statusObj["conditionalBullet"];
+                    if (statusObj["conditionalBulletColor"] !== undefined) this.conditionalBulletColor = statusObj["conditionalBulletColor"];
                     if (statusObj["stausFontSize"] !== undefined) this.stausFontSize = statusObj["stausFontSize"];
+                    if (statusObj["stausActualTargetFontSize"] !== undefined) this.stausActualTargetFontSize = statusObj["stausActualTargetFontSize"];
+                    
 
                 }
                 if (options.dataViews[0].metadata.objects["icon"]) {
@@ -125,6 +140,8 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
                     if (iconObj["icon"] !== undefined) this.icon = iconObj["icon"];
                     if (iconObj["iconColor"] !== undefined) this.iconColor = iconObj["iconColor"];
                     if (iconObj["iconBgColor"] !== undefined) this.iconBgColor = iconObj["iconBgColor"];
+                    if (iconObj["iconBgType"] !== undefined) this.iconBgType = iconObj["iconBgType"];
+                    
                     if (iconObj["iconSize"] !== undefined) this.iconSize = iconObj["iconSize"];
 
                 }
@@ -153,7 +170,7 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
                 .append("div")
                 .attr("class", "iconCard")
                 .attr("style", "width:100%;text-align:left;border-spacing:0")
-                .attr("style", 'color:rgb(102, 102, 102);font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif');
+                .attr("style", 'color:' + this.textColor.solid.color +';font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif');
 
             if (this.hasActual === false) {
                 container
@@ -267,13 +284,13 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
             if (this.hasTarget) {
                 var row1 = container.append("tr").append("td").attr("style", "text-align:left;vertical-align:middle;");
                 var row2 = container.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
-                var row3 = container.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
+               // var row3 = container.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
                 var row4 = container.append("tr").append("td").attr("style", "text-align:right;vertical-align:bottom;");
 
                 this.drawActualHeader(row1);
 
                 this.drawStatusIcon(row2);
-                this.drawActual(row3);
+                //this.drawActual(row3);
 
                 this.drawStatus(row4);
             }
@@ -285,8 +302,11 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
         private leftIcon(container) {
             var row1 = container.append("tr");
             
-            var iconCon = row1.append("td").attr("style", "text-align:center;vertical-align:middle;background:" + this.iconBgColor.solid.color + ";");
-            var actTable = row1.append("td").append("table").attr("style","height:100%;width:100%");
+            var iconCon = row1.append("td").attr("style", "text-align:center;vertical-align:middle;");
+
+            if (this.iconBgType === 'full') iconCon.style("background", this.iconBgColor.solid.color);
+
+            var actTable = row1.append("td").append("table").attr("style", "height:100%;width:100%");
 
             var actualHeader = actTable.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
           
@@ -313,7 +333,10 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
 
             var actualCon = actTable.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
            
-            var iconCon = row1.append("td").attr("style", "text-align:center;vertical-align:middle;background:" + this.iconBgColor.solid.color + ";");
+            var iconCon = row1.append("td").attr("style", "text-align:center;vertical-align:middle;");
+
+            if (this.iconBgType === 'full') iconCon.style("background", this.iconBgColor.solid.color);
+
             this.drawIcon(iconCon);
             this.drawActualHeader(actualHeader);
             this.drawActual(actualCon);
@@ -370,22 +393,38 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
 
             let html = this.chartData[0].actual.value > this.chartData[0].target.value ? icons[0] : icons[1];
 
-            container
+            var statusIcon  = container
                 .append("span")
                 .html(html)
                 .attr("class", "material-icons")
                 .style("font-size", this.stausFontSize + "px");
 
+            if (this.conditionalBullet === true)  {
+                statusIcon.style("color", d => {
+
+                    if ((this.chartData[0].actual.value - this.chartData[0].target.value) > 0) return this.conditionalBulletColorOptions[this.conditionalBulletColor][0];
+                    else return this.conditionalBulletColorOptions[this.conditionalBulletColor][1];
+
+                });
+            }
+
         }
 
         private drawIcon(container) {
 
-            container
+           var icon =  container
                 .append("span")
                 .html(this.icon)
                 .attr("class", "material-icons")
                 .style("font-size", this.iconSize + "px")
                 .style("color", this.iconColor.solid.color);
+
+            if (this.iconBgType !== 'full') {
+                icon.style("background", this.iconBgColor.solid.color)
+                    .style("padding", "10px")
+                    .style("border-radius", "50px");
+            }
+            
             
         }
 
@@ -398,6 +437,15 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
             var width = this.chartData[0].width - 20;
             var barScale = d3.scale.linear().range([0, width]).domain([min, backgroundBarLen]);
 
+            container
+                .append("span")
+                .html(this.chartData[0].actual.caption)
+                .attr("style", "float:left;font-size:" + this.stausActualTargetFontSize +"px;margin-left:5px");
+
+            container
+                .append("span")
+                .html(this.chartData[0].target.caption)
+                .attr("style", "float:right;font-size:" + this.stausActualTargetFontSize +"px;margin-right:5px");
 
             var bullet = container
                 .append("svg")
@@ -416,7 +464,17 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
                 .attr("y", 2)
                 .attr("width", barScale(actualMax))
                 .attr("height", 5)
-                .attr("fill", this.bulletFill.solid.color);
+                
+
+            if (this.conditionalBullet === false) bulletRect.attr("fill", this.bulletFill.solid.color);
+            else {
+                bulletRect.style("fill", d => {
+
+                    if ((actualMax - targetMax) > 0) return this.conditionalBulletColorOptions[this.conditionalBulletColor][0];
+                    else return this.conditionalBulletColorOptions[this.conditionalBulletColor][1];
+
+                });
+            }
 
             bullet.append("rect")
                 .attr("width", 2)
@@ -498,22 +556,26 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
             switch (objectName) {
                 case 'displayTemplate':
                     objectEnumeration.push({ objectName: objectName, properties: { selectedTemplate: this.selectedTemplate }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showBorder: this.showBorder }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { textColor: this.textColor }, selector: null });
 
+                    objectEnumeration.push({ objectName: objectName, properties: { showBorder: this.showBorder }, selector: null });
+                    
                     break;
 
                 case 'actual':
                     objectEnumeration.push({ objectName: objectName, properties: { actualHeader: this.actualHeader }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { actualCaptionFontSize: this.actualCaptionFontSize }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.actualValFontSize }, selector: null });
+                    if (this.selectedTemplate !== 'status')objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.actualValFontSize }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { actualValFormat: this.actualValFormat }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { actualValPrecision: this.actualValPrecision }, selector: null });
                     break;
 
                 case 'target':
                     if (this.hasTarget) {
-                        objectEnumeration.push({ objectName: objectName, properties: { targetHeader: this.targetHeader }, selector: null });
-                        objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.targetFontSize }, selector: null });
+                        if (this.selectedTemplate !== 'status') {
+                            objectEnumeration.push({ objectName: objectName, properties: { targetHeader: this.targetHeader }, selector: null });
+                            objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.targetFontSize }, selector: null });
+                        }
                         objectEnumeration.push({ objectName: objectName, properties: { targetValFormat: this.targetValFormat }, selector: null });
                         objectEnumeration.push({ objectName: objectName, properties: { targetValPrecision: this.targetValPrecision }, selector: null });
                     }
@@ -523,8 +585,14 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
                 case 'status':
                     if (this.selectedTemplate === 'status') {
                         objectEnumeration.push({ objectName: objectName, properties: { stausIcon: this.stausIcon }, selector: null });
-                        objectEnumeration.push({ objectName: objectName, properties: { bulletFill: this.bulletFill }, selector: null });
+                       
                         objectEnumeration.push({ objectName: objectName, properties: { stausFontSize: this.stausFontSize }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { stausActualTargetFontSize: this.stausActualTargetFontSize }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { conditionalBullet: this.conditionalBullet }, selector: null });
+                        if (this.conditionalBullet)objectEnumeration.push({ objectName: objectName, properties: { conditionalBulletColor: this.conditionalBulletColor }, selector: null });
+                        if (!this.conditionalBullet)objectEnumeration.push({ objectName: objectName, properties: { bulletFill: this.bulletFill }, selector: null });
+                        
+                        
                     }
 
                     break;
@@ -533,6 +601,8 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
                         objectEnumeration.push({ objectName: objectName, properties: { icon: this.icon }, selector: null });
                         objectEnumeration.push({ objectName: objectName, properties: { iconColor: this.iconColor }, selector: null });
                         objectEnumeration.push({ objectName: objectName, properties: { iconBgColor: this.iconBgColor }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { iconBgType: this.iconBgType }, selector: null });
+                        
                         objectEnumeration.push({ objectName: objectName, properties: { iconSize: this.iconSize }, selector: null });
                     }
                   

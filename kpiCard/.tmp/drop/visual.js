@@ -9063,7 +9063,7 @@ var powerbi;
                             actual: { display: actHeader, value: act },
                             prior: { display: "Prior", value: prior },
                             target: { display: targetHeader, value: target },
-                            growth: { display: "Growth", value: act - actSecondLast / act },
+                            growth: { display: "Growth", value: act - prior },
                             needed: { display: "Needed", value: target - act },
                             trend: { display: "", value: trend }
                         };
@@ -9269,7 +9269,7 @@ var powerbi;
                     Visual.prototype.drawGrowth = function (container) {
                         var val = container
                             .append("span")
-                            .text(this.chartData.growth.value.toFixed(2));
+                            .text(this.iValueFormatter.format(this.chartData.growth.value));
                         if (this.selectedTemplate === "group") {
                             val.attr("style", "display:block;font-size:14px");
                             container.style("text-align", "right")
