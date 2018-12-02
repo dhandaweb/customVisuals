@@ -9086,9 +9086,7 @@ var powerbi;
                     Visual.prototype.update = function (options) {
                         this.element.style("overflow", "hidden");
                         this.element.select('.dotPlot').remove();
-                        console.log(this.colorPalette);
                         this.colorPalette.reset();
-                        console.log(this.colorPalette);
                         this.draw(options);
                     };
                     Visual.prototype.draw = function (options) {
@@ -9198,7 +9196,7 @@ var powerbi;
                                         iden: _this.host.createSelectionIdBuilder().withMeasure(d.source.queryName).createSelectionId(),
                                         values: d.values.map(function (t, j) {
                                             if (_this.hasSize)
-                                                sizeValues.push(sizeG[i]);
+                                                sizeValues.push(sizeG[j]);
                                             return {
                                                 xValue: { title: xMetadata.displayName, value: xAxis[j], caption: xAxis[j] },
                                                 yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
@@ -9597,6 +9595,7 @@ var powerbi;
                             else
                                 return 'fill:rgb(102, 102, 102);font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif';
                         })
+                            .style("font-size", fontSize + "px")
                             .attr("y", fontSize / 2)
                             .text(function (d) { return d.text; });
                         legengG.style("font-size", fontSize);
@@ -9769,6 +9768,8 @@ var powerbi;
                             case 'default':
                                 valF = max;
                                 break;
+                            case 'none':
+                                return { format: d3.format(",." + this.valPrecision + "f") };
                         }
                         iValueFormatter = valueFormatter.create({ format: val, value: valF, precision: this.valPrecision });
                         return iValueFormatter;
@@ -10326,8 +10327,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.dotPlotD9885417F9AAF5BB8D45B007E_DEBUG = {
-                name: 'dotPlotD9885417F9AAF5BB8D45B007E_DEBUG',
+            plugins.dotPlotD9885417F9AAF5BB8D45B007E = {
+                name: 'dotPlotD9885417F9AAF5BB8D45B007E',
                 displayName: 'DotPlot',
                 class: 'Visual',
                 version: '1.0.0',

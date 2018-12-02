@@ -47,7 +47,10 @@ module powerbi.extensibility.visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E  {
 
         private showTarget: any = true;
         private targetHeader: any = "";
-      
+
+        private valFormat: any = "default";
+        private valPrecision: any = 0;
+
         private bulletScaleMinZero: any = true;
 
         private trendIndicator: any = true;
@@ -116,7 +119,8 @@ module powerbi.extensibility.visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E  {
                    if (displayTemplateObj["actualHeader"] !== undefined) this.actualHeader = displayTemplateObj["actualHeader"];
                    if (displayTemplateObj["targetHeader"] !== undefined) this.targetHeader = displayTemplateObj["targetHeader"];
                    if (displayTemplateObj["selectedTemplate"] !== undefined) this.selectedTemplate = displayTemplateObj["selectedTemplate"];
-                   
+                   if (displayTemplateObj["valFormat"] !== undefined) this.valFormat = displayTemplateObj["valFormat"];
+                   if (displayTemplateObj["valPrecision"] !== undefined) this.valPrecision = displayTemplateObj["valPrecision"];
                }
               
                if (options.dataViews[0].metadata.objects["Sparkline"]) {
@@ -138,7 +142,7 @@ module powerbi.extensibility.visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E  {
                    var bulletObj = options.dataViews[0].metadata.objects["Bullet"];
 
                    if (bulletObj["conditionalBullet"] !== undefined) this.conditionalBullet = bulletObj["conditionalBullet"];
-                   if (bulletObj["conditionalBulletColor"] !== undefined) this.conditionalBulletColor = bulletObj["conditionalBulletColor"];
+                   if (bulletObj["singleBulletColor"] !== undefined) this.singleBulletColor = bulletObj["singleBulletColor"];
                    if (bulletObj["conditionalBulletColor"] !== undefined) this.conditionalBulletColor = bulletObj["conditionalBulletColor"];
                    if (bulletObj["conditionalBulletColorScale"] !== undefined) this.conditionalBulletColorScale = bulletObj["conditionalBulletColorScale"];
                    if (bulletObj["bulletScaleMinZero"] !== undefined) this.bulletScaleMinZero = bulletObj["bulletScaleMinZero"];
@@ -150,22 +154,26 @@ module powerbi.extensibility.visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E  {
            this.hasTarget = false;
            this.hasActual = false;
            this.hasPeriod = false;
-          
+
+           
+
            this.columns.forEach((d,i) => {
                if (d.roles["target"]) {
                    this.hasTarget = true;
                    this.targetIndex = i;
+                   var targetMax: any = (options.dataViews[0].table.rows.map((d: any) => d[this.targetIndex]));
+                   this.iValueFormatter = this.getValueFormat(d.format, d3.min(targetMax) / 10, this.valFormat, this.valPrecision);
                }
                if (d.roles["actual"]) {
                    this.hasActual = true;
                    this.actualIndex = i;
+                   var actualMax: any = (options.dataViews[0].table.rows.map((d: any) => d[this.actualIndex]));
+                   this.iValueFormatter = this.getValueFormat(d.format, d3.min(actualMax)/10, this.valFormat, this.valPrecision);
                }
                if (d.roles["period"]) {
                    this.hasPeriod = true;
                    this.periodIndex = i;
-                  
                    this.dateFormat = d.format;
-                   
                }
            });
 
@@ -188,10 +196,10 @@ module powerbi.extensibility.visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E  {
             }
 
 
-           this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ value:1001 });
+           //this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ value:1001 });
         
-           if (this.hasActual) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.actualIndex].format });
-           else if (this.hasTarget) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.targetIndex].format });
+           //if (this.hasActual) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.actualIndex].format });
+           //else if (this.hasTarget) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.targetIndex].format });
           
             var data = [];
             let dateformat;
@@ -260,6 +268,7 @@ module powerbi.extensibility.visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E  {
                 var neededContainer = thirdRow.append("td").style("text-align", "center");
 
                 this.drawTitle(titleContainer);
+              
                 this.drawBullet(data, bulletContainer, options.viewport.width/2);
 
                 this.drawActual(actualContainer);
@@ -538,7 +547,7 @@ module powerbi.extensibility.visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E  {
                     .attr("width", 18)
                     .attr("height", 18);
 
-                if (this.selectedTemplate === "group")trendIndicator.attr("style","position: absolute;top: 3;right: 0;")  
+                if (this.selectedTemplate === "group")trendIndicator.attr("style","position: absolute;top:3px;right: 0;")  
 
                 var triangleDirection = this.flipTrendDirection == false ? 'triangle-down' : 'triangle-up';
                 var triangle = d3.svg.symbol().type(triangleDirection).size(50);
@@ -704,6 +713,36 @@ module powerbi.extensibility.visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E  {
            return retData;
         }
 
+        private getValueFormat(val, max, format, precision) {
+
+            let valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
+            let iValueFormatter = valueFormatter.create({});
+            let valF = null;
+            switch (format) {
+                case 'thousand':
+                    valF = 1001;
+                    break;
+                case 'million':
+                    valF = 1e6;
+                    break;
+                case 'billion':
+                    valF = 1e9;
+                    break;
+                case 'trillion':
+                    valF = 1e12;
+                    break;
+                case 'default':
+                    valF = max;
+                    break;
+                case 'none':
+                    return { format: d3.format(",." + precision + "f") }
+            }
+            
+            iValueFormatter = valueFormatter.create({ format: val, value: valF, precision: precision });
+
+            return iValueFormatter;
+        }
+
        public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {
 
             let objectName = options.objectName;
@@ -714,6 +753,8 @@ module powerbi.extensibility.visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E  {
                     objectEnumeration.push({ objectName: objectName, properties: { selectedTemplate: this.selectedTemplate }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { actualHeader: this.actualHeader }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { targetHeader: this.targetHeader }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { valFormat: this.valFormat }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
                     break;
 
                 case 'Sparkline':

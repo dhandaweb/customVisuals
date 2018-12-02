@@ -8955,6 +8955,8 @@ var powerbi;
                             "RedGreen": ["#ff4701", "#00ad00"],
                             "GreenRed": ["#00ad00", "#ff4701"]
                         };
+                        this.conditionalVariance = false;
+                        this.conditionalVarianceColor = "GreenRed";
                         this.conditionalBulletColor = "GreenRed";
                         this.singleBulletColor = { solid: { color: "#4682b4" } };
                         this.aboveThresholdColor = { solid: { color: "#00ad00" } };
@@ -9010,6 +9012,10 @@ var powerbi;
                                     this.showVariancePer = targetObj["showVariancePer"];
                                 if (targetObj["variancePerHeader"] !== undefined)
                                     this.variancePerHeader = targetObj["variancePerHeader"];
+                                if (targetObj["conditionalVariance"] !== undefined)
+                                    this.conditionalVariance = targetObj["conditionalVariance"];
+                                if (targetObj["conditionalVarianceColor"] !== undefined)
+                                    this.conditionalVarianceColor = targetObj["conditionalVarianceColor"];
                             }
                             if (options.dataViews[0].metadata.objects["Trend"]) {
                                 var trendObj = options.dataViews[0].metadata.objects["Trend"];
@@ -9026,8 +9032,8 @@ var powerbi;
                                     this.conditionalBullet = bulletObj["conditionalBullet"];
                                 if (bulletObj["conditionalBulletColor"] !== undefined)
                                     this.conditionalBulletColor = bulletObj["conditionalBulletColor"];
-                                if (bulletObj["conditionalBulletColor"] !== undefined)
-                                    this.conditionalBulletColor = bulletObj["conditionalBulletColor"];
+                                if (bulletObj["singleBulletColor"] !== undefined)
+                                    this.singleBulletColor = bulletObj["singleBulletColor"];
                                 if (bulletObj["conditionalBulletColorScale"] !== undefined)
                                     this.conditionalBulletColorScale = bulletObj["conditionalBulletColorScale"];
                                 if (bulletObj["bulletScaleMinZero"] !== undefined)
@@ -9056,6 +9062,8 @@ var powerbi;
                                     this.belowThreshold4Color = thresholdObj["belowThreshold4Color"];
                             }
                         }
+                        this.element.style("overflow", "auto");
+                        this.element.select('.multipleSparkline').remove();
                         this.hasTarget = false;
                         this.hasActual = false;
                         this.hasPeriod = false;
@@ -9080,29 +9088,26 @@ var powerbi;
                             }
                             return d;
                         });
+                        var table = this.element
+                            .append("div")
+                            .attr("class", "multipleSparkline")
+                            .attr("style", "width:100%;")
+                            .append("table")
+                            .attr("style", "width:100%;text-align:left;border-spacing:0");
+                        if (this.hasActual === false || (this.hasPeriod === false && this.hasGroup === false)) {
+                            table
+                                .append("html")
+                                .attr("style", "")
+                                .html("Data is required to draw the visual");
+                            return;
+                        }
                         this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ value: 1001 });
                         if (this.hasActual)
                             this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.actualIndex].format });
                         else if (this.hasTarget)
                             this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.targetIndex].format });
                         var nestedData, data = [], identityData;
-                        //options.dataViews[0].table.rows = options.dataViews[0].table.rows.map((d:any,i) => {
-                        //             d.identity = options.dataViews[0].table.identity[i]
-                        //        return d;
-                        //});
                         nestedData = this.formatData(options.dataViews[0]);
-                        //if (this.hasGroup && this.hasPeriod) {
-                        //    //nestedData  = d3.nest()
-                        //    //    .key((d) => d[this.groupIndex])
-                        //    //    .entries(options.dataViews[0].table.rows);
-                        //    nestedData = this.formatData(options.dataViews[0]);
-                        //}
-                        //else if (this.hasPeriod){
-                        //    //nestedData = [{
-                        //    //    key: options.dataViews[0].metadata.columns[this.actualIndex].displayName,
-                        //    //    values: options.dataViews[0].table.rows
-                        //    //}];
-                        //}
                         nestedData.map(function (d, i) {
                             var actual = _this.hasActual ? d.values[d.values.length - 1].actual : 0;
                             var secondLastActual = 0;
@@ -9146,21 +9151,6 @@ var powerbi;
                                 identity: d.identity
                             });
                         });
-                        this.element.style("overflow", "auto");
-                        this.element.select('.multipleSparkline').remove();
-                        var table = this.element
-                            .append("div")
-                            .attr("class", "multipleSparkline")
-                            .attr("style", "width:100%;")
-                            .append("table")
-                            .attr("style", "width:100%;text-align:left;border-spacing:0");
-                        if (this.hasActual === false) {
-                            table
-                                .append("html")
-                                .attr("style", "")
-                                .html("Actual is required to draw the visual");
-                            return;
-                        }
                         if (nestedData.length === 0) {
                             table
                                 .append("html")
@@ -9178,29 +9168,22 @@ var powerbi;
                         rows.on("click", function (d, i) {
                             d.isFiltered = !d.isFiltered;
                             _this.selectionManager.select(d.identity, true);
-                            //d.values.forEach(d => {
-                            //    const categoryColumn: DataViewCategoryColumn = {
-                            //        source: options.dataViews[0].table.columns[this.groupIndex],
-                            //        values: null,
-                            //        identity: [d.identity]
-                            //    };
-                            //    var id = this.host.createSelectionIdBuilder()
-                            //        .withCategory(categoryColumn, 0)
-                            //        .createSelectionId();
-                            //    this.selectionManager.select(d.iden, true);
-                            //});
                             _this.setFilterOpacity(rows);
                         });
                         this.showIntensityCircle(rows, thead);
                         this.drawMetric(rows, thead);
-                        this.drawSparkline(data, rows, thead);
-                        this.drawBisectorToolTip();
+                        if (this.hasPeriod) {
+                            this.drawSparkline(data, rows, thead);
+                            this.drawBisectorToolTip();
+                        }
                         this.drawCurrent(rows, thead);
-                        this.drawPrior(rows, thead);
-                        this.drawChange(rows, thead);
-                        this.drawPerChange(rows, thead);
-                        this.drawTotalChange(rows, thead);
-                        this.showTrendIndicator(rows, thead);
+                        if (this.hasPeriod) {
+                            this.drawPrior(rows, thead);
+                            this.drawChange(rows, thead);
+                            this.drawPerChange(rows, thead);
+                            this.drawTotalChange(rows, thead);
+                            this.showTrendIndicator(rows, thead);
+                        }
                         this.drawActual(rows, thead);
                         this.drawBullet(data, rows, thead);
                         this.drawTarget(rows, thead);
@@ -9474,6 +9457,14 @@ var powerbi;
                                 .append("td")
                                 .append("html")
                                 .text(function (d) { return _this.iValueFormatter.format(d.variance); });
+                            if (this.conditionalVariance == true) {
+                                variance.style("color", function (d) {
+                                    if (d.variance > 0)
+                                        return _this.conditionalBulletColorOptions[_this.conditionalBulletColor][0];
+                                    else
+                                        return _this.conditionalBulletColorOptions[_this.conditionalBulletColor][1];
+                                });
+                            }
                             this.tooltipServiceWrapper.addTooltip(variance, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data, 'Variance'); }, function (tooltipEvent) { return null; });
                         }
                     };
@@ -9487,6 +9478,14 @@ var powerbi;
                                 .append("td")
                                 .append("html")
                                 .text(function (d) { return d.variancePer + "%"; });
+                            if (this.conditionalVariance == true) {
+                                variancePer.style("color", function (d) {
+                                    if (d.variance > 0)
+                                        return _this.conditionalBulletColorOptions[_this.conditionalBulletColor][0];
+                                    else
+                                        return _this.conditionalBulletColorOptions[_this.conditionalBulletColor][1];
+                                });
+                            }
                             this.tooltipServiceWrapper.addTooltip(variancePer, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data, 'VariancePer'); }, function (tooltipEvent) { return null; });
                         }
                     };
@@ -9664,6 +9663,26 @@ var powerbi;
                                 };
                             });
                         }
+                        else if (this.hasGroup) {
+                            formattedData = group.map(function (t, i) {
+                                return {
+                                    key: t,
+                                    identity: _this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).createSelectionId(),
+                                    values: actualValues.map(function (d, j) {
+                                        return {
+                                            actual: d.values[i],
+                                            target: _this.hasTarget ? targetValues[j].values[i] : 0,
+                                            group: t,
+                                            period: "Test",
+                                            additional: addVal.map(function (d) {
+                                                var format = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: d.values[j].source.format });
+                                                return { key: d.key, val: d.values[j].values[i], caption: format.format(d.values[j].values[i]) };
+                                            })
+                                        };
+                                    })
+                                };
+                            });
+                        }
                         else {
                             formattedData = [{
                                     key: "Measure",
@@ -9707,6 +9726,9 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { varianceHeader: this.varianceHeader }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { showVariancePer: this.showVariancePer }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { variancePerHeader: this.variancePerHeader }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { conditionalVariance: this.conditionalVariance }, selector: null });
+                                if (this.conditionalVariance)
+                                    objectEnumeration.push({ objectName: objectName, properties: { conditionalVarianceColor: this.conditionalVarianceColor }, selector: null });
                                 break;
                             case 'Trend':
                                 objectEnumeration.push({ objectName: objectName, properties: { show: this.trendIndicator }, selector: null });

@@ -46,7 +46,7 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
         private actualIndex: number;
         private hasActual: any;
         private actValueFormatter: any;
-        private actualCaptionFontSize: any = 16;
+        private actualCaptionFontSize: any = 11;
         private actualValFontSize: any = 36;
         private actualValFormat: any = "default";
         private actualValPrecision: any = 0;
@@ -73,7 +73,7 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
         private conditionalBulletColor: any = "GreenRed";
         private bulletFill: any = { solid: { color: "#01b8aa" } };
 
-        private stausActualTargetFontSize: any = 12;
+        private stausActualTargetFontSize: any = 11;
         
         private chartData: any;
         private tooltipServiceWrapper: ITooltipServiceWrapper;
@@ -163,13 +163,13 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
             });
             
 
-            this.element.style("overflow", "auto");
+            this.element.style("overflow", "hidden");
             this.element.select('.iconCard').remove();
 
             var container = this.element
                 .append("div")
                 .attr("class", "iconCard")
-                .attr("style", "width:100%;text-align:left;border-spacing:0")
+                .attr("style", "width:100%;text-align:left;padding:1px;border-spacing:0;")
                 .attr("style", 'color:' + this.textColor.solid.color +';font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif');
 
             if (this.hasActual === false) {
@@ -193,8 +193,8 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
             var actHeader = this.actualHeader.length === 0 ? this.columns[this.actualIndex].displayName : this.actualHeader;
 
             this.columns.forEach((d, i) => {
-                if (d.roles["target"]) this.targetValueFormatter = this.getValueFormat(d.format, target, this.targetValFormat, this.targetValPrecision );
-                if (d.roles["actual"]) this.actValueFormatter = this.getValueFormat(d.format, act, this.actualValFormat, this.actualValPrecision );
+                if (d.roles["target"]) this.targetValueFormatter = this.getValueFormat(d.format, target/10, this.targetValFormat, this.targetValPrecision );
+                if (d.roles["actual"]) this.actValueFormatter = this.getValueFormat(d.format, act/10, this.actualValFormat, this.actualValPrecision );
                
             });
 
@@ -218,7 +218,7 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
             var table = container
                 .data(this.chartData)
                 .append("table")
-                .attr("style", "width:100%;padding:4px;height:" + options.viewport.height + "px;");
+                .attr("style", "width:100%;padding:1px;height:" + (options.viewport.height-4) + "px;");
 
             var tbody = table.append("tbody");
 
@@ -283,7 +283,7 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
 
             if (this.hasTarget) {
                 var row1 = container.append("tr").append("td").attr("style", "text-align:left;vertical-align:middle;");
-                var row2 = container.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
+                var row2 = container.append("tr").append("td").attr("style", "text-align:center;vertical-align:bottom;");
                // var row3 = container.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
                 var row4 = container.append("tr").append("td").attr("style", "text-align:right;vertical-align:bottom;");
 
@@ -396,7 +396,8 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
             var statusIcon  = container
                 .append("span")
                 .html(html)
-                .attr("class", "material-icons")
+                .attr("class", "material-icons IconCard")
+                .style("font-feature-settings", "liga")
                 .style("font-size", this.stausFontSize + "px");
 
             if (this.conditionalBullet === true)  {
@@ -415,8 +416,9 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
            var icon =  container
                 .append("span")
                 .html(this.icon)
-                .attr("class", "material-icons")
-                .style("font-size", this.iconSize + "px")
+               .attr("class", "material-icons IconCard")
+               .style("font-size", this.iconSize + "px")
+               .style("font-feature-settings","liga")
                 .style("color", this.iconColor.solid.color);
 
             if (this.iconBgType !== 'full') {
@@ -434,7 +436,7 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
             var actualMax = this.chartData[0].actual.value;
             var min = 0;
             var backgroundBarLen = d3.max([targetMax, actualMax]) * 1.15;
-            var width = this.chartData[0].width - 20;
+            var width = this.chartData[0].width - 16;
             var barScale = d3.scale.linear().range([0, width]).domain([min, backgroundBarLen]);
 
             container
@@ -541,6 +543,8 @@ module powerbi.extensibility.visual.iconCardCCFC224D9885417F9AAF5BB8D45B007E  {
                 case 'default':
                     valF = max;
                     break;
+                case 'none':
+                    return { format: d3.format(",." + precision + "f") }
             }
 
             iValueFormatter = valueFormatter.create({ format: val, value: valF, precision: precision });

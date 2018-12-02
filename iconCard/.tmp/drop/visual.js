@@ -8925,7 +8925,7 @@ var powerbi;
                     function Visual(options) {
                         this.selectedTemplate = "textCard";
                         this.actualHeader = "";
-                        this.actualCaptionFontSize = 16;
+                        this.actualCaptionFontSize = 11;
                         this.actualValFontSize = 36;
                         this.actualValFormat = "default";
                         this.actualValPrecision = 0;
@@ -8942,7 +8942,7 @@ var powerbi;
                         };
                         this.conditionalBulletColor = "GreenRed";
                         this.bulletFill = { solid: { color: "#01b8aa" } };
-                        this.stausActualTargetFontSize = 12;
+                        this.stausActualTargetFontSize = 11;
                         this.showBorder = true;
                         this.icon = 'send';
                         this.iconColor = { solid: { color: "#ffffff" } };
@@ -9033,12 +9033,12 @@ var powerbi;
                                 _this.actualIndex = i;
                             }
                         });
-                        this.element.style("overflow", "auto");
+                        this.element.style("overflow", "hidden");
                         this.element.select('.iconCard').remove();
                         var container = this.element
                             .append("div")
                             .attr("class", "iconCard")
-                            .attr("style", "width:100%;text-align:left;border-spacing:0")
+                            .attr("style", "width:100%;text-align:left;padding:1px;border-spacing:0;")
                             .attr("style", 'color:' + this.textColor.solid.color + ';font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif');
                         if (this.hasActual === false) {
                             container
@@ -9058,9 +9058,9 @@ var powerbi;
                         var actHeader = this.actualHeader.length === 0 ? this.columns[this.actualIndex].displayName : this.actualHeader;
                         this.columns.forEach(function (d, i) {
                             if (d.roles["target"])
-                                _this.targetValueFormatter = _this.getValueFormat(d.format, target, _this.targetValFormat, _this.targetValPrecision);
+                                _this.targetValueFormatter = _this.getValueFormat(d.format, target / 10, _this.targetValFormat, _this.targetValPrecision);
                             if (d.roles["actual"])
-                                _this.actValueFormatter = _this.getValueFormat(d.format, act, _this.actualValFormat, _this.actualValPrecision);
+                                _this.actValueFormatter = _this.getValueFormat(d.format, act / 10, _this.actualValFormat, _this.actualValPrecision);
                         });
                         this.chartData = [{
                                 actual: { header: actHeader, value: act, caption: this.actValueFormatter.format(act) },
@@ -9079,7 +9079,7 @@ var powerbi;
                         var table = container
                             .data(this.chartData)
                             .append("table")
-                            .attr("style", "width:100%;padding:4px;height:" + options.viewport.height + "px;");
+                            .attr("style", "width:100%;padding:1px;height:" + (options.viewport.height - 4) + "px;");
                         var tbody = table.append("tbody");
                         switch (this.selectedTemplate) {
                             case "textCard":
@@ -9125,7 +9125,7 @@ var powerbi;
                     Visual.prototype.status = function (container) {
                         if (this.hasTarget) {
                             var row1 = container.append("tr").append("td").attr("style", "text-align:left;vertical-align:middle;");
-                            var row2 = container.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
+                            var row2 = container.append("tr").append("td").attr("style", "text-align:center;vertical-align:bottom;");
                             // var row3 = container.append("tr").append("td").attr("style", "text-align:center;vertical-align:middle;");
                             var row4 = container.append("tr").append("td").attr("style", "text-align:right;vertical-align:bottom;");
                             this.drawActualHeader(row1);
@@ -9208,7 +9208,8 @@ var powerbi;
                         var statusIcon = container
                             .append("span")
                             .html(html)
-                            .attr("class", "material-icons")
+                            .attr("class", "material-icons IconCard")
+                            .style("font-feature-settings", "liga")
                             .style("font-size", this.stausFontSize + "px");
                         if (this.conditionalBullet === true) {
                             statusIcon.style("color", function (d) {
@@ -9223,8 +9224,9 @@ var powerbi;
                         var icon = container
                             .append("span")
                             .html(this.icon)
-                            .attr("class", "material-icons")
+                            .attr("class", "material-icons IconCard")
                             .style("font-size", this.iconSize + "px")
+                            .style("font-feature-settings", "liga")
                             .style("color", this.iconColor.solid.color);
                         if (this.iconBgType !== 'full') {
                             icon.style("background", this.iconBgColor.solid.color)
@@ -9238,7 +9240,7 @@ var powerbi;
                         var actualMax = this.chartData[0].actual.value;
                         var min = 0;
                         var backgroundBarLen = d3.max([targetMax, actualMax]) * 1.15;
-                        var width = this.chartData[0].width - 20;
+                        var width = this.chartData[0].width - 16;
                         var barScale = d3.scale.linear().range([0, width]).domain([min, backgroundBarLen]);
                         container
                             .append("span")
@@ -9328,6 +9330,8 @@ var powerbi;
                             case 'default':
                                 valF = max;
                                 break;
+                            case 'none':
+                                return { format: d3.format(",." + precision + "f") };
                         }
                         iValueFormatter = valueFormatter.create({ format: val, value: valF, precision: precision });
                         return iValueFormatter;

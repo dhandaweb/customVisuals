@@ -100,7 +100,7 @@ module powerbi.extensibility.visual {
 
         public update(options: VisualUpdateOptions) {
 
-            this.columns = options.dataViews[0].metadata.columns;
+           this.columns = options.dataViews[0].metadata.columns;
            
            this.setProperties(options);
            this.setIndex(options);
@@ -115,7 +115,7 @@ module powerbi.extensibility.visual {
 
                if (this.xAxisIndex == -1) {
                    if (this.valueIndex !== -1) {
-                       d.xValue = this.columns[this.valueIndex].displayName
+                       d.xValue = this.columns[this.valueIndex].displayName;
                    }
                }
                else {
@@ -154,6 +154,16 @@ module powerbi.extensibility.visual {
                 .append("div")
                 .attr("class", "heatMap")
                 .attr("style", "width:100%;");
+
+            if (this.hasValue == false) {
+                chartContainer.append("span").html("Value is required to draw visual");
+                return;
+            }
+
+            if (this.hasXaxis == false && this.hasYaxis == false) {
+                chartContainer.append("span").html("One dimension is required to draw visual");
+                return;
+            }
 
             var dimension = this.getDimensions(options.viewport,data);
 

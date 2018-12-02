@@ -119,9 +119,9 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
            
             this.element.style("overflow", "hidden");
             this.element.select('.dotPlot').remove();
-            console.log(this.colorPalette);
+         
             this.colorPalette.reset();
-            console.log(this.colorPalette);
+           
             this.draw(options);
         }
 
@@ -199,6 +199,7 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
                     var sizeMetadata = rawData.categorical.values.filter(d => d.source.roles.size)[0];
 
                     var sizeG = sizeMetadata.values;
+                 
                     var sizeFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: sizeMetadata.source.format });
 
                     var sizeV = rawData.categorical.values.filter(d => d.source.roles.size);
@@ -253,7 +254,6 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
                        
                         if (grouped[0].values[i].source.objects) {
                             color = grouped[0].values[i].source.objects.colorSelector.fill.solid.color;
-                           
                         }
                         
                         return {
@@ -261,7 +261,7 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
                             color: color,
                             iden: this.host.createSelectionIdBuilder().withMeasure(d.source.queryName).createSelectionId(),
                             values: d.values.map((t, j) => {
-                                if (this.hasSize) sizeValues.push(sizeG[i]);
+                                if (this.hasSize) sizeValues.push(sizeG[j]);
                                 return {
                                     xValue: { title: xMetadata.displayName, value: xAxis[j], caption: xAxis[j] },
                                     yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
@@ -642,7 +642,7 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
             }
 
             if (this.hasSize) {
-
+              
                 var sizeScale = d3.scale.linear()
                     .range([this.dotRadius, d3.min([25, (5 * this.dotRadius)])])
                     .domain([d3.min(data.sizeValues), d3.max(data.sizeValues)]);
@@ -711,12 +711,14 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
 
             legengG
                 .append("text")
+               
                 .attr("x", d => d.color === "transparent" ? -5 : fontSize)
                 .attr("font-weight", d => d.color === "transparent" ? "bold" : "normal")
                 .attr("style", d => {
                     if (d.color === "transparent") return 'fill:rgb(102, 102, 102);font-family: "Segoe UI Semibold", wf_segoe-ui_semibold, helvetica, arial, sans-serif;';
                     else return 'fill:rgb(102, 102, 102);font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif';
                 })
+                .style("font-size", fontSize +"px")
                 .attr("y", fontSize / 2)
                 .text(d => d.text);
 
@@ -941,6 +943,8 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
                 case 'default':
                     valF = max;
                     break;
+                case 'none':
+                    return { format: d3.format(",." + this.valPrecision + "f") }
             }
 
             iValueFormatter = valueFormatter.create({ format: val, value: valF, precision: this.valPrecision });

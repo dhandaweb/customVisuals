@@ -8923,11 +8923,15 @@ var powerbi;
                 "use strict";
                 var Visual = (function () {
                     function Visual(options) {
-                        this.selectedTemplate = "defaut";
+                        this.selectedTemplate = "default";
                         this.actualHeader = "";
                         this.actualColor = { solid: { color: "#01b8aa" } };
+                        this.actualValFormat = "default";
+                        this.actualValPrecision = 0;
                         this.targetHeader = "";
                         this.targetColor = { solid: { color: "#374649" } };
+                        this.targetValFormat = "default";
+                        this.targetValPrecision = 0;
                         this.trendIndicator = true;
                         this.flipTrendDirection = false;
                         this.trendColor = "GreenRed";
@@ -8938,6 +8942,10 @@ var powerbi;
                         this.lineStroke = 20;
                         this.displayAs = "line";
                         this.showBorder = true;
+                        this.showMinMax = true;
+                        this.actualName = '';
+                        this.targetName = '';
+                        this.periodName = '';
                         this.element = d3.select(options.element);
                         this.host = options.host;
                         this.tooltipServiceWrapper = sparklineCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
@@ -8954,18 +8962,25 @@ var powerbi;
                             if (d.roles["target"]) {
                                 _this.hasTarget = true;
                                 _this.targetIndex = i;
+                                _this.targetName = d.displayName;
+                                var targetMax = (options.dataViews[0].table.rows.map(function (d) { return d[_this.targetIndex]; }));
+                                _this.targetValueFormatter = _this.getValueFormat(d.format, d3.min(targetMax) / 10, _this.targetValFormat, _this.targetValPrecision);
                             }
                             if (d.roles["actual"]) {
                                 _this.hasActual = true;
                                 _this.actualIndex = i;
+                                _this.actualName = d.displayName;
+                                var actualMax = (options.dataViews[0].table.rows.map(function (d) { return d[_this.actualIndex]; }));
+                                _this.actValueFormatter = _this.getValueFormat(d.format, d3.min(actualMax) / 10, _this.actualValFormat, _this.actualValPrecision);
                             }
                             if (d.roles["period"]) {
                                 _this.hasPeriod = true;
                                 _this.periodIndex = i;
+                                _this.periodName = d.displayName;
                                 _this.dateFormat = d.format;
                             }
                         });
-                        this.element.style("overflow", "auto");
+                        this.element.style("overflow", "hidden");
                         this.element.select('.sparkline').remove();
                         var container = this.element
                             .append("div")
@@ -8979,11 +8994,6 @@ var powerbi;
                                 .html("Data is missing to draw the visual");
                             return;
                         }
-                        this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ value: 1001 });
-                        if (this.hasActual)
-                            this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.actualIndex].format });
-                        else if (this.hasTarget)
-                            this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.targetIndex].format });
                         var data = [];
                         var dateformat;
                         if (this.dateFormat !== undefined)
@@ -9019,14 +9029,65 @@ var powerbi;
                         };
                         var table = container
                             .append("table")
-                            .attr("style", "width:100%;table-layout: fixed;");
+                            .attr("style", "width:100%;height:" + (options.viewport.height - 2) + "px;table-layout: fixed;");
                         var tbody = table.append("tbody");
-                        var titleRow = tbody.append("tr");
-                        var titleContainer = titleRow.append("td");
-                        var shapeContainer = tbody.append("tr").append("td");
-                        this.drawTitle(titleContainer);
-                        this.drawShape(data, shapeContainer, options.viewport);
-                        this.showTrendIndicator(titleContainer);
+                        var minMaxOffset = this.showMinMax ? 20 : 0;
+                        switch (this.selectedTemplate) {
+                            case 'default':
+                                var titleContainer = tbody.append("tr").append("td");
+                                this.drawTitle(titleContainer);
+                                this.drawActualVal(tbody);
+                                var shapeContainer = tbody.append("tr").append("td");
+                                var height = options.viewport.height - 84 - minMaxOffset;
+                                var width = options.viewport.width - 12;
+                                this.drawShape(data, shapeContainer, width, height);
+                                this.drawMinMax(data, tbody);
+                                this.showTrendIndicator(titleContainer);
+                                break;
+                            case 'left':
+                                var row = tbody.append("tr");
+                                var left = row.append("td");
+                                var right = row.append("td");
+                                var height = options.viewport.height / 2;
+                                var width = options.viewport.width / 2 - 10;
+                                this.drawShape(data, left, width, height);
+                                var subtable = right.append("table").attr("style", "width:100%;height:100%;");
+                                var titCon = subtable.append("tr").append("td");
+                                var actCon = subtable.append("tr").append("td");
+                                this.drawTitle(titCon);
+                                this.showTrendIndicator(left);
+                                this.drawActualVal(actCon);
+                                this.drawMinMax(data, subtable);
+                                break;
+                            case 'right':
+                                var row = tbody.append("tr");
+                                var right = row.append("td");
+                                var left = row.append("td");
+                                var height = options.viewport.height / 2;
+                                var width = options.viewport.width / 2 - 10;
+                                this.drawShape(data, left, width, height);
+                                var subtable = right.append("table").attr("style", "width:100%;height:100%;");
+                                var titCon = subtable.append("tr").append("td");
+                                var actCon = subtable.append("tr").append("td");
+                                this.drawTitle(titCon);
+                                this.showTrendIndicator(left);
+                                this.drawActualVal(actCon);
+                                this.drawMinMax(data, subtable);
+                                break;
+                            case 'top':
+                                var shapeContainer = tbody.append("tr").append("td").attr("colspan", "2");
+                                var height = options.viewport.height / 3;
+                                var width = options.viewport.width - 5;
+                                this.drawShape(data, shapeContainer, width, height);
+                                var row = tbody.append("tr");
+                                var titleContainer = row.append("td");
+                                var actContainer = row.append("td").style("text-align", "right");
+                                this.drawTitle(titleContainer);
+                                this.drawActualVal(actContainer);
+                                this.drawMinMax(data, tbody);
+                                this.showTrendIndicator(titleContainer);
+                                break;
+                        }
                         this.setBorder(table);
                     };
                     Visual.prototype.setProperties = function (options) {
@@ -9039,6 +9100,8 @@ var powerbi;
                                     this.displayAs = displayTemplateObj["displayAs"];
                                 if (displayTemplateObj["showBorder"] !== undefined)
                                     this.showBorder = displayTemplateObj["showBorder"];
+                                if (displayTemplateObj["showMinMax"] !== undefined)
+                                    this.showMinMax = displayTemplateObj["showMinMax"];
                             }
                             if (options.dataViews[0].metadata.objects["Actual"]) {
                                 var actualObj = options.dataViews[0].metadata.objects["Actual"];
@@ -9046,6 +9109,10 @@ var powerbi;
                                     this.actualHeader = actualObj["actualHeader"];
                                 if (actualObj["actualColor"] !== undefined)
                                     this.actualColor = actualObj["actualColor"];
+                                if (actualObj["actualValFormat"] !== undefined)
+                                    this.actualValFormat = actualObj["actualValFormat"];
+                                if (actualObj["actualValPrecision"] !== undefined)
+                                    this.actualValPrecision = actualObj["actualValPrecision"];
                             }
                             if (options.dataViews[0].metadata.objects["Target"]) {
                                 var targetObj = options.dataViews[0].metadata.objects["Target"];
@@ -9053,6 +9120,10 @@ var powerbi;
                                     this.targetHeader = targetObj["targetHeader"];
                                 if (targetObj["targetColor"] !== undefined)
                                     this.targetColor = targetObj["targetColor"];
+                                if (targetObj["targetValFormat"] !== undefined)
+                                    this.targetValFormat = targetObj["targetValFormat"];
+                                if (targetObj["targetValPrecision"] !== undefined)
+                                    this.targetValPrecision = targetObj["targetValPrecision"];
                             }
                             if (options.dataViews[0].metadata.objects["Line"]) {
                                 var sparkObj = options.dataViews[0].metadata.objects["Line"];
@@ -9075,19 +9146,15 @@ var powerbi;
                             table.style("border", "1px solid #b3b3b3");
                         }
                     };
-                    Visual.prototype.drawGroupActual = function (container) {
-                        var _this = this;
-                        var actual = container
+                    Visual.prototype.drawActualVal = function (tbody) {
+                        var actContainer = tbody.append("tr").append("td").attr("style", "text-align:center");
+                        if (this.selectedTemplate === 'top')
+                            actContainer = tbody;
+                        var val = this.actValueFormatter.format(this.chartData.actual.value);
+                        var actual = actContainer
                             .append("span")
-                            .attr("style", "display:block;font-size:18px;text-align:right")
-                            .style("margin-right", this.trendIndicator === true ? "15px" : "0px")
-                            .text(function (d) { return _this.iValueFormatter.format(_this.chartData.actual.value); });
-                        this.tooltipServiceWrapper.addTooltip(actual, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data, 'Actual'); }, function (tooltipEvent) { return null; });
-                        var target = container
-                            .append("span")
-                            .attr("style", "display:block;font-size:14px;text-align:right")
-                            .text(function (d) { return _this.iValueFormatter.format(_this.chartData.target.value); });
-                        this.tooltipServiceWrapper.addTooltip(target, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data, 'Target'); }, function (tooltipEvent) { return null; });
+                            .attr("style", "display:block;font-size:20px;")
+                            .text(val);
                     };
                     Visual.prototype.drawTitle = function (container) {
                         var title = "";
@@ -9098,13 +9165,21 @@ var powerbi;
                         container
                             .append("span")
                             .text(title)
-                            .attr("style", "font-size:14px;");
+                            .attr("style", "font-size:12px;");
                     };
-                    Visual.prototype.drawShape = function (data, shapeContainer, vp) {
-                        var height = vp.height - 35;
-                        if (height < 20)
-                            height = 20;
-                        var width = vp.width - 5;
+                    Visual.prototype.drawMinMax = function (data, tbody) {
+                        if (this.showMinMax) {
+                            var row = tbody.append("tr").append("td").attr("style", "font-size:11px;border-top: 1px solid #dfdede;");
+                            if (this.selectedTemplate === 'top')
+                                row.attr("colspan", "2");
+                            var arr = data.map(function (d) { return d.actual; });
+                            row.append("span").attr("style", "float:left;").text("Min: " + this.actValueFormatter.format(d3.min(arr)));
+                            row.append("span").attr("style", "float:right;").text("Max: " + this.actValueFormatter.format(d3.max(arr)));
+                        }
+                    };
+                    Visual.prototype.drawShape = function (data, shapeContainer, width, height) {
+                        if (height < 10)
+                            height = 10;
                         if (this.hasActual) {
                             var xDomain = [];
                             var yDomain = [];
@@ -9115,11 +9190,12 @@ var powerbi;
                                     yDomain.push(d.target);
                             });
                             var xScale = d3.scale.ordinal().rangePoints([0, width]).domain(xDomain);
-                            var xScaleBar = d3.scale.ordinal().rangeRoundBands([0, width], .05).domain(xDomain);
-                            var yScalebar = d3.scale.linear().range([height, 0]).domain([d3.min(yDomain) - d3.min(yDomain) * 0.10, d3.max(yDomain)]);
+                            var xScaleBar = d3.scale.ordinal().rangeRoundBands([0, width], .1).domain(xDomain);
+                            var min = d3.min(yDomain) < 0 ? d3.min(yDomain) - d3.min(yDomain) * 0.10 : 0;
+                            var yScalebar = d3.scale.linear().range([height, 0]).domain([min, d3.max(yDomain)]);
                             var yScale = d3.scale.linear().range([height, 0]).domain([d3.min(yDomain), d3.max(yDomain)]);
                             this.sparklineSelection = shapeContainer
-                                .style("background", "#f6f6f6")
+                                .attr("style", "background:#f6f6f6;padding-top:5px;")
                                 .append("svg")
                                 .attr("width", width)
                                 .attr("height", height);
@@ -9189,6 +9265,7 @@ var powerbi;
                         }
                     };
                     Visual.prototype.drawBar = function (sparklineSelectionG, xScale, yScale, data) {
+                        var _this = this;
                         var width = xScale.rangeBand();
                         if (this.hasTarget === true)
                             width = width / 2;
@@ -9209,6 +9286,7 @@ var powerbi;
                                 barHeight = 1;
                             return barHeight;
                         });
+                        this.tooltipServiceWrapper.addTooltip(bars, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data, "Actual"); }, function (tooltipEvent) { return null; });
                         if (this.hasTarget === true) {
                             var targetBars = sparklineSelectionG.selectAll(".bar")
                                 .data(data)
@@ -9217,24 +9295,27 @@ var powerbi;
                             targetBars.attr("x", function (d) { return xScale(d.period) + width; })
                                 .style("fill", this.targetColor.solid.color)
                                 .attr("width", width)
-                                .attr("y", function (d) { return (d.actual < 0 ? yScale(0) : yScale(d.actual)); })
+                                .attr("y", function (d) { return (d.target < 0 ? yScale(0) : yScale(d.target)); })
                                 .attr("height", 0)
                                 .transition()
                                 .duration(500)
                                 .attr("height", function (d) {
-                                var barHeight = d.actual < 0 ? (yScale(d.actual) - yScale(0)) : (yScale(0) - yScale(d.actual));
+                                var barHeight = d.target < 0 ? (yScale(d.target) - yScale(0)) : (yScale(0) - yScale(d.target));
                                 if (barHeight < 1 && barHeight > 0)
                                     barHeight = 1;
                                 return barHeight;
                             });
+                            this.tooltipServiceWrapper.addTooltip(targetBars, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data, "Target"); }, function (tooltipEvent) { return null; });
                         }
                     };
                     Visual.prototype.drawBarLine = function (sparklineSelectionG, xScale, yScale, data) {
+                        var _this = this;
                         var width = xScale.rangeBand();
                         var bars = sparklineSelectionG.selectAll(".bar")
                             .data(data)
                             .enter()
                             .append("rect");
+                        this.tooltipServiceWrapper.addTooltip(bars, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data, "Actual"); }, function (tooltipEvent) { return null; });
                         bars.attr("x", function (d) { return xScale(d.period); })
                             .style("fill", this.actualColor.solid.color)
                             .attr("width", width)
@@ -9256,17 +9337,10 @@ var powerbi;
                                 .style("stroke-width", this.lineStroke / 10)
                                 .attr("d", function (d) {
                                 return "M" + data.map(function (d) {
-                                    return (xScale(d.period) + width / 2) + ',' + yScale(d.actual);
+                                    return (xScale(d.period) + width / 2) + ',' + yScale(d.target);
                                 }).join('L');
                             });
                         }
-                    };
-                    Visual.prototype.drawActual = function (container) {
-                        var _this = this;
-                        var actual = container
-                            .append("span")
-                            .text(function (d) { return _this.iValueFormatter.format(_this.chartData.actual.value); });
-                        this.tooltipServiceWrapper.addTooltip(actual, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data, 'Actual'); }, function (tooltipEvent) { return null; });
                     };
                     Visual.prototype.showTrendIndicator = function (container) {
                         var _this = this;
@@ -9276,7 +9350,7 @@ var powerbi;
                                 .append("svg")
                                 .attr("width", 18)
                                 .attr("height", 18);
-                            trendIndicator.attr("style", "position: absolute;top: 3;right: 0;");
+                            trendIndicator.attr("style", "position: absolute;top:3px;right: 0;");
                             var triangleDirection = this.flipTrendDirection == false ? 'triangle-down' : 'triangle-up';
                             var triangle = d3.svg.symbol().type(triangleDirection).size(50);
                             trendIndicator
@@ -9287,13 +9361,6 @@ var powerbi;
                             })
                                 .style("fill", this.chartData.trend.value == 180 ? color[0] : color[1]);
                         }
-                    };
-                    Visual.prototype.drawTarget = function (container) {
-                        var _this = this;
-                        var target = container
-                            .append("span")
-                            .text(function (d) { return _this.iValueFormatter.format(_this.chartData.target.value); });
-                        this.tooltipServiceWrapper.addTooltip(target, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data, 'Target'); }, function (tooltipEvent) { return null; });
                     };
                     //#region Tooltip
                     Visual.prototype.drawBisectorToolTip = function (data, width, height) {
@@ -9352,7 +9419,10 @@ var powerbi;
                         var hoverVal;
                         data.map(function (d) {
                             if (d.period === hoverXValue) {
-                                hoverVal = _this.iValueFormatter.format(d.actual);
+                                hoverVal = _this.actValueFormatter.format(d.actual);
+                                if (_this.hasTarget) {
+                                    hoverVal = "A:" + _this.actValueFormatter.format(d.actual) + ", T:" + _this.targetValueFormatter.format(d.target);
+                                }
                             }
                         });
                         this.sparklineCaptionName.text(hoverXValue);
@@ -9375,25 +9445,48 @@ var powerbi;
                     Visual.parseSettings = function (dataView) {
                         return sparklineCCFC224D9885417F9AAF5BB8D45B007E.VisualSettings.parse(dataView);
                     };
-                    Visual.prototype.getTooltipData = function (data, vtype) {
-                        var retData = [];
-                        var val = '';
-                        switch (vtype) {
-                            case 'Needed':
-                                val = this.chartData.needed.value;
+                    Visual.prototype.getValueFormat = function (val, max, format, precision) {
+                        var valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
+                        var iValueFormatter = valueFormatter.create({});
+                        var valF = null;
+                        switch (format) {
+                            case 'thousand':
+                                valF = 1001;
                                 break;
-                            case 'Actual':
-                                val = this.chartData.actual.value;
+                            case 'million':
+                                valF = 1e6;
                                 break;
-                            case 'Target':
-                                val = this.chartData.target.value;
+                            case 'billion':
+                                valF = 1e9;
                                 break;
+                            case 'trillion':
+                                valF = 1e12;
+                                break;
+                            case 'default':
+                                valF = max;
+                                break;
+                            case 'none':
+                                return { format: d3.format(",." + precision + "f") };
                         }
-                        retData.push({
-                            displayName: vtype,
-                            value: val.toString(),
-                            header: vtype
-                        });
+                        iValueFormatter = valueFormatter.create({ format: val, value: valF, precision: precision });
+                        return iValueFormatter;
+                    };
+                    Visual.prototype.getTooltipData = function (data, type) {
+                        var retData = [];
+                        if (type === 'Actual') {
+                            retData.push({
+                                header: this.periodName + ": " + data.period,
+                                value: this.actValueFormatter.format(data.actual),
+                                displayName: this.actualName
+                            });
+                        }
+                        if (type === 'Target') {
+                            retData.push({
+                                header: this.periodName + " : " + data.period,
+                                value: this.targetValueFormatter.format(data.target),
+                                displayName: this.targetName
+                            });
+                        }
                         return retData;
                     };
                     Visual.prototype.enumerateObjectInstances = function (options) {
@@ -9404,17 +9497,26 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { selectedTemplate: this.selectedTemplate }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { displayAs: this.displayAs }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { showBorder: this.showBorder }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { showMinMax: this.showMinMax }, selector: null });
                                 break;
                             case 'Actual':
                                 objectEnumeration.push({ objectName: objectName, properties: { actualHeader: this.actualHeader }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { actualColor: this.actualColor }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { actualValFormat: this.actualValFormat }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { actualValPrecision: this.actualValPrecision }, selector: null });
                                 break;
                             case 'Target':
-                                objectEnumeration.push({ objectName: objectName, properties: { targetHeader: this.targetHeader }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { targetColor: this.targetColor }, selector: null });
+                                if (this.hasTarget == true) {
+                                    objectEnumeration.push({ objectName: objectName, properties: { targetHeader: this.targetHeader }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { targetColor: this.targetColor }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { targetValFormat: this.targetValFormat }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { targetValPrecision: this.targetValPrecision }, selector: null });
+                                }
                                 break;
                             case 'Line':
-                                objectEnumeration.push({ objectName: objectName, properties: { transparency: this.lineStroke }, selector: null });
+                                if (this.displayAs === 'line' || this.displayAs === 'area') {
+                                    objectEnumeration.push({ objectName: objectName, properties: { transparency: this.lineStroke }, selector: null });
+                                }
                                 break;
                             case 'Trend':
                                 objectEnumeration.push({ objectName: objectName, properties: { show: this.trendIndicator }, selector: null });

@@ -8928,6 +8928,8 @@ var powerbi;
                         this.actualHeader = "";
                         this.showTarget = true;
                         this.targetHeader = "";
+                        this.valFormat = "default";
+                        this.valPrecision = 0;
                         this.bulletScaleMinZero = true;
                         this.trendIndicator = true;
                         this.flipTrendDirection = false;
@@ -8967,6 +8969,10 @@ var powerbi;
                                     this.targetHeader = displayTemplateObj["targetHeader"];
                                 if (displayTemplateObj["selectedTemplate"] !== undefined)
                                     this.selectedTemplate = displayTemplateObj["selectedTemplate"];
+                                if (displayTemplateObj["valFormat"] !== undefined)
+                                    this.valFormat = displayTemplateObj["valFormat"];
+                                if (displayTemplateObj["valPrecision"] !== undefined)
+                                    this.valPrecision = displayTemplateObj["valPrecision"];
                             }
                             if (options.dataViews[0].metadata.objects["Sparkline"]) {
                                 var sparkObj = options.dataViews[0].metadata.objects["Sparkline"];
@@ -8990,8 +8996,8 @@ var powerbi;
                                 var bulletObj = options.dataViews[0].metadata.objects["Bullet"];
                                 if (bulletObj["conditionalBullet"] !== undefined)
                                     this.conditionalBullet = bulletObj["conditionalBullet"];
-                                if (bulletObj["conditionalBulletColor"] !== undefined)
-                                    this.conditionalBulletColor = bulletObj["conditionalBulletColor"];
+                                if (bulletObj["singleBulletColor"] !== undefined)
+                                    this.singleBulletColor = bulletObj["singleBulletColor"];
                                 if (bulletObj["conditionalBulletColor"] !== undefined)
                                     this.conditionalBulletColor = bulletObj["conditionalBulletColor"];
                                 if (bulletObj["conditionalBulletColorScale"] !== undefined)
@@ -9007,10 +9013,14 @@ var powerbi;
                             if (d.roles["target"]) {
                                 _this.hasTarget = true;
                                 _this.targetIndex = i;
+                                var targetMax = (options.dataViews[0].table.rows.map(function (d) { return d[_this.targetIndex]; }));
+                                _this.iValueFormatter = _this.getValueFormat(d.format, d3.min(targetMax) / 10, _this.valFormat, _this.valPrecision);
                             }
                             if (d.roles["actual"]) {
                                 _this.hasActual = true;
                                 _this.actualIndex = i;
+                                var actualMax = (options.dataViews[0].table.rows.map(function (d) { return d[_this.actualIndex]; }));
+                                _this.iValueFormatter = _this.getValueFormat(d.format, d3.min(actualMax) / 10, _this.valFormat, _this.valPrecision);
                             }
                             if (d.roles["period"]) {
                                 _this.hasPeriod = true;
@@ -9032,11 +9042,9 @@ var powerbi;
                                 .html("Data is missing to draw the visual");
                             return;
                         }
-                        this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ value: 1001 });
-                        if (this.hasActual)
-                            this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.actualIndex].format });
-                        else if (this.hasTarget)
-                            this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.targetIndex].format });
+                        //this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ value:1001 });
+                        //if (this.hasActual) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.actualIndex].format });
+                        //else if (this.hasTarget) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.targetIndex].format });
                         var data = [];
                         var dateformat;
                         if (this.dateFormat !== undefined)
@@ -9294,7 +9302,7 @@ var powerbi;
                                 .attr("width", 18)
                                 .attr("height", 18);
                             if (this.selectedTemplate === "group")
-                                trendIndicator.attr("style", "position: absolute;top: 3;right: 0;");
+                                trendIndicator.attr("style", "position: absolute;top:3px;right: 0;");
                             var triangleDirection = this.flipTrendDirection == false ? 'triangle-down' : 'triangle-up';
                             var triangle = d3.svg.symbol().type(triangleDirection).size(50);
                             trendIndicator
@@ -9421,6 +9429,32 @@ var powerbi;
                         });
                         return retData;
                     };
+                    Visual.prototype.getValueFormat = function (val, max, format, precision) {
+                        var valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
+                        var iValueFormatter = valueFormatter.create({});
+                        var valF = null;
+                        switch (format) {
+                            case 'thousand':
+                                valF = 1001;
+                                break;
+                            case 'million':
+                                valF = 1e6;
+                                break;
+                            case 'billion':
+                                valF = 1e9;
+                                break;
+                            case 'trillion':
+                                valF = 1e12;
+                                break;
+                            case 'default':
+                                valF = max;
+                                break;
+                            case 'none':
+                                return { format: d3.format(",." + precision + "f") };
+                        }
+                        iValueFormatter = valueFormatter.create({ format: val, value: valF, precision: precision });
+                        return iValueFormatter;
+                    };
                     Visual.prototype.enumerateObjectInstances = function (options) {
                         var objectName = options.objectName;
                         var objectEnumeration = [];
@@ -9429,6 +9463,8 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { selectedTemplate: this.selectedTemplate }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { actualHeader: this.actualHeader }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { targetHeader: this.targetHeader }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { valFormat: this.valFormat }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
                                 break;
                             case 'Sparkline':
                                 objectEnumeration.push({ objectName: objectName, properties: { transparency: this.lineStroke }, selector: null });

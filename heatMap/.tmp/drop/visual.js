@@ -8995,6 +8995,14 @@ var powerbi;
                             .append("div")
                             .attr("class", "heatMap")
                             .attr("style", "width:100%;");
+                        if (this.hasValue == false) {
+                            chartContainer.append("span").html("Value is required to draw visual");
+                            return;
+                        }
+                        if (this.hasXaxis == false && this.hasYaxis == false) {
+                            chartContainer.append("span").html("One dimension is required to draw visual");
+                            return;
+                        }
                         var dimension = this.getDimensions(options.viewport, data);
                         var chart = chartContainer
                             .append("svg")
@@ -9670,8 +9678,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.heatMapCCFC224D9885417F9AAF5BB8D45B007E = {
-                name: 'heatMapCCFC224D9885417F9AAF5BB8D45B007E',
+            plugins.heatMapCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
+                name: 'heatMapCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
                 displayName: 'Heat Map',
                 class: 'Visual',
                 version: '1.0.0',

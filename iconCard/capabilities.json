@@ -137,6 +137,10 @@
                             {
                                 "value": "trillion",
                                 "displayName": "Trillion"
+                            },
+                            {
+                                "value": "none",
+                                "displayName": "None"
                             }
                         ]
                     }
@@ -208,6 +212,10 @@
                             {
                                 "value": "trillion",
                                 "displayName": "Trillion"
+                            },
+                            {
+                                "value": "none",
+                                "displayName": "None"
                             }
                         ]
                     }

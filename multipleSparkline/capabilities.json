@@ -144,6 +144,25 @@
                 "variancePerHeader": {
                     "displayName": "Variance % header",
                     "type": { "text": true }
+                },
+                "conditionalVariance": {
+                    "displayName": "Conditional variance",
+                    "type": { "bool": true }
+                },
+                "conditionalVarianceColor": {
+                    "displayName": "Variance color",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "RedGreen",
+                                "displayName": "Red Green"
+                            },
+                            {
+                                "value": "GreenRed",
+                                "displayName": "Green Red"
+                            }
+                        ]
+                    }
                 }
             }
         },
