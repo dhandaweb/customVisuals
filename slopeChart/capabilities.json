@@ -1,0 +1,204 @@
+{
+    "dataRoles": [
+        {
+            "displayName": "Values",
+            "name": "values",
+            "kind": "Measure",
+            "requiredTypes": [
+                {
+                    "integer": true
+                },
+                {
+                    "numeric": true
+                }
+            ],
+            "preferredTypes": [
+                {
+                    "numeric": true
+                }
+            ]
+        },
+        {
+            "displayName": "Axis",
+            "name": "axis",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Period",
+            "name": "period",
+            "kind": "Grouping"
+        }
+    ],
+    "dataViewMappings": [
+        {
+            "categorical": {
+                "categories": {
+                    "for": {
+                        "in": "period"
+                    }
+                },
+                "values": {
+                    "group": {
+                        "by": "axis",
+                        "select": [
+                            { "bind": { "to": "values" } }
+                        ]
+                    }
+                }
+            },
+            "conditions": [
+                {
+                    "values": {
+                        "min": 0
+                    },
+                    "axis": {
+                        "min": 0,
+                        "max": 1
+                    },
+                    "period": {
+                        "min": 0,
+                        "max": 1
+                    }
+                }
+            ]
+        }
+    ],
+    "objects": {
+        "Basic": {
+            "displayName": "Basic",
+            "properties": {
+                "dotRadius": {
+                    "displayName": "Dot radius",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                },
+                "circleOpacity": {
+                    "displayName": "Circle Opacity",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                },
+                "valFormat": {
+                    "displayName": "Value Format",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "thousand",
+                                "displayName": "Thousand"
+                            },
+                            {
+                                "value": "million",
+                                "displayName": "Million"
+                            },
+                            {
+                                "value": "billion",
+                                "displayName": "Billion"
+                            },
+                            {
+                                "value": "trillion",
+                                "displayName": "Trillion"
+                            },
+                            {
+                                "value": "none",
+                                "displayName": "None"
+                            }
+                        ]
+                    }
+                },
+                "valPrecision": {
+                    "displayName": "Value Precision",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "0",
+                                "displayName": "0"
+                            },
+                            {
+                                "value": "1",
+                                "displayName": "1"
+                            },
+                            {
+                                "value": "2",
+                                "displayName": "2"
+                            },
+                            {
+                                "value": "3",
+                                "displayName": "3"
+                            },
+                            {
+                                "value": "4",
+                                "displayName": "4"
+                            }
+                        ]
+                    }
+                },
+                "showLabel": {
+                    "displayName": "Data Labels",
+                    "type": { "bool": true }
+                }
+
+            }
+        },
+        "colorSelector": {
+            "displayName": "Data Colors",
+            "properties": {
+                "fill": {
+                    "displayName": "Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "Legend": {
+            "displayName": "Legend",
+            "properties": {
+                "legendPosition": {
+                    "displayName": "Legend Position",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "right",
+                                "displayName": "Right"
+                            },
+                            {
+                                "value": "top",
+                                "displayName": "Top"
+                            },
+                            {
+                                "value": "bottom",
+                                "displayName": "Bottom"
+                            }
+                        ]
+                    }
+                },
+                "legendName": {
+                    "displayName": "Legend Name",
+                    "type": { "text": true }
+                },
+                "fontSize": {
+                    "displayName": "Legend Font Size",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                }
+            }
+        }
+    }
+} 
+
