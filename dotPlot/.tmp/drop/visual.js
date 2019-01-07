@@ -8963,9 +8963,13 @@ var powerbi;
                         this.dumbbellSort = 'default';
                         this.dotRadius = 6;
                         this.circleOpacity = 100;
+                        this.circlestroke = 1;
                         this.orientation = "vertical";
                         this.fontSize = 11;
                         this.legendFontSize = 10;
+                        this.constantLineValue = '';
+                        this.constantLineStrokeWidth = 1;
+                        this.constantLineColor = { solid: { color: "#000000" } };
                         this.setValueDomain = function (Min, Max) {
                             var domain = {};
                             if (Min > 0) {
@@ -9123,6 +9127,7 @@ var powerbi;
                         this.drawYScale(yScale, chartSvg, dimension, data);
                         this.drawDumbellLines(data, chartSvg, dimension, xScale, yScale);
                         this.drawCircles(xScale, yScale, chartSvg, data, dimension);
+                        this.drawConstantLine(yScale, chartSvg, data, dimension);
                         this.drawLegend(chartLegend, chartSvg, dimension, data);
                         this.setFontSize(chartSvg);
                         this.drawStastics(xScale, yScale, chartSvg, data, dimension);
@@ -9264,6 +9269,8 @@ var powerbi;
                                 var basic = options.dataViews[0].metadata.objects["Basic"];
                                 if (basic.dotRadius !== undefined)
                                     this.dotRadius = basic["dotRadius"];
+                                if (basic.circlestroke !== undefined)
+                                    this.circlestroke = basic["circlestroke"];
                                 if (basic.circleOpacity !== undefined)
                                     this.circleOpacity = basic["circleOpacity"];
                                 if (basic.showLabel !== undefined)
@@ -9332,6 +9339,15 @@ var powerbi;
                                     this.standardDeviation = statistics["standardDeviation"];
                                 if (statistics.noOfStandardDeviation !== undefined)
                                     this.noOfStandardDeviation = statistics["noOfStandardDeviation"];
+                            }
+                            if (options.dataViews[0].metadata.objects["ConstantLine"]) {
+                                var constantLineObj = options.dataViews[0].metadata.objects["ConstantLine"];
+                                if (constantLineObj.constantLineValue !== undefined)
+                                    this.constantLineValue = constantLineObj["constantLineValue"];
+                                if (constantLineObj.constantLineStrokeWidth !== undefined)
+                                    this.constantLineStrokeWidth = constantLineObj["constantLineStrokeWidth"];
+                                if (constantLineObj.constantLineColor !== undefined)
+                                    this.constantLineColor = constantLineObj["constantLineColor"];
                             }
                         }
                     };
@@ -9506,6 +9522,7 @@ var powerbi;
                             .attr("r", this.dotRadius)
                             .attr("fill", function (d) { return d.color; })
                             .style("stroke", function (d) { return d.color; })
+                            .style("stroke-width", this.circlestroke + "px")
                             .style("fill-opacity", this.circleOpacity / 100);
                         circle.on("click", function (d, i) {
                             d.isFiltered = !d.isFiltered;
@@ -9541,6 +9558,27 @@ var powerbi;
                             });
                         }
                         this.tooltipServiceWrapper.addTooltip(circle, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
+                    };
+                    Visual.prototype.drawConstantLine = function (yScale, chartSvg, data, dimension) {
+                        if (this.constantLineValue.length > 0) {
+                            var constLine = this.constantLineValue;
+                            if (this.orientation == 'vertical') {
+                                var constantLine = chartSvg.append("line")
+                                    .attr("x1", dimension.yOffset)
+                                    .attr("x2", dimension.yOffset + dimension.chartWidth)
+                                    .attr("y1", yScale(constLine))
+                                    .attr("y2", yScale(constLine));
+                            }
+                            else {
+                                var constantLine = chartSvg.append("line")
+                                    .attr("y1", 0)
+                                    .attr("y2", dimension.chartHeight)
+                                    .attr("x1", dimension.yOffset + yScale(constLine))
+                                    .attr("x2", dimension.yOffset + yScale(constLine));
+                            }
+                            constantLine.style("stroke", this.constantLineColor.solid.color)
+                                .style("stroke-width", this.constantLineStrokeWidth + "px");
+                        }
                     };
                     Visual.prototype.setFilterOpacity = function (element) {
                         var anyFilter = false;
@@ -10252,10 +10290,12 @@ var powerbi;
                             case 'Basic':
                                 objectEnumeration.push({ objectName: objectName, properties: { orientation: this.orientation }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { circlestroke: this.circlestroke }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { valFormat: this.valFormat }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { constantLineValue: this.constantLineValue }, selector: null });
                                 break;
                             case 'colorSelector':
                                 for (var _i = 0, _a = this.formattedData; _i < _a.length; _i++) {
@@ -10308,6 +10348,13 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.standardDeviation }, selector: null });
                                 if (this.standardDeviation == true)
                                     objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.noOfStandardDeviation }, selector: null });
+                                break;
+                            case 'ConstantLine':
+                                objectEnumeration.push({ objectName: objectName, properties: { constantLineValue: this.constantLineValue }, selector: null });
+                                if (this.constantLineValue.length > 0) {
+                                    objectEnumeration.push({ objectName: objectName, properties: { constantLineStrokeWidth: this.constantLineStrokeWidth }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { constantLineColor: this.constantLineColor }, selector: null });
+                                }
                                 break;
                         }
                         ;

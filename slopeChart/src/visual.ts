@@ -31,9 +31,6 @@ module powerbi.extensibility.visual {
 
     export class Visual implements IVisual {
 
-
-
-
         private host: IVisualHost;
 
         private selectionManager: ISelectionManager;
@@ -64,8 +61,15 @@ module powerbi.extensibility.visual {
         private dotRadius: any = 14;
         private circleOpacity: any = 10;
         private showLabel: any = true;
+        private showAxis: any = true;
 
         private formattedData: any = [];
+        private slopes: any;
+
+        private showConditionalColor: any = false;
+        private upColor: any = { solid: { color: "#01b8aa" } };
+        private downColor: any = { solid: { color: "#3557B8" } };
+        private showAs: any = "default";
 
         constructor(options: VisualConstructorOptions) {
 
@@ -110,7 +114,10 @@ module powerbi.extensibility.visual {
                 .attr("width", dimension.width)
                 .on("click", (d, i) => {
                     this.selectionManager.clear();
-
+                    this.slopes.style("opacity", (d: any) => {
+                        d.isFiltered = false;
+                        return 1;
+                    });
                 });
 
             var chartSvg = chart.append("g")
@@ -118,15 +125,16 @@ module powerbi.extensibility.visual {
             chartSvg.attr("transform", "translate(0," + this.dotRadius + ")");
 
             var chartLegend = chart.append("g");
-
-            console.log(data);
-
+           
             var yScale = this.setYScale(data, dimension);
 
-            this.drawLeftAxis(yScale, chartSvg, dimension, data);
-            this.drawRightAxis(yScale, chartSvg, dimension, data);
+            if (this.showAxis) {
+                this.drawLeftAxis(yScale, chartSvg, dimension, data);
+                this.drawRightAxis(yScale, chartSvg, dimension, data);
+            }
+
             this.drawSlope(yScale, chartSvg, dimension, data);
-            this.drawLegend(chartLegend, chartSvg, dimension, data);
+            if (this.legendPosition !== "legendOnCircle" && this.showConditionalColor === false) this.drawLegend(chartLegend, chartSvg, dimension, data);
             this.setFontSize(chartSvg);
         }
 
@@ -227,21 +235,45 @@ module powerbi.extensibility.visual {
             if (this.hasPeriod) legendD.unshift({ key: nm, color: "transparent" });
 
             var legend = this.setLegendWidth(this.element, legendD);
-
+            var retData = this.setUpAnalyticData(formattedData)
 
             var yAxis = [];
 
-            formattedData.map(d => {
+            retData.map(d => {
                 d.values.map(d => {
                     yAxis.push(d.yValue.value);
                 })
             });
 
+            if (this.showAs == "perTotal") valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: "0.00 %;-0.00 %;0.00 %" });
+
+            this.formattedData = retData;
+
+            return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat.format, data: retData, legend: legend }
+        }
+
+        private setUpAnalyticData(data) {
+            var retData;
+
+            switch (this.showAs) {
+
+                case "perTotal":
+                    retData = data.map(function (d) {
+                        var total = d3.sum(d.values.map(function (d) { return d.yValue.value; }));
+                        d.values.map(function (d, i) {
+                            if (d.yValue.value !== null) d.yValue.value = (d.yValue.value / total);
+                        });
+                        return d;
+                    });
+                    break;
 
 
-            this.formattedData = formattedData;
+                default:
+                    retData = data;
+                    break;
+            }
 
-            return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat.format, data: formattedData, legend: legend }
+            return retData;
         }
 
         private findAvailableMetadata(metadata) {
@@ -252,13 +284,13 @@ module powerbi.extensibility.visual {
             metadata.map((d, i) => {
                 if (d.roles["axis"]) {
                     this.hasAxis = true;
-                    this.axisFormat = d.format;
+                    this.periodFormat = d.format;
                     this.periodTitle = d.displayName;
                 }
                 if (d.roles["period"]) {
                     this.hasPeriod = true;
-                    this.periodFormat = d.format;
-
+                    
+                    this.axisFormat = d.format;
                 }
                 if (d.roles["values"]) {
                     this.hasValue = true;
@@ -286,7 +318,7 @@ module powerbi.extensibility.visual {
         }
 
         private drawLeftAxis(yScale, chartSvg, dimension, data) {
-
+           
             var yaxis = d3.svg.axis()
                 .scale(yScale)
                 .orient("left")
@@ -317,24 +349,38 @@ module powerbi.extensibility.visual {
         }
 
         private drawSlope(yScale, chartSvg, dimension, data) {
-            console.log(dimension);
+            
             var radius = 14;
             var end = dimension.chartWidth;
             var start = dimension.xOffset;
+            var slopeData = data.data.filter(d => {
+                return d.values[0] !== undefined
+                    && d.values[0].yValue.value !== null
+                    && d.values[d.values.length - 1].yValue.value !== null
+            });
 
-            var slopes = chartSvg.selectAll("slopeGroups")
-                .data(data.data)
+            var slopes = this.slopes = chartSvg.selectAll("slopeGroups")
+                .data(slopeData)
                 .enter()
                 .append("g");
 
-            slopes.append("line")
+            slopes.on("click", (d, i) => {
+                d.isFiltered = !d.isFiltered;
+               
+                this.selectionManager.select(d.iden, true);
+
+                this.setFilterOpacity(slopes);
+                (<Event>d3.event).stopPropagation();
+            });
+
+           var slopeLine = slopes.append("line")
                 .attr("x1", start)
                 .attr("x2", end)
                 .attr("y1", d => yScale(d.values[0].yValue.value))
                 .attr("y2", d => yScale(d.values[d.values.length - 1].yValue.value))
                 .attr("style", "stroke-width:1px;stroke:#b3b3b3");
 
-            slopes.append("circle")
+           var startCircle = slopes.append("circle")
                 .attr("cx", start)
                 .attr("cy", d => yScale(d.values[0].yValue.value))
                 .attr("r", this.dotRadius)
@@ -342,7 +388,12 @@ module powerbi.extensibility.visual {
                 .attr("stroke", d => d.color)
                 .attr("fill-opacity", this.circleOpacity / 10);
 
-            slopes.append("circle")
+            this.tooltipServiceWrapper.addTooltip(startCircle,
+                (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data.values[0]),
+                (tooltipEvent: TooltipEventArgs<any>) => null
+            );
+
+            var endCircles = slopes.append("circle")
                 .attr("cx", end)
                 .attr("cy", d => yScale(d.values[d.values.length - 1].yValue.value))
                 .attr("r", this.dotRadius)
@@ -350,21 +401,60 @@ module powerbi.extensibility.visual {
                 .attr("stroke", d => d.color)
                 .attr("fill-opacity", this.circleOpacity / 10);
 
+            this.tooltipServiceWrapper.addTooltip(endCircles,
+                (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data.values[tooltipEvent.data.values.length - 1]),
+                (tooltipEvent: TooltipEventArgs<any>) => null
+            );
+
             if (this.showLabel === true) {
                 slopes.append("text")
                     .attr("x", start)
-                    .attr("y", d => yScale(d.values[0].yValue.value) + this.dotRadius / 3)
+                    .attr("y", d => yScale(d.values[0].yValue.value) + this.dotRadius / 4)
                     .attr("text-anchor", "middle")
+                    .attr("style", "pointer-events:none;")
                     .text(d => d.values[0].yValue.caption)
                     .attr("fill", "#fff");
 
                 slopes.append("text")
+                    .attr("style", "pointer-events:none;")
                     .attr("x", end)
-                    .attr("y", d => yScale(d.values[d.values.length - 1].yValue.value) + this.dotRadius / 3)
+                    .attr("y", d => yScale(d.values[d.values.length - 1].yValue.value) + this.dotRadius / 4)
                     .attr("text-anchor", "middle")
                     .text(d => d.values[d.values.length - 1].yValue.caption)
                     .attr("fill", "#fff");
             }
+
+            if (this.legendPosition === "legendOnCircle" || this.showConditionalColor === true) {
+                slopes.append("text")
+                    .attr("style", "pointer-events:none;")
+                    .attr("class","legendOnCircle")
+                    .attr("x", end + (this.dotRadius*2))
+                    .attr("y", d => yScale(d.values[d.values.length - 1].yValue.value) + this.dotRadius / 4)
+                    .attr("text-anchor", "start")
+                    .text(d => d.key)
+                    .attr("style", "font-family: 'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif;")
+                    
+                    .attr("fill", "#666666");
+            }
+
+            if (this.showConditionalColor === true) {
+                startCircle.attr("fill", d => d.values[0].yValue.value < d.values[d.values.length - 1].yValue.value ? this.upColor.solid.color : this.downColor.solid.color);
+                endCircles.attr("fill", d => d.values[0].yValue.value < d.values[d.values.length - 1].yValue.value ? this.upColor.solid.color : this.downColor.solid.color);
+                startCircle.attr("stroke", d => d.values[0].yValue.value < d.values[d.values.length - 1].yValue.value ? this.upColor.solid.color : this.downColor.solid.color);
+                endCircles.attr("stroke", d => d.values[0].yValue.value < d.values[d.values.length - 1].yValue.value ? this.upColor.solid.color : this.downColor.solid.color);
+
+                slopeLine.style("stroke", d => d.values[0].yValue.value < d.values[d.values.length - 1].yValue.value ? this.upColor.solid.color : this.downColor.solid.color);
+            }
+
+            chartSvg.append("text")
+                .attr("transform", "translate(" + dimension.xOffset + "," + (dimension.height-20) + ")")
+                .attr("text-anchor","middle")
+                .text(slopeData[0].values[0].xValue.caption);
+
+            chartSvg.append("text")
+                .attr("text-anchor", "middle")
+                .attr("transform", "translate(" + dimension.chartWidth + "," + (dimension.height-20) + ")")
+                .text(slopeData[0].values[slopeData[0].values.length - 1].xValue.caption)
 
         }
         //endregion
@@ -374,11 +464,11 @@ module powerbi.extensibility.visual {
                 chartLegend.attr("transform", "translate(" + (dimension.chartWidth + dimension.yOffset + (this.legendFontSize * 2)) + "," + (5) + ")");
             }
             if (this.legendPosition == "top") {
-                chartSvg.attr("transform", "translate(0," + this.legendFontSize * 3 + ")");
-                chartLegend.attr("transform", "translate(" + (dimension.yOffset) + "," + this.legendFontSize + ")");
-            }
+                chartSvg.attr("transform", "translate(0," + (this.legendFontSize * 3 + this.dotRadius) + ")");
+                chartLegend.attr("transform", "translate(" + 10 + "," + this.legendFontSize + ")");
+            } 
             if (this.legendPosition == "bottom") {
-                chartLegend.attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight + dimension.xOffset + (this.legendFontSize * 2)) + ")");
+                chartLegend.attr("transform", "translate(" + 10 + "," + (dimension.chartHeight + dimension.xOffset + (this.legendFontSize * 2)) + ")");
             }
             var fontSize = parseInt(this.legendFontSize);
 
@@ -402,6 +492,7 @@ module powerbi.extensibility.visual {
                 .attr("cy", fontSize / 5)
                 .attr("fill", d => d.color);
 
+           
             legengG
                 .append("text")
 
@@ -423,10 +514,11 @@ module powerbi.extensibility.visual {
         private getDimensions(vp, data) {
             let xlegendOffset = 0;
             let ylegendOffset = 0;
-
-            if (this.legendPosition == "right") ylegendOffset = d3.max(data.legend.map(d => d.width)) + (4 * this.legendFontSize);
+          
+            if (this.legendPosition == "right") ylegendOffset = d3.max(data.legend.map(d => d.width)) + (3 * this.legendFontSize);
             if (this.legendPosition == "top" || this.legendPosition === "bottom") xlegendOffset = this.legendFontSize * 3;
-
+            if (this.legendPosition === "legendOnCircle" || this.showConditionalColor === true) ylegendOffset = d3.max(data.legend.map(d => d.width)) + (this.legendFontSize);
+           
             let xdata = data.xAxis;
             let xDomain = d3.scale.ordinal().domain(xdata).domain();
 
@@ -434,14 +526,13 @@ module powerbi.extensibility.visual {
 
             let xOffset, yOffset, chartWidth, chartHeight, xFilter, xTickval;
 
-            yOffset = xT.Space + 15;
-            if (yOffset > vp.width / 4) yOffset = vp.width / 4 > 100 ? 100 : vp.width / 4;
+            yOffset = 10 + parseFloat(this.dotRadius);
+            if ((yOffset > vp.width / 4) && (this.legendPosition !== "legendOnCircle" || this.showConditionalColor !== true)) yOffset = vp.width / 4 > 100 ? 100 : vp.width / 4;
             xOffset = 30;
             chartWidth = vp.width - yOffset - ylegendOffset;
             chartHeight = vp.height - xOffset - xlegendOffset;
             xFilter = chartHeight / xDomain.length < this.fontSize ? Math.round((xDomain.length / chartHeight * 20)) : 1;
             xTickval = xDomain.filter((d, i) => (i % xFilter === 0));
-
 
             return {
                 width: vp.width,
@@ -539,7 +630,7 @@ module powerbi.extensibility.visual {
 
         private getTextWidth(container, text, fontsize) {
 
-            var dummytext = container.append("text").text(text).attr("font-size", fontsize);
+            var dummytext = container.append("text").text(text).attr("font-size", this.legendFontSize);
             var bbox = { width: 10, height: 10 };
             if (dummytext.node() !== null) bbox = dummytext.node().getBBox();
             dummytext.remove();
@@ -595,10 +686,50 @@ module powerbi.extensibility.visual {
         private setFontSize(chartSvg) {
 
             chartSvg.selectAll("text").style("font-size", this.fontSize + "px");
+
+            chartSvg.selectAll(".legendOnCircle").style("font-size", this.legendFontSize + "px");
+            
+        }
+
+        private getTooltipData(data: any): VisualTooltipDataItem[] {
+            var retData = [];
+           
+            retData.push({
+                displayName: data.xValue.title,
+                value: data.xValue.caption,
+            });
+            retData.push({
+                displayName: data.yValue.title,
+                value: data.yValue.caption,
+            });
+
+           
+            if (this.hasPeriod === true) {
+                retData.push({
+                    displayName: data.colorValue.title,
+                    value: data.colorValue.caption,
+                });
+            }
+
+            return retData;
+        }
+
+        public setFilterOpacity(element) {
+
+            var anyFilter = false;
+            element.each(d => {
+                if (d.isFiltered === true) anyFilter = true;
+            });
+
+            if (anyFilter) {
+                element.style("opacity", d => d.isFiltered ? 1 : 0.2);
+            }
+            else {
+                element.style("opacity", 1);
+            }
+
         }
         //endregion
-
-
 
 
         private setProperties(options) {
@@ -612,7 +743,8 @@ module powerbi.extensibility.visual {
                     if (basic.showLabel !== undefined) this.showLabel = basic["showLabel"];
                     if (basic.valFormat !== undefined) this.valFormat = basic["valFormat"];
                     if (basic.valPrecision !== undefined) this.valPrecision = basic["valPrecision"];
-
+                    if (basic.showAxis !== undefined) this.showAxis = basic["showAxis"];
+                    if (basic.showAs !== undefined) this.showAs = basic["showAs"];
                 }
 
                 if (options.dataViews[0].metadata.objects["Legend"]) {
@@ -620,6 +752,14 @@ module powerbi.extensibility.visual {
                     if (legend.legendPosition !== undefined) this.legendPosition = legend["legendPosition"];
                     if (legend.fontSize !== undefined) this.legendFontSize = legend["fontSize"];
                     if (legend.legendName !== undefined) this.legendName = legend["legendName"];
+
+                }
+
+                if (options.dataViews[0].metadata.objects["conditionalColor"]) {
+                    var conditionalColor = options.dataViews[0].metadata.objects["conditionalColor"];
+                    if (conditionalColor.showConditionalColor !== undefined) this.showConditionalColor = conditionalColor["showConditionalColor"];
+                    if (conditionalColor.upColor !== undefined) this.upColor = conditionalColor["upColor"];
+                    if (conditionalColor.downColor !== undefined) this.downColor = conditionalColor["downColor"];
 
                 }
             }
@@ -639,41 +779,55 @@ module powerbi.extensibility.visual {
                 case 'Basic':
 
                     objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { valFormat: this.valFormat }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
+                    if (this.showLabel == true) {
+                        objectEnumeration.push({ objectName: objectName, properties: { valFormat: this.valFormat }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
+                    }
+                    objectEnumeration.push({ objectName: objectName, properties: { showAxis: this.showAxis }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAs }, selector: null });
 
-
+                   
+                    
                     break;
 
                 case 'colorSelector':
-                    for (let barDataPoint of this.formattedData) {
+                    if (this.showConditionalColor == false) {
+                        for (let barDataPoint of this.formattedData) {
 
-                        objectEnumeration.push({
-                            objectName: objectName,
-                            displayName: barDataPoint.key,
-                            properties: {
-                                fill: {
-                                    solid: {
-                                        color: barDataPoint.color
+                            objectEnumeration.push({
+                                objectName: objectName,
+                                displayName: barDataPoint.key,
+                                properties: {
+                                    fill: {
+                                        solid: {
+                                            color: barDataPoint.color
+                                        }
                                     }
-                                }
-                            },
-                            selector: barDataPoint.iden.getSelector()
-                        });
+                                },
+                                selector: barDataPoint.iden.getSelector()
+                            });
+                        }
                     }
                     break;
 
                 case 'Legend':
-
-                    objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });
-                    if (this.hasAxis) objectEnumeration.push({ objectName: objectName, properties: { legendName: this.legendName }, selector: null });
-                    //objectEnumeration.push({ objectName: objectName, properties: { legendColor: this.legendColor }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.legendFontSize }, selector: null });
+                    if (this.showConditionalColor === false) {
+                        objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });
+                        if (this.hasAxis) objectEnumeration.push({ objectName: objectName, properties: { legendName: this.legendName }, selector: null });
+                        //objectEnumeration.push({ objectName: objectName, properties: { legendColor: this.legendColor }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.legendFontSize }, selector: null });
+                    }
                     break;
 
+                case "conditionalColor":
+                    objectEnumeration.push({ objectName: objectName, properties: { showConditionalColor: this.showConditionalColor }, selector: null });
+                    if (this.showConditionalColor === true) {
+                        objectEnumeration.push({ objectName: objectName, properties: { upColor: this.upColor }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { downColor: this.downColor }, selector: null });
+                    }
 
+                    break;
 
             };
 

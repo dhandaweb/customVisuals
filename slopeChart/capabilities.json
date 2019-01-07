@@ -144,6 +144,25 @@
                 "showLabel": {
                     "displayName": "Data Labels",
                     "type": { "bool": true }
+                },
+                "showAxis": {
+                    "displayName": "Show Axis",
+                    "type": { "bool": true }
+                },
+                "showAs": {
+                    "displayName": "Show slope as",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "perTotal",
+                                "displayName": "% of Total"
+                            }                          
+                        ]
+                    }
                 }
 
             }
@@ -181,6 +200,10 @@
                             {
                                 "value": "bottom",
                                 "displayName": "Bottom"
+                            },
+                            {
+                                "value": "legendOnCircle",
+                                "displayName": "Legend on Circle"
                             }
                         ]
                     }
@@ -194,6 +217,35 @@
                     "type": {
                         "formatting": {
                             "fontSize": true
+                        }
+                    }
+                }
+            }
+        },
+        "conditionalColor": {
+            "displayName": "ConditionalColor",
+            "properties": {
+                "showConditionalColor": {
+                    "displayName": "Show conditional Color",
+                    "type": { "bool": true }
+                },
+                "upColor": {
+                    "displayName": "Slope upward color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "downColor": {
+                    "displayName": "Slope downward color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
                         }
                     }
                 }

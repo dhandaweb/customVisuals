@@ -101,13 +101,20 @@ module powerbi.extensibility.visual {
 
         private dotRadius: any = 6;
         private circleOpacity: any = 100;
+        private circlestroke: any = 1;
 
         private orientation: any = "vertical";
         private fontSize: any = 11;
         private legendFontSize: any = 10;
 
+        private constantLineValue: any = '';
+        private constantLineStrokeWidth:any = 1;
+        private constantLineColor:any = { solid: { color: "#000000" } };
+
+      
+
         constructor(options: VisualConstructorOptions) {
-          
+
             this.element = d3.select(options.element);
             this.host = options.host;
             this.colorPalette = this.host.colorPalette;
@@ -116,12 +123,12 @@ module powerbi.extensibility.visual {
         }
 
         public update(options: VisualUpdateOptions) {
-           
+
             this.element.style("overflow", "hidden");
             this.element.select('.dotPlot').remove();
-         
+
             this.colorPalette.reset();
-           
+
             this.draw(options);
         }
 
@@ -157,21 +164,24 @@ module powerbi.extensibility.visual {
             var chartSvg = chart.append("g")
 
             chartSvg.attr("transform", "translate(0," + 5 + ")");
-
+           
             var chartLegend = chart.append("g")
             var xScale = this.setXScale(data, dimension);
             var yScale = this.setYScale(data, dimension);
-
+           
             this.drawXScale(xScale, chartSvg, dimension);
             this.drawYScale(yScale, chartSvg, dimension, data);
+           
             this.drawDumbellLines(data, chartSvg, dimension, xScale, yScale);
             this.drawCircles(xScale, yScale, chartSvg, data, dimension);
-
+           
+            this.drawConstantLine(yScale, chartSvg, data, dimension);
+           
             this.drawLegend(chartLegend, chartSvg, dimension, data);
-
-
+           
             this.setFontSize(chartSvg);
             this.drawStastics(xScale, yScale, chartSvg, data, dimension);
+          
         }
 
         public formatData(rawData) {
@@ -199,7 +209,7 @@ module powerbi.extensibility.visual {
                     var sizeMetadata = rawData.categorical.values.filter(d => d.source.roles.size)[0];
 
                     var sizeG = sizeMetadata.values;
-                 
+
                     var sizeFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: sizeMetadata.source.format });
 
                     var sizeV = rawData.categorical.values.filter(d => d.source.roles.size);
@@ -246,16 +256,16 @@ module powerbi.extensibility.visual {
                 else {
 
                     formattedData = valuesG.map((d, i) => {
-                       
+
                         valFormat = this.getValueFormat(d.source.format, d3.max(d.values.map(d => d)));
-                       
+
                         //this.colorPalette.getColor(d.source.groupName).value
                         var color = this.colorPalette.colors[i].value;
-                       
+
                         if (grouped[0].values[i].source.objects) {
                             color = grouped[0].values[i].source.objects.colorSelector.fill.solid.color;
                         }
-                        
+
                         return {
                             key: d.source.displayName,
                             color: color,
@@ -346,14 +356,15 @@ module powerbi.extensibility.visual {
                 if (options.dataViews[0].metadata.objects["Basic"]) {
                     var basic = options.dataViews[0].metadata.objects["Basic"];
                     if (basic.dotRadius !== undefined) this.dotRadius = basic["dotRadius"];
+                    if (basic.circlestroke !== undefined) this.circlestroke = basic["circlestroke"];
                     if (basic.circleOpacity !== undefined) this.circleOpacity = basic["circleOpacity"];
                     if (basic.showLabel !== undefined) this.showLabel = basic["showLabel"];
                     if (basic.connectDots !== undefined) this.connectDots = basic["connectDots"];
                     if (basic.connectDotsBy !== undefined) this.connectDotsBy = basic["connectDotsBy"];
-
                     if (basic.orientation !== undefined) this.orientation = basic["orientation"];
                     if (basic.valFormat !== undefined) this.valFormat = basic["valFormat"];
                     if (basic.valPrecision !== undefined) this.valPrecision = basic["valPrecision"];
+                
 
                 }
                 if (options.dataViews[0].metadata.objects["Dumbbell"]) {
@@ -393,6 +404,12 @@ module powerbi.extensibility.visual {
                     if (statistics.standardDeviation !== undefined) this.standardDeviation = statistics["standardDeviation"];
                     if (statistics.noOfStandardDeviation !== undefined) this.noOfStandardDeviation = statistics["noOfStandardDeviation"];
 
+                }
+                if (options.dataViews[0].metadata.objects["ConstantLine"]) {
+                    var constantLineObj = options.dataViews[0].metadata.objects["ConstantLine"];
+                    if (constantLineObj.constantLineValue !== undefined) this.constantLineValue = constantLineObj["constantLineValue"];
+                    if (constantLineObj.constantLineStrokeWidth !== undefined) this.constantLineStrokeWidth = constantLineObj["constantLineStrokeWidth"];
+                    if (constantLineObj.constantLineColor !== undefined) this.constantLineColor = constantLineObj["constantLineColor"];
                 }
 
 
@@ -460,7 +477,7 @@ module powerbi.extensibility.visual {
                 xFilter = chartHeight / xDomain.length < this.fontSize ? Math.round((xDomain.length / chartHeight * 20)) : 1;
                 xTickval = xDomain.filter((d, i) => (i % xFilter === 0));
 
-               
+
             }
 
 
@@ -602,6 +619,7 @@ module powerbi.extensibility.visual {
                 .attr("r", this.dotRadius)
                 .attr("fill", d => d.color)
                 .style("stroke", d => d.color)
+                .style("stroke-width", this.circlestroke + "px")
                 .style("fill-opacity", this.circleOpacity / 100);
 
 
@@ -613,7 +631,7 @@ module powerbi.extensibility.visual {
                 this.setFilterOpacity(circle);
                 (<Event>d3.event).stopPropagation();
             });
-
+           
             if (this.showLabel == true) {
                 var text = circleG.selectAll(".dotText")
                     .data(d => d.values.filter(d => d.yValue.value !== null))
@@ -642,7 +660,7 @@ module powerbi.extensibility.visual {
             }
 
             if (this.hasSize) {
-              
+
                 var sizeScale = d3.scale.linear()
                     .range([this.dotRadius, d3.min([25, (5 * this.dotRadius)])])
                     .domain([d3.min(data.sizeValues), d3.max(data.sizeValues)]);
@@ -658,6 +676,31 @@ module powerbi.extensibility.visual {
                 (tooltipEvent: TooltipEventArgs<any>) => null
             );
 
+        }
+
+        private drawConstantLine(yScale, chartSvg, data, dimension) {
+            if (this.constantLineValue.length > 0) {
+                var constLine = this.constantLineValue;
+
+
+                if (this.orientation == 'vertical') {
+                    var constantLine = chartSvg.append("line")
+                        .attr("x1", dimension.yOffset)
+                        .attr("x2", dimension.yOffset + dimension.chartWidth)
+                        .attr("y1", yScale(constLine))
+                        .attr("y2", yScale(constLine))
+                }
+                else {
+                    var constantLine = chartSvg.append("line")
+                        .attr("y1", 0)
+                        .attr("y2", dimension.chartHeight)
+                        .attr("x1", dimension.yOffset + yScale(constLine))
+                        .attr("x2", dimension.yOffset + yScale(constLine))
+                }
+
+                constantLine.style("stroke", this.constantLineColor.solid.color)
+                    .style("stroke-width", this.constantLineStrokeWidth + "px");
+            }
         }
 
         public setFilterOpacity(element) {
@@ -711,14 +754,14 @@ module powerbi.extensibility.visual {
 
             legengG
                 .append("text")
-               
+
                 .attr("x", d => d.color === "transparent" ? -5 : fontSize)
                 .attr("font-weight", d => d.color === "transparent" ? "bold" : "normal")
                 .attr("style", d => {
                     if (d.color === "transparent") return 'fill:rgb(102, 102, 102);font-family: "Segoe UI Semibold", wf_segoe-ui_semibold, helvetica, arial, sans-serif;';
                     else return 'fill:rgb(102, 102, 102);font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif';
                 })
-                .style("font-size", fontSize +"px")
+                .style("font-size", fontSize + "px")
                 .attr("y", fontSize / 2)
                 .text(d => d.text);
 
@@ -1674,11 +1717,12 @@ module powerbi.extensibility.visual {
                 case 'Basic':
                     objectEnumeration.push({ objectName: objectName, properties: { orientation: this.orientation }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { circlestroke: this.circlestroke }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { valFormat: this.valFormat }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
-
+                    objectEnumeration.push({ objectName: objectName, properties: { constantLineValue: this.constantLineValue }, selector: null });
 
                     break;
 
@@ -1738,7 +1782,13 @@ module powerbi.extensibility.visual {
                     if (this.standardDeviation == true) objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.noOfStandardDeviation }, selector: null });
                     break;
 
-
+                case 'ConstantLine':
+                    objectEnumeration.push({ objectName: objectName, properties: { constantLineValue: this.constantLineValue }, selector: null });
+                    if (this.constantLineValue.length > 0) {
+                        objectEnumeration.push({ objectName: objectName, properties: { constantLineStrokeWidth: this.constantLineStrokeWidth }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { constantLineColor: this.constantLineColor }, selector: null });
+                    }
+                    break;
 
 
             };

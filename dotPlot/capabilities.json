@@ -122,6 +122,14 @@
                         }
                     }
                 },
+                "circlestroke": {
+                    "displayName": "Circle Stroke",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                },
                 "valFormat": {
                     "displayName": "Value Format",
                     "type": {
@@ -184,7 +192,6 @@
                     "displayName": "Data Labels",
                     "type": { "bool": true }
                 }
-
             }
         },
         "colorSelector": {
@@ -474,7 +481,35 @@
                     }
                 }
             }
+        },
+        "ConstantLine": {
+            "displayName": "Constant Line",
+            "properties": {
+                "constantLineValue": {
+                    "displayName": "Constant line value",
+                    "type": { "text": true }
+                },
+                "constantLineStrokeWidth": {
+                    "displayName": "Constant line width",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                },
+                "constantLineColor": {
+                    "displayName": "Constant line color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                }
+            }
         }
+
     }
 } 
 

@@ -123,6 +123,7 @@ module powerbi.extensibility.visual {
         private NegativeTextColor: any;
 
 
+
         constructor(options: VisualConstructorOptions) {
 
             this.element = d3.select(options.element);
