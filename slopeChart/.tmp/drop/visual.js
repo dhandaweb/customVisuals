@@ -9156,6 +9156,7 @@ var powerbi;
                     };
                     Visual.prototype.drawSlope = function (yScale, chartSvg, dimension, data) {
                         var _this = this;
+                        var format = data.yFormat;
                         var radius = 14;
                         var end = dimension.chartWidth;
                         var start = dimension.xOffset;
@@ -9202,14 +9203,14 @@ var powerbi;
                                 .attr("y", function (d) { return yScale(d.values[0].yValue.value) + _this.dotRadius / 4; })
                                 .attr("text-anchor", "middle")
                                 .attr("style", "pointer-events:none;")
-                                .text(function (d) { return d.values[0].yValue.caption; })
+                                .text(function (d) { return _this.showAs == "perTotal" ? format(d.values[0].yValue.value) : d.values[0].yValue.caption; })
                                 .attr("fill", "#fff");
                             slopes.append("text")
                                 .attr("style", "pointer-events:none;")
                                 .attr("x", end)
                                 .attr("y", function (d) { return yScale(d.values[d.values.length - 1].yValue.value) + _this.dotRadius / 4; })
                                 .attr("text-anchor", "middle")
-                                .text(function (d) { return d.values[d.values.length - 1].yValue.caption; })
+                                .text(function (d) { return _this.showAs == "perTotal" ? format(d.values[d.values.length - 1].yValue.value) : d.values[d.values.length - 1].yValue.caption; })
                                 .attr("fill", "#fff");
                         }
                         if (this.legendPosition === "legendOnCircle" || this.showConditionalColor === true) {
@@ -9570,8 +9571,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.slopeChartD9885417F9AAF5BB8D45B007E = {
-                name: 'slopeChartD9885417F9AAF5BB8D45B007E',
+            plugins.slopeChartD9885417F9AAF5BB8D45B007E_DEBUG = {
+                name: 'slopeChartD9885417F9AAF5BB8D45B007E_DEBUG',
                 displayName: 'Slope Chart',
                 class: 'Visual',
                 version: '1.0.0',

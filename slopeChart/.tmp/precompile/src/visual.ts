@@ -127,7 +127,7 @@ module powerbi.extensibility.visual.slopeChartD9885417F9AAF5BB8D45B007E  {
             var chartLegend = chart.append("g");
            
             var yScale = this.setYScale(data, dimension);
-
+           
             if (this.showAxis) {
                 this.drawLeftAxis(yScale, chartSvg, dimension, data);
                 this.drawRightAxis(yScale, chartSvg, dimension, data);
@@ -158,7 +158,6 @@ module powerbi.extensibility.visual.slopeChartD9885417F9AAF5BB8D45B007E  {
                 var valFormat;
                 var sizeValues = [];
                 var valuesG = rawData.categorical.values.filter(d => d.source.roles.values);
-
 
 
                 if (this.hasPeriod) {
@@ -349,7 +348,8 @@ module powerbi.extensibility.visual.slopeChartD9885417F9AAF5BB8D45B007E  {
         }
 
         private drawSlope(yScale, chartSvg, dimension, data) {
-            
+
+            var format = data.yFormat;
             var radius = 14;
             var end = dimension.chartWidth;
             var start = dimension.xOffset;
@@ -412,7 +412,7 @@ module powerbi.extensibility.visual.slopeChartD9885417F9AAF5BB8D45B007E  {
                     .attr("y", d => yScale(d.values[0].yValue.value) + this.dotRadius / 4)
                     .attr("text-anchor", "middle")
                     .attr("style", "pointer-events:none;")
-                    .text(d => d.values[0].yValue.caption)
+                    .text(d => this.showAs == "perTotal" ? format(d.values[0].yValue.value) : d.values[0].yValue.caption)
                     .attr("fill", "#fff");
 
                 slopes.append("text")
@@ -420,7 +420,7 @@ module powerbi.extensibility.visual.slopeChartD9885417F9AAF5BB8D45B007E  {
                     .attr("x", end)
                     .attr("y", d => yScale(d.values[d.values.length - 1].yValue.value) + this.dotRadius / 4)
                     .attr("text-anchor", "middle")
-                    .text(d => d.values[d.values.length - 1].yValue.caption)
+                    .text(d => this.showAs == "perTotal" ? format(d.values[d.values.length - 1].yValue.value) :d.values[d.values.length - 1].yValue.caption)
                     .attr("fill", "#fff");
             }
 

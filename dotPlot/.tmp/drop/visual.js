@@ -8970,6 +8970,7 @@ var powerbi;
                         this.constantLineValue = '';
                         this.constantLineStrokeWidth = 1;
                         this.constantLineColor = { solid: { color: "#000000" } };
+                        this.dumbbellLineStroke = 1;
                         this.setValueDomain = function (Min, Max) {
                             var domain = {};
                             if (Min > 0) {
@@ -9228,7 +9229,6 @@ var powerbi;
                             });
                         });
                         if (this.showAs == "perDifference"
-                            || this.showAs == "perDifferenceFromAverage"
                             || this.showAs == "perTotal"
                             || this.showAs == "perGrandTotal"
                             || this.showAs == "perAxisValue")
@@ -9294,6 +9294,8 @@ var powerbi;
                                     this.connectDotsBy = dumbbell["connectDotsBy"];
                                 if (dumbbell.dumbbellSort !== undefined)
                                     this.dumbbellSort = dumbbell["dumbbellSort"];
+                                if (dumbbell.dumbbellLineStroke !== undefined)
+                                    this.dumbbellLineStroke = dumbbell["dumbbellLineStroke"];
                             }
                             if (options.dataViews[0].metadata.objects["Legend"]) {
                                 var legend = options.dataViews[0].metadata.objects["Legend"];
@@ -9840,6 +9842,7 @@ var powerbi;
                             var dumbell = dumbellG.append("path")
                                 .attr("style", "fill:none;")
                                 .style("stroke", "#b3b3b3")
+                                .attr("stroke-width", this.dumbbellLineStroke + "px")
                                 .attr("d", function (d) { return line(d.values); });
                             if (this.connectDotsBy === "color")
                                 dumbell.style("stroke", function (d) { return d.color; });
@@ -9848,9 +9851,10 @@ var powerbi;
                     ;
                     Visual.prototype.setUpAnalyticData = function (data) {
                         var retData;
+                        var cdata = JSON.parse(JSON.stringify(data));
                         switch (this.showAs) {
                             case "runningTotal":
-                                retData = data.map(function (d) {
+                                retData = cdata.map(function (d) {
                                     var cumulative = 0;
                                     d.values.map(function (d) {
                                         if (d.yValue.value !== null) {
@@ -9864,7 +9868,7 @@ var powerbi;
                                 break;
                             case "difference":
                                 var current, previous;
-                                retData = data.map(function (d) {
+                                retData = cdata.map(function (d) {
                                     previous = 0;
                                     d.values.map(function (d, i) {
                                         if (d.yValue.value !== null) {
@@ -9881,7 +9885,7 @@ var powerbi;
                                 break;
                             case "perDifference":
                                 var previous;
-                                retData = data.map(function (d) {
+                                retData = cdata.map(function (d) {
                                     previous = 0;
                                     d.values.map(function (d) {
                                         if (d.yValue.value !== null) {
@@ -9898,12 +9902,12 @@ var powerbi;
                                 break;
                             case "differenceFromAverage":
                                 var average;
-                                retData = data.map(function (d) {
+                                retData = cdata.map(function (d) {
                                     average = d3.sum(d.values.map(function (d) { return d.yValue.value; })) / d.values.length;
                                     d.AnalyticValue = average;
                                     d.values.map(function (d, i) {
                                         if (d.yValue.value !== null) {
-                                            d.yValue.value = d.yValue.value - average;
+                                            d.yValue.value = d.yValue.value - average / average;
                                         }
                                     });
                                     return d;
@@ -9911,7 +9915,7 @@ var powerbi;
                                 break;
                             case "perDifferenceFromAverage":
                                 var average;
-                                retData = data.map(function (d) {
+                                retData = cdata.map(function (d) {
                                     average = d3.sum(d.values.map(function (d) { return d.yValue.value; })) / d.values.length;
                                     d.AnalyticValue = average;
                                     d.values.map(function (d) {
@@ -9924,9 +9928,11 @@ var powerbi;
                                 break;
                             case "perAxisValue":
                                 var axisTotalValue;
-                                retData = data.map(function (d, j) {
+                                retData = cdata.map(function (d, j) {
                                     d.values.map(function (d, i) {
-                                        axisTotalValue = d3.sum(data.map(function (d) { return d.values[i].yValue.value; }));
+                                        axisTotalValue = d3.sum(data.map(function (d) {
+                                            return d.values[i].yValue.value;
+                                        }));
                                         if (d.yValue.value !== null)
                                             d.yValue.value = d.yValue.value / axisTotalValue;
                                     });
@@ -9934,7 +9940,7 @@ var powerbi;
                                 });
                                 break;
                             case "perTotal":
-                                retData = data.map(function (d) {
+                                retData = cdata.map(function (d) {
                                     var total = d3.sum(d.values.map(function (d) { return d.yValue.value; }));
                                     d.values.map(function (d, i) {
                                         if (d.yValue.value !== null)
@@ -9945,7 +9951,7 @@ var powerbi;
                                 break;
                             case "perGrandTotal":
                                 var grandTotal = d3.sum(data.map(function (d) { return d3.sum(d.values.map(function (d) { return d.yValue.value; })); }));
-                                retData = data.map(function (d) {
+                                retData = cdata.map(function (d) {
                                     d.AnalyticValue = grandTotal;
                                     d.values.map(function (d, i) {
                                         if (d.yValue.value !== null)
@@ -9956,7 +9962,7 @@ var powerbi;
                                 break;
                             case "movingAverage":
                                 var previous = 0, secondprevious = 0;
-                                retData = data.map(function (d) {
+                                retData = cdata.map(function (d) {
                                     d.values.map(function (d) {
                                         if (d.yValue.value !== null) {
                                             d.yValue.value = (d.yValue.value + previous + secondprevious) / 3;
@@ -10320,6 +10326,7 @@ var powerbi;
                                     objectEnumeration.push({ objectName: objectName, properties: { connectDotsBy: this.connectDotsBy }, selector: null });
                                     if (this.connectDotsBy == "axis")
                                         objectEnumeration.push({ objectName: objectName, properties: { dumbbellSort: this.dumbbellSort }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { dumbbellLineStroke: this.dumbbellLineStroke }, selector: null });
                                 }
                                 break;
                             case 'Legend':

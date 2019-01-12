@@ -111,6 +111,7 @@ module powerbi.extensibility.visual {
         private constantLineStrokeWidth:any = 1;
         private constantLineColor:any = { solid: { color: "#000000" } };
 
+        private dumbbellLineStroke: any= 1;
       
 
         constructor(options: VisualConstructorOptions) {
@@ -302,7 +303,7 @@ module powerbi.extensibility.visual {
             });
 
             if (this.showAs == "perDifference"
-                || this.showAs == "perDifferenceFromAverage"
+                //|| this.showAs == "perDifferenceFromAverage"
                 || this.showAs == "perTotal"
                 || this.showAs == "perGrandTotal"
                 || this.showAs == "perAxisValue"
@@ -372,7 +373,8 @@ module powerbi.extensibility.visual {
                     if (dumbbell.connectDots !== undefined) this.connectDots = dumbbell["connectDots"];
                     if (dumbbell.connectDotsBy !== undefined) this.connectDotsBy = dumbbell["connectDotsBy"];
                     if (dumbbell.dumbbellSort !== undefined) this.dumbbellSort = dumbbell["dumbbellSort"];
-
+                    if (dumbbell.dumbbellLineStroke !== undefined) this.dumbbellLineStroke = dumbbell["dumbbellLineStroke"];
+                    
                 }
 
 
@@ -1063,6 +1065,7 @@ module powerbi.extensibility.visual {
                 var dumbell = dumbellG.append("path")
                     .attr("style", "fill:none;")
                     .style("stroke", "#b3b3b3")
+                    .attr("stroke-width", this.dumbbellLineStroke + "px")
                     .attr("d", d => line(d.values));
 
                 if (this.connectDotsBy === "color") dumbell.style("stroke", d => d.color)
@@ -1073,11 +1076,11 @@ module powerbi.extensibility.visual {
 
         private setUpAnalyticData(data) {
             var retData;
-
+            var cdata = JSON.parse(JSON.stringify(data)); 
             switch (this.showAs) {
 
                 case "runningTotal":
-                    retData = data.map(function (d) {
+                    retData = cdata.map(function (d) {
                         var cumulative = 0;
                         d.values.map(function (d) {
                             if (d.yValue.value !== null) {
@@ -1092,7 +1095,7 @@ module powerbi.extensibility.visual {
 
                 case "difference":
                     var current, previous;
-                    retData = data.map(d => {
+                    retData = cdata.map(d => {
                         previous = 0;
                         d.values.map(function (d, i) {
                             if (d.yValue.value !== null) {
@@ -1109,7 +1112,7 @@ module powerbi.extensibility.visual {
 
                 case "perDifference":
                     var previous;
-                    retData = data.map(d => {
+                    retData = cdata.map(d => {
                         previous = 0;
                         d.values.map(d => {
                             if (d.yValue.value !== null) {
@@ -1126,12 +1129,12 @@ module powerbi.extensibility.visual {
 
                 case "differenceFromAverage":
                     var average;
-                    retData = data.map(function (d) {
+                    retData = cdata.map(function (d) {
                         average = d3.sum(d.values.map(function (d) { return d.yValue.value; })) / d.values.length;
                         d.AnalyticValue = average;
                         d.values.map(function (d, i) {
                             if (d.yValue.value !== null) {
-                                d.yValue.value = d.yValue.value - average;
+                                d.yValue.value = d.yValue.value - average / average;
                             }
                         });
                         return d;
@@ -1140,7 +1143,7 @@ module powerbi.extensibility.visual {
 
                 case "perDifferenceFromAverage":
                     var average;
-                    retData = data.map(function (d) {
+                    retData = cdata.map(function (d) {
                         average = d3.sum(d.values.map(function (d) { return d.yValue.value; })) / d.values.length;
                         d.AnalyticValue = average;
                         d.values.map(function (d) {
@@ -1155,10 +1158,16 @@ module powerbi.extensibility.visual {
 
                 case "perAxisValue":
                     var axisTotalValue;
-                    retData = data.map(function (d, j) {
+                   
+                    retData = cdata.map(function (d, j) {
                         d.values.map(function (d, i) {
-                            axisTotalValue = d3.sum(data.map(function (d) { return d.values[i].yValue.value }));
+                           
+                            axisTotalValue = d3.sum(data.map(function (d) {
+                                return d.values[i].yValue.value
+                            }));
+                           
                             if (d.yValue.value !== null) d.yValue.value = d.yValue.value / axisTotalValue;
+                          
                         });
                         return d;
                     });
@@ -1166,7 +1175,7 @@ module powerbi.extensibility.visual {
                     break;
 
                 case "perTotal":
-                    retData = data.map(function (d) {
+                    retData = cdata.map(function (d) {
                         var total = d3.sum(d.values.map(function (d) { return d.yValue.value; }));
                         d.values.map(function (d, i) {
                             if (d.yValue.value !== null) d.yValue.value = (d.yValue.value / total);
@@ -1179,7 +1188,7 @@ module powerbi.extensibility.visual {
 
                     var grandTotal = d3.sum(data.map(function (d) { return d3.sum(d.values.map(d => d.yValue.value)) }));
 
-                    retData = data.map(function (d) {
+                    retData = cdata.map(function (d) {
                         d.AnalyticValue = grandTotal;
                         d.values.map(function (d, i) {
                             if (d.yValue.value !== null) d.yValue.value = (d.yValue.value / grandTotal);
@@ -1191,7 +1200,7 @@ module powerbi.extensibility.visual {
 
                 case "movingAverage":
                     var previous: any = 0, secondprevious = 0;
-                    retData = data.map(function (d) {
+                    retData = cdata.map(function (d) {
                         d.values.map(function (d) {
                             if (d.yValue.value !== null) {
                                 d.yValue.value = (d.yValue.value + previous + secondprevious) / 3;
@@ -1749,6 +1758,9 @@ module powerbi.extensibility.visual {
                     if (this.connectDots == true) {
                         objectEnumeration.push({ objectName: objectName, properties: { connectDotsBy: this.connectDotsBy }, selector: null });
                         if (this.connectDotsBy == "axis") objectEnumeration.push({ objectName: objectName, properties: { dumbbellSort: this.dumbbellSort }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { dumbbellLineStroke: this.dumbbellLineStroke }, selector: null });
+
+                        
                     }
                     break;
                 case 'Legend':
