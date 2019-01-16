@@ -1,0 +1,56 @@
+{
+    "dataRoles": [
+        {
+            "displayName": "Values",
+            "name": "values",
+            "kind": "Measure"
+            
+        },
+        {
+            "displayName": "Group",
+            "name": "group",
+            "kind": "Grouping"
+
+        }
+
+    ],
+    "dataViewMappings": [
+        {
+             "table": {
+                "rows": {
+                    "dataReductionAlgorithm": {
+                        "top": {
+                            "count": 30000
+                        }
+                    },
+                    "select": [
+                        {
+                            "for": {
+                                "in": "group"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "values"
+                            }
+                        }
+
+                    ]
+                }
+            },
+            "conditions": [
+                {
+                    "values": {
+                        "max": 1
+                    },
+                    "group": {
+                        "max": 1
+                    }
+                }
+            ]
+        }
+    ],
+    "objects": {
+      
+    }
+}

@@ -1,7 +1,10 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\histogram",
+    "\\histogram\\style",
+    "\\slopeChart\\src"
   ],
-  "SelectedNode": "\\dotPlot",
+  "SelectedNode": "\\histogram\\style\\visual.less",
   "PreviewInSolutionExplorer": false
 }
