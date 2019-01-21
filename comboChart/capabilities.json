@@ -1,0 +1,648 @@
+{
+    "dataRoles": [
+        {
+            "displayName": "Bar",
+            "name": "bar",
+            "kind": "Measure",
+            "requiredTypes": [
+                {
+                    "integer": true
+                },
+                {
+                    "numeric": true
+                }
+            ],
+            "preferredTypes": [
+                {
+                    "numeric": true
+                }
+            ]
+        },
+        {
+            "displayName": "Area",
+            "name": "area",
+            "kind": "Measure",
+            "requiredTypes": [
+                {
+                    "integer": true
+                },
+                {
+                    "numeric": true
+                }
+            ],
+            "preferredTypes": [
+                {
+                    "numeric": true
+                }
+            ]
+        },
+        {
+            "displayName": "Line",
+            "name": "line",
+            "kind": "Measure",
+            "requiredTypes": [
+                {
+                    "integer": true
+                },
+                {
+                    "numeric": true
+                }
+            ],
+            "preferredTypes": [
+                {
+                    "numeric": true
+                }
+            ]
+        },
+        {
+            "displayName": "Dot",
+            "name": "dot",
+            "kind": "Measure",
+            "requiredTypes": [
+                {
+                    "integer": true
+                },
+                {
+                    "numeric": true
+                }
+            ],
+            "preferredTypes": [
+                {
+                    "numeric": true
+                }
+            ]
+        },
+        {
+            "displayName": "Axis",
+            "name": "axis",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Color",
+            "name": "color",
+            "kind": "Grouping"
+        }
+    ],
+    "dataViewMappings": [
+        {
+            "categorical": {
+                "categories": {
+                    "for": {
+                        "in": "axis"
+                    },
+                    "dataReductionAlgorithm": {
+                        "top": {
+                            "count": 300
+                        }
+                    }
+                },
+                "values": {
+                    "group": {
+                        "by": "color",
+                        "select": [
+                            { "bind": { "to": "bar" } },
+                            { "bind": { "to": "area" } },
+                            { "bind": { "to": "line" } },
+                            { "bind": { "to": "dot" } }
+                        ]
+                    }
+                }
+            },
+            "conditions": [
+                {
+                    "bar": {
+                        "min": 0,
+                        "max": 1
+                    },
+                    "area": {
+                        "min": 0,
+                        "max": 1
+                    },
+                    "line": {
+                        "min": 0,
+                        "max": 1
+                    },
+                    "dot": {
+                        "min": 0,
+                        "max": 1
+                    },
+                    "axis": {
+                        "min": 0,
+                        "max": 1
+                    },
+                    "color": {
+                        "min": 0,
+                        "max": 1
+                    }
+                }
+            ]
+        }
+    ],
+    "objects": {
+        "Basic": {
+            "displayName": "Basic",
+            "properties": {
+                "leftValFormat": {
+                    "displayName": "Value Format",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "thousand",
+                                "displayName": "Thousand"
+                            },
+                            {
+                                "value": "million",
+                                "displayName": "Million"
+                            },
+                            {
+                                "value": "billion",
+                                "displayName": "Billion"
+                            },
+                            {
+                                "value": "trillion",
+                                "displayName": "Trillion"
+                            },
+                            {
+                                "value": "none",
+                                "displayName": "None"
+                            }
+                        ]
+                    }
+                },
+                "leftValPrecision": {
+                    "displayName": "Value Precision",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "0",
+                                "displayName": "0"
+                            },
+                            {
+                                "value": "1",
+                                "displayName": "1"
+                            },
+                            {
+                                "value": "2",
+                                "displayName": "2"
+                            },
+                            {
+                                "value": "3",
+                                "displayName": "3"
+                            },
+                            {
+                                "value": "4",
+                                "displayName": "4"
+                            }
+                        ]
+                    }
+                },
+                "rightValFormat": {
+                    "displayName": "Value Format",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "thousand",
+                                "displayName": "Thousand"
+                            },
+                            {
+                                "value": "million",
+                                "displayName": "Million"
+                            },
+                            {
+                                "value": "billion",
+                                "displayName": "Billion"
+                            },
+                            {
+                                "value": "trillion",
+                                "displayName": "Trillion"
+                            },
+                            {
+                                "value": "none",
+                                "displayName": "None"
+                            }
+                        ]
+                    }
+                },
+                "rightValPrecision": {
+                    "displayName": "Value Precision",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "0",
+                                "displayName": "0"
+                            },
+                            {
+                                "value": "1",
+                                "displayName": "1"
+                            },
+                            {
+                                "value": "2",
+                                "displayName": "2"
+                            },
+                            {
+                                "value": "3",
+                                "displayName": "3"
+                            },
+                            {
+                                "value": "4",
+                                "displayName": "4"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "Bar": {
+            "displayName": "Bar",
+            "properties": {
+                "showLabel": {
+                    "displayName": "Data Labels",
+                    "type": { "bool": true }
+                },
+                "axis": {
+                    "displayName": "Axis",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "left",
+                                "displayName": "Left"
+                            },
+                            {
+                                "value": "right",
+                                "displayName": "Right"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "Area": {
+            "displayName": "Area",
+            "properties": {
+                "showLabel": {
+                    "displayName": "Data Labels",
+                    "type": { "bool": true }
+                },
+                "axis": {
+                    "displayName": "Axis",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "left",
+                                "displayName": "Left"
+                            },
+                            {
+                                "value": "right",
+                                "displayName": "Right"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "Line": {
+            "displayName": "Line",
+            "properties": {
+                "showLabel": {
+                    "displayName": "Data Labels",
+                    "type": { "bool": true }
+                },
+                "axis": {
+                    "displayName": "Axis",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "left",
+                                "displayName": "Left"
+                            },
+                            {
+                                "value": "right",
+                                "displayName": "Right"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "Dot": {
+            "displayName": "Dot",
+            "properties": {
+                "showLabel": {
+                    "displayName": "Data Labels",
+                    "type": { "bool": true }
+                },
+                "axis": {
+                    "displayName": "Axis",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "left",
+                                "displayName": "Left"
+                            },
+                            {
+                                "value": "right",
+                                "displayName": "Right"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "colorSelector": {
+            "displayName": "Data Colors",
+            "properties": {
+                "fill": {
+                    "displayName": "Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "Axis": {
+            "displayName": "Axis",
+            "properties": {
+                "yAxisMinValue": {
+                    "displayName": "Y Axis Start From Min Value",
+                    "type": { "bool": true }
+                },
+                "fontSize": {
+                    "displayName": "Text Size",
+                    "displayNameKey": "Visual_TextSize",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                }
+
+            }
+        },
+        "Legend": {
+            "displayName": "Legend",
+            "properties": {
+                "legendPosition": {
+                    "displayName": "Legend Position",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "right",
+                                "displayName": "Right"
+                            },
+                            {
+                                "value": "top",
+                                "displayName": "Top"
+                            },
+                            {
+                                "value": "bottom",
+                                "displayName": "Bottom"
+                            }
+                        ]
+                    }
+                },
+                "legendName": {
+                    "displayName": "Legend Name",
+                    "type": { "text": true }
+                },
+                "legendColor": {
+                    "displayName": "Legend Color",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "Category1",
+                                "displayName": "Category1"
+                            },
+                            {
+                                "value": "Category2",
+                                "displayName": "Category2"
+                            },
+                            {
+                                "value": "Category3",
+                                "displayName": "Category3"
+                            },
+                            {
+                                "value": "Category4",
+                                "displayName": "Category4"
+                            },
+                            {
+                                "value": "Category5",
+                                "displayName": "Category5"
+                            },
+                            {
+                                "value": "Category6",
+                                "displayName": "Category6"
+                            },
+                            {
+                                "value": "Category7",
+                                "displayName": "Category7"
+                            },
+                            {
+                                "value": "Category8",
+                                "displayName": "Category8"
+                            },
+                            {
+                                "value": "Category9",
+                                "displayName": "Category9"
+                            },
+                            {
+                                "value": "Category10",
+                                "displayName": "Category10"
+                            }
+                        ]
+                    }
+                },
+                "fontSize": {
+                    "displayName": "Legend Font Size",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                }
+            }
+        },
+        "Statistics": {
+            "displayName": "Analytics",
+            "properties": {
+                "showAs": {
+                    "displayName": "Show as",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "runningTotal",
+                                "displayName": "Running Total"
+                            },
+                            {
+                                "value": "difference",
+                                "displayName": "Difference"
+                            },
+                            {
+                                "value": "perDifference",
+                                "displayName": "% Difference"
+                            },
+                            {
+                                "value": "differenceFromAverage",
+                                "displayName": "Difference From Average"
+                            },
+                            {
+                                "value": "perDifferenceFromAverage",
+                                "displayName": "% Difference From Average"
+                            },
+                            {
+                                "value": "perAxisValue",
+                                "displayName": "% of Axis Value"
+                            },
+                            {
+                                "value": "perTotal",
+                                "displayName": "% of Total"
+                            },
+                            {
+                                "value": "perGrandTotal",
+                                "displayName": "% of Grand Total"
+                            },
+                            {
+                                "value": "movingAverage",
+                                "displayName": "Moving Average"
+                            }
+                        ]
+                    }
+                },
+                "showMean": {
+                    "displayName": "Show Mean",
+                    "type": { "bool": true }
+                },
+                "showMedian": {
+                    "displayName": "Show Median",
+                    "type": { "bool": true }
+                },
+                "showMode": {
+                    "displayName": "Show Mode",
+                    "type": { "bool": true }
+                },
+                "exponentialSmoothingLine": {
+                    "displayName": "Exponential Smoothing Line",
+                    "type": { "bool": true }
+                },
+                "regressionLine": {
+                    "displayName": "Regression Line",
+                    "type": { "bool": true }
+                },
+                "regressionCurveType": {
+                    "displayName": "Regression Curve Type",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "linear",
+                                "displayName": "Linear"
+                            },
+                            {
+                                "value": "exponential",
+                                "displayName": "Exponential"
+                            }
+
+                        ]
+                    }
+                },
+                "regressionLineType": {
+                    "displayName": "Regression Line Type",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "single",
+                                "displayName": "Single"
+                            },
+                            {
+                                "value": "multiple",
+                                "displayName": "Multiple"
+                            }
+
+                        ]
+                    }
+                },
+                "standardDeviation": {
+                    "displayName": "StandardDeviation",
+                    "type": { "bool": true }
+                },
+                "noOfStandardDeviation": {
+                    "displayName": "No of Standard Deviation",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "1",
+                                "displayName": "1"
+                            },
+                            {
+                                "value": "2",
+                                "displayName": "2"
+                            },
+                            {
+                                "value": "3",
+                                "displayName": "3"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "ConstantLine": {
+            "displayName": "Constant Line",
+            "properties": {
+                "axis": {
+                    "displayName": "Axis",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "left",
+                                "displayName": "Left"
+                            },
+                            {
+                                "value": "right",
+                                "displayName": "Right"
+                            }
+                        ]
+                    }
+                },
+                "constantLineValue": {
+                    "displayName": "Constant line value",
+                    "type": { "text": true }
+                },
+                "constantLineStrokeWidth": {
+                    "displayName": "Constant line width",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                },
+                "constantLineColor": {
+                    "displayName": "Constant line color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+} 
+
