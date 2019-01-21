@@ -26,7 +26,7 @@
  */
 
 
-module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
+module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
     "use strict";
 
     export class Visual implements IVisual {
@@ -41,12 +41,36 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
         private dimension: any
 
         private hasAxis: any = false;
+        private axisFormat: any;
+
         private hasColor: any = false;
-        private hasValue: any = false;
-        private hasSize: any = false;
+        private colorFormat: any;
+
+        private hasBar: any = false;
+        private showBarLabel: any = false;
+        private barAxis: any = "left";
+        private barFormat: any;
+
+        private hasArea: any = false;
+        private showAreaLabel: any = false;
+        private areaAxis: any = "left";
+        private areaFormat: any;
+
+        private hasLine: any = false;
+        private showLineLabel: any = false;
+        private lineAxis: any = "left";
+        private lineFormat: any;
+
+        private hasDot: any = false;
+        private showDotLabel: any = false;
+        private dotAxis: any = "left";
+        private dotFormat: any;
+        
+
         private colorTitle: any = '';
         private legendPosition: any = "right";
         private legendName: any;
+
         private showAs: any = "default";
 
         private showMean: any = false;
@@ -61,16 +85,19 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
         private noOfStandardDeviation: any = "1";
 
         private exponentialSmoothingLine: any = false;
+
         private formattedData: any = [];
-        private axisFormat: any;
-        private colorFormat: any;
-        private circles: any;
+
         private colorScale: any;
         private iValueFormatter: any;
         private element: d3.Selection<SVGElement>;
         private container: d3.Selection<SVGElement>;
-        private valFormat: any = 'default';
-        private valPrecision: any = 0;
+
+        private leftValFormat: any = 'default';
+        private leftValPrecision: any = 0;
+
+        private rightValFormat: any = 'default';
+        private rightValPrecision: any = 0;
 
         private tooltipServiceWrapper: ITooltipServiceWrapper;
         private TooltipEventArgs: any;
@@ -79,40 +106,21 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
         private yAxisMinValue: boolean = false;;
         private legendColor: any = 'Category1';
         private colorPalette: any;
-        private colorOptions: any = {
-            Category1: ["#26C6DA", "#EC407A", "#9CCC65", "#FFCA28", "#EF5350", "#78909C", "#42A5F5", "#FFA726", "#26A69A", "#AB47BC", "#BDBDBD", "#5C6BC0", "#8D6E63", "#D4E157", "#29B6F6", "#66BB6A", "#FF7043", "#7E57C2", "#FFEE58", "#9CCC64"],
-            Category2: ["#C79A6B", "#737373", "#97C7C5", "#67B0E1", "#FEBC4A", "#A7D679", "#ED82B7", "#ADAEB5", "#C8B570", "#448EC9", "#F6B982", "#9DBE59", "#5BBE94", "#5884B3", "#CC6686", "#E68570"],
-            Category3: ["#ACD15F", "#F64747", "#F69647", "#2B9494", "#F6CD47", "#699DCF", "#B5253C", "#868686", "#4CA2B3", "#DBA13A", "#D2527F", "#4CB972", "#3598DB", "#F8CF47", "#FF2100", "#BBBBBB", "#AD7CCA", "#FDE3A7", "#5DB753", "#EE91AC"],
-            Category4: ["#F64747", "#ACD15F", "#F69647", "#3598DB", "#F8CF47", "#2B9494", "#BBBBBB", "#D03C7D", "#4CB972", "#B5253C", "#9CDAEE", "#868686", "#699DCF", "#FDE3A7", "#2B9494", "#FF2100", "#5DB753", "#EE91AC", "#AD7CCA", "#E08283"],
-            Category5: ["#3D94D1", "#B5253C", "#45A8A8", "#F64747", "#00AF64", "#F8CF47", "#AD7CCA", "#EE91AC", "#C79A6B", "#868686", "#9CDAEE", "#FFB300", "#B5253C", "#4CA2B3", "#ACD15F", "#FDE3A7", "#D03C7D", "#2B9494", "#BBBBBB", "#3598DB"],
-            Category6: ["#00A0B0", "#FE4365", "#7AB317", "#EDC951", "#CC333F", "#F69647", "#4DBCE9", "#EE91AC", "#99B2B7", "#4ECDC4", "#948C75", "#C7F464", "#FF6B6B", "#00CDAC", "#3598DB", "#FFB300", "#5DB753", "#868686", "#699DCF", "#CD8C52"],
-            Category7: ["#699DCF", "#C79A6B", "#E15759", "#45A8A8", "#59A14E", "#EDC951", "#B07AA1", "#F69647", "#EE91AC", "#99B2B7", "#ACD15F", "#F06D69", "#FFAE0B", "#8BC2CB", "#5785C1", "#CD8C52", "#A1CEA8", "#F8CF47", "#FF9DA7", "#9CDAEE"],
-            Category8: ["#699DCF", "#F69647", "#E15759", "#45A8A8", "#C79A6B", "#99B2B7", "#B07AA1", "#F8CF47", "#9CDAEE", "#5785C1", "#C3BC29", "#FF9DA7", "#2B9494", "#868686", "#ACD15F", "#4CB972", "#F69647", "#EE91AC", "#9C755F", "#D7CE9B"],
-            Category9: ["#C79A6B", "#699DCF", "#868686", "#FF9DA7", "#A1CEA8", "#F69647", "#F8CF47", "#45A8A8", "#F06D69", "#9CDAEE", "#53AD87", "#EE91AC", "#ACD15F", "#DBA13A", "#BAB0AC", "#A1CEA8", "#C3BC29", "#C7F464", "#EE91AC", "#FFC107"],
-            Category10: ["#699DCF", "#F69647", "#99B2B7", "#ACD15F", "#C79A6B", "#FF9DA7", "#45A8A8", "#F8CF47", "#E15759", "#BAB0AC", "#5785C1", "#CD8C52", "#A1CEA8", "#FFAE0B", "#EE91AC", "#9CDAEE", "#B07AA1", "#868686", "#53AD87", "#CD8C52"],
-        }
 
         private showAxis: any = true;
-        private showLabel: any = false;
-
-        private connectDots: any = false;
-        private connectDotsBy: any = 'color';
-        private dumbbellSort: any = 'default';
 
         private dotRadius: any = 6;
         private circleOpacity: any = 100;
         private circlestroke: any = 1;
 
-        private orientation: any = "vertical";
+
         private fontSize: any = 11;
         private legendFontSize: any = 10;
 
         private constantLineValue: any = '';
-        private constantLineStrokeWidth:any = 1;
-        private constantLineColor:any = { solid: { color: "#000000" } };
+        private constantLineStrokeWidth: any = 1;
+        private constantLineColor: any = { solid: { color: "#000000" } };
 
-        private dumbbellLineStroke: any= 1;
-      
 
         constructor(options: VisualConstructorOptions) {
 
@@ -134,220 +142,218 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
         }
 
         public draw(options) {
-
+            
+            
             this.findAvailableMetadata(options.dataViews[0].metadata.columns);
             var chartContainer = this.element
                 .append("div")
                 .attr("class", "dotPlot")
                 .attr("style", "width:100%;");
 
-            if (this.hasAxis == false || this.hasValue == false) {
+            if (this.hasAxis == false || (this.hasBar || this.hasArea || this.hasLine || this.hasDot) == false) {
                 chartContainer.append("span").html("Axis and Value is required to draw the chart");
                 return;
             }
-
+           
             this.setProperties(options);
             var data = this.formatData(options.dataViews[0]);
             var dimension = this.getDimensions(options.viewport, data);
-
+           
             var chart = chartContainer
                 .append("svg")
                 .attr("height", dimension.height)
                 .attr("width", dimension.width)
                 .on("click", (d, i) => {
                     this.selectionManager.clear();
-                    this.circles.style("opacity", (d: any) => {
-                        d.isFiltered = false;
-                        return 1;
-                    });
                 });
 
             var chartSvg = chart.append("g")
 
             chartSvg.attr("transform", "translate(0," + 5 + ")");
-           
-            var chartLegend = chart.append("g")
+
+            var chartLegend = chart.append("g");
+
             var xScale = this.setXScale(data, dimension);
             var yScale = this.setYScale(data, dimension);
-           
+            var yRightScale = this.setRightYScale(data, dimension);
+
             this.drawXScale(xScale, chartSvg, dimension);
             this.drawYScale(yScale, chartSvg, dimension, data);
-           
-            this.drawDumbellLines(data, chartSvg, dimension, xScale, yScale);
-            this.drawCircles(xScale, yScale, chartSvg, data, dimension);
-           
-            this.drawConstantLine(yScale, chartSvg, data, dimension);
-           
+            this.drawRightYScale(yRightScale, chartSvg, dimension, data);
+
+            // this.drawCircles(xScale, yScale, chartSvg, data, dimension);
+
+            // this.drawConstantLine(yScale, chartSvg, data, dimension);
+
             this.drawLegend(chartLegend, chartSvg, dimension, data);
-           
+
             this.setFontSize(chartSvg);
-            this.drawStastics(xScale, yScale, chartSvg, data, dimension);
-          
+            // this.drawStastics(xScale, yScale, chartSvg, data, dimension);
+
         }
 
         public formatData(rawData) {
             var metadata = rawData.metadata.columns;
-            this.colorScale = d3.scale.ordinal().range(this.colorOptions[this.legendColor]);
+            var barData: any = [], lineData = [], areaData = [], dotData = [], allData = [];
 
-            var formattedData = [];
+            var leftAxisData: any = [], rightAxisData: any = [], legend: any = [], legendD: any = [];
+            var leftAxisFormat, rightAxisFormat;
+            let legendName = (this.legendName !== undefined) ? this.legendName.length > 0 ? this.legendName : this.colorTitle : this.colorTitle;
 
-            if (this.hasAxis && this.hasValue) {
+            if (this.hasAxis && ((this.hasBar || this.hasArea || this.hasLine || this.hasDot))) {
                 var xAxis = rawData.categorical.categories[0].values;
                 var xMetadata = rawData.categorical.categories[0].source;
-                var identityData = rawData.categorical.categories[0].identity;
-                var grouped = rawData.categorical.values.grouped();
 
                 if (this.axisFormat !== undefined) {
                     var axisFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.axisFormat });
                     xAxis = xAxis.map(d => { return axisFormat.format(d) });
                 }
 
-                var valFormat;
-                var sizeValues = [];
-                var valuesG = rawData.categorical.values.filter(d => d.source.roles.values);
-
-                if (this.hasSize == true) {
-                    var sizeMetadata = rawData.categorical.values.filter(d => d.source.roles.size)[0];
-
-                    var sizeG = sizeMetadata.values;
-
-                    var sizeFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: sizeMetadata.source.format });
-
-                    var sizeV = rawData.categorical.values.filter(d => d.source.roles.size);
-
+                var grouped = rawData.categorical.values.grouped();
+               
+                if (this.hasBar) {
+                    var valuesG = rawData.categorical.values.filter(d => d.source.roles.bar);
+                    barData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata);
+                    barData.map(d => {
+                        d.values.map(d => {
+                            if (this.barAxis === "left") leftAxisData.push(d.yValue.value);
+                            else rightAxisData.push(d.yValue.value);
+                        })
+                    });
                 }
-
-                if (this.hasColor) {
-
-                    var valuesMetadata = metadata.filter(d => d.roles["values"])[0].displayName;
-                    var filteredValues = valuesG.filter(d => d.source.displayName == valuesMetadata);
-
-                    if (this.colorFormat !== undefined) {
-                        var colorFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.colorFormat });
-                    }
-
-                    formattedData = filteredValues.map((d, i) => {
-                        valFormat = this.getValueFormat(d.source.format, d3.max(d.values.map(d => d)));
-
-                        let color: any = this.colorPalette.getColor(d.source.groupName).value;
-
-                        if (grouped[i].objects) color = grouped[i].objects.colorSelector.fill.solid.color;
-
-                        return {
-                            key: this.colorFormat !== undefined ? colorFormat.format(d.source.groupName) : d.source.groupName,
-                            iden: this.host.createSelectionIdBuilder().withSeries(rawData.categorical.values, rawData.categorical.values[i]).createSelectionId(),
-                            color: color,
-                            values: d.values.map((t, j) => {
-
-                                if (this.hasSize) if (sizeV[i].values[j] !== null) sizeValues.push(sizeV[i].values[j]);
-                                return {
-                                    xValue: { title: xMetadata.displayName, value: xAxis[j], caption: xAxis[j] },
-                                    yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
-                                    legend: d.source.groupName,
-                                    selectionId: this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).withSeries(rawData.categorical.values, rawData.categorical.values[i]).createSelectionId(),
-                                    color: color,
-                                    colorValue: { title: this.colorTitle, caption: d.source.groupName },
-                                    size: this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeV[i].values[j], caption: sizeFormat.format(sizeV[i].values[j]) } : null
-                                }
-                            })
-                        }
-                    })
-
+                if (this.hasArea) {
+                    var valuesG = rawData.categorical.values.filter(d => d.source.roles.area);
+                    areaData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata);
+                    areaData.map(d => {
+                        d.values.map(d => {
+                            if (this.areaAxis === "left") leftAxisData.push(d.yValue.value);
+                            else rightAxisData.push(d.yValue.value);
+                        })
+                    });
                 }
-                else {
-
-                    formattedData = valuesG.map((d, i) => {
-
-                        valFormat = this.getValueFormat(d.source.format, d3.max(d.values.map(d => d)));
-
-                        //this.colorPalette.getColor(d.source.groupName).value
-                        var color = this.colorPalette.colors[i].value;
-
-                        if (grouped[0].values[i].source.objects) {
-                            color = grouped[0].values[i].source.objects.colorSelector.fill.solid.color;
-                        }
-
-                        return {
-                            key: d.source.displayName,
-                            color: color,
-                            iden: this.host.createSelectionIdBuilder().withMeasure(d.source.queryName).createSelectionId(),
-                            values: d.values.map((t, j) => {
-                                if (this.hasSize) sizeValues.push(sizeG[j]);
-                                return {
-                                    xValue: { title: xMetadata.displayName, value: xAxis[j], caption: xAxis[j] },
-                                    yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
-                                    legend: d.source.displayName,
-                                    color: color,
-                                    selectionId: this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], j).createSelectionId(),
-                                    size: this.hasSize ? { title: sizeMetadata.source.displayName, value: sizeG[j], caption: sizeFormat.format(sizeG[j]) } : null
-                                }
-                            })
-                        }
-                    })
-
+              
+                if (this.hasLine) {
+                    var valuesG = rawData.categorical.values.filter(d => d.source.roles.line);
+                    lineData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata);
+                    lineData.map(d => {
+                        d.values.map(d => {
+                            if (this.lineAxis === "left") leftAxisData.push(d.yValue.value);
+                            else rightAxisData.push(d.yValue.value);
+                        })
+                    });
                 }
-            }
-            let legendD = formattedData.map(d => { return { key: d.key, color: d.color } });
-            let nm = (this.legendName !== undefined) ? this.legendName.length > 0 ? this.legendName : this.colorTitle : this.colorTitle;
-            if (this.hasColor) legendD.unshift({ key: nm, color: "transparent" });
+                if (this.hasDot) {
+                    var valuesG = rawData.categorical.values.filter(d => d.source.roles.dot);
+                    dotData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata);
+                    dotData.map(d => {
+                        d.values.map(d => {
+                            if (this.dotAxis === "left") leftAxisData.push(d.yValue.value);
+                            else rightAxisData.push(d.yValue.value);
+                        })
+                    });
+                }
+            };
+           
+            allData = barData.concat(lineData.concat(areaData.concat(dotData)));
+           
+            legendD = allData.map(d => { return { key: d.key, color: d.color } });
+
+            if (this.hasColor) legendD.unshift({ key: legendName, color: "transparent" });
+
+            leftAxisFormat = this.getValueFormat(this.barFormat, d3.max(leftAxisData));
+            rightAxisFormat = this.getValueFormat(this.lineFormat, d3.max(rightAxisData));
 
             var legend = this.setLegendWidth(this.element, legendD);
+           
+            return {
+                xAxis: xAxis,
+                leftAxis: { data: leftAxisData, format: leftAxisFormat },
+                rightAxis: { data: rightAxisData, format: rightAxisFormat },
+                barData: barData,
+                areaData: areaData,
+                lineData: lineData,
+                dotData: dotData,
+                legend: legend,
+            }
+        }
 
-            var retData = this.setUpAnalyticData(formattedData)
-            var yAxis = [];
+        private getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata) {
 
-            retData.map(d => {
-                d.values.map(d => {
-                    yAxis.push(d.yValue.value);
-                })
-            });
+            var formattedData = [];
 
-            if (this.showAs == "perDifference"
-                //|| this.showAs == "perDifferenceFromAverage"
-                || this.showAs == "perTotal"
-                || this.showAs == "perGrandTotal"
-                || this.showAs == "perAxisValue"
-            ) valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: "0.00 %;-0.00 %;0.00 %" });
+            if (this.hasColor) {
+                var valuesMetadata = metadata.filter(d => d.roles["bar"])[0].displayName;
+                var filteredValues = valuesG.filter(d => d.source.displayName == valuesMetadata);
 
-            var dumbellData: any = []
-
-            if (this.connectDots == true) {
-                if (this.connectDotsBy == 'axis') {
-
-                    xAxis.map((d, i) => {
-                        var t = { key: d, sortValue: 0, values: [] };
-
-                        retData.map(g => {
-                            t.values.push({
-                                xValue: d,
-                                yValue: g.values[i].yValue.value,
-                            })
-                        });
-                        t.sortValue = Math.abs(t.values[0].yValue - t.values[t.values.length - 1].yValue);
-                        dumbellData.push(t);
-                    });
-
-                    if (this.dumbbellSort == "ascending") {
-                        dumbellData.sort((a, b) => a.sortValue - b.sortValue);
-                        xAxis = dumbellData.map(d => d.key);
-                    }
-                    else if (this.dumbbellSort == "descending") {
-                        dumbellData.sort((a, b) => b.sortValue - a.sortValue);
-                        xAxis = dumbellData.map(d => d.key);
-                    }
-
-                }
-                else {
-                    dumbellData = retData;
-                }
-
-
-
+                formattedData = this.getColorData(filteredValues, grouped, rawData, xMetadata, xAxis);
 
             }
-            this.formattedData = retData;
+            else formattedData = this.getMeasureData(valuesG, grouped, rawData, xMetadata, xAxis);
 
-            return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat.format, data: retData, legend: legend, sizeValues: sizeValues, dumbellData: dumbellData }
+            var retData = this.setUpAnalyticData(formattedData)
+
+            return retData;
+        }
+
+        private getColorData(filteredValues, grouped, rawData, xMetadata, xAxis) {
+
+            if (this.colorFormat !== undefined) {
+                var colorFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.colorFormat });
+            }
+
+            return filteredValues.map((d, i) => {
+                var valFormat = this.getValueFormat(d.source.format, d3.max(d.values.map(d => d)));
+
+                let color: any = this.colorPalette.getColor(d.source.groupName).value;
+
+                if (grouped[i].objects) color = grouped[i].objects.colorSelector.fill.solid.color;
+
+                return {
+                    key: this.colorFormat !== undefined ? colorFormat.format(d.source.groupName) : d.source.groupName,
+                    iden: this.host.createSelectionIdBuilder().withSeries(rawData.categorical.values, rawData.categorical.values[i]).createSelectionId(),
+                    color: color,
+                    values: d.values.map((t, j) => {
+                        return {
+                            xValue: { title: xMetadata.displayName, value: xAxis[j], caption: xAxis[j] },
+                            yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
+                            legend: d.source.groupName,
+                            selectionId: this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).withSeries(rawData.categorical.values, rawData.categorical.values[i]).createSelectionId(),
+                            color: color,
+                            colorValue: { title: this.colorTitle, caption: d.source.groupName },
+
+                        }
+                    })
+                }
+            })
+        }
+
+        private getMeasureData(filteredValues, grouped, rawData, xMetadata, xAxis) {
+            return filteredValues.map((d, i) => {
+
+                var valFormat = this.getValueFormat(d.source.format, d3.max(d.values.map(d => d)));
+
+                var color = this.colorPalette.colors[i].value;
+
+                if (grouped[0].values[i].source.objects) {
+                    color = grouped[0].values[i].source.objects.colorSelector.fill.solid.color;
+                }
+
+                return {
+                    key: d.source.displayName,
+                    color: color,
+                    iden: this.host.createSelectionIdBuilder().withMeasure(d.source.queryName).createSelectionId(),
+                    values: d.values.map((t, j) => {
+
+                        return {
+                            xValue: { title: xMetadata.displayName, value: xAxis[j], caption: xAxis[j] },
+                            yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
+                            legend: d.source.displayName,
+                            color: color,
+                            selectionId: this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], j).createSelectionId(),
+                        }
+                    })
+                }
+            })
         }
 
         private setProperties(options) {
@@ -356,28 +362,31 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
 
                 if (options.dataViews[0].metadata.objects["Basic"]) {
                     var basic = options.dataViews[0].metadata.objects["Basic"];
-                    if (basic.dotRadius !== undefined) this.dotRadius = basic["dotRadius"];
-                    if (basic.circlestroke !== undefined) this.circlestroke = basic["circlestroke"];
-                    if (basic.circleOpacity !== undefined) this.circleOpacity = basic["circleOpacity"];
-                    if (basic.showLabel !== undefined) this.showLabel = basic["showLabel"];
-                    if (basic.connectDots !== undefined) this.connectDots = basic["connectDots"];
-                    if (basic.connectDotsBy !== undefined) this.connectDotsBy = basic["connectDotsBy"];
-                    if (basic.orientation !== undefined) this.orientation = basic["orientation"];
-                    if (basic.valFormat !== undefined) this.valFormat = basic["valFormat"];
-                    if (basic.valPrecision !== undefined) this.valPrecision = basic["valPrecision"];
-                
-
+                    if (basic.leftValFormat !== undefined) this.leftValFormat = basic["leftValFormat"];
+                    if (basic.leftValPrecision !== undefined) this.leftValPrecision = basic["leftValPrecision"];
+                    if (basic.rightValFormat !== undefined) this.rightValFormat = basic["rightValFormat"];
+                    if (basic.rightValPrecision !== undefined) this.rightValPrecision = basic["rightValPrecision"];
                 }
-                if (options.dataViews[0].metadata.objects["Dumbbell"]) {
-                    var dumbbell = options.dataViews[0].metadata.objects["Dumbbell"];
-                    if (dumbbell.connectDots !== undefined) this.connectDots = dumbbell["connectDots"];
-                    if (dumbbell.connectDotsBy !== undefined) this.connectDotsBy = dumbbell["connectDotsBy"];
-                    if (dumbbell.dumbbellSort !== undefined) this.dumbbellSort = dumbbell["dumbbellSort"];
-                    if (dumbbell.dumbbellLineStroke !== undefined) this.dumbbellLineStroke = dumbbell["dumbbellLineStroke"];
-                    
+                if (options.dataViews[0].metadata.objects["Bar"]) {
+                    var bar = options.dataViews[0].metadata.objects["Bar"];
+                    if (bar.showLabel !== undefined) this.showBarLabel = bar["showLabel"];
+                    if (bar.axis !== undefined) this.barAxis = bar["axis"];
                 }
-
-
+                if (options.dataViews[0].metadata.objects["Area"]) {
+                    var area = options.dataViews[0].metadata.objects["Area"];
+                    if (area.showLabel !== undefined) this.showAreaLabel = area["showLabel"];
+                    if (area.axis !== undefined) this.areaAxis = area["axis"];
+                }
+                if (options.dataViews[0].metadata.objects["Line"]) {
+                    var line = options.dataViews[0].metadata.objects["Line"];
+                    if (line.showLabel !== undefined) this.showLineLabel = line["showLabel"];
+                    if (line.axis !== undefined) this.lineAxis = line["axis"];
+                }
+                if (options.dataViews[0].metadata.objects["Dot"]) {
+                    var dot = options.dataViews[0].metadata.objects["Dot"];
+                    if (dot.showLabel !== undefined) this.showDotLabel = dot["showLabel"];
+                    if (dot.axis !== undefined) this.dotAxis = dot["axis"];
+                }
                 if (options.dataViews[0].metadata.objects["Legend"]) {
                     var legend = options.dataViews[0].metadata.objects["Legend"];
                     if (legend.legendPosition !== undefined) this.legendPosition = legend["legendPosition"];
@@ -389,7 +398,6 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
                 if (options.dataViews[0].metadata.objects["Axis"]) {
                     var axis = options.dataViews[0].metadata.objects["Axis"];
                     if (axis.showAxis !== undefined) this.showAxis = axis["showAxis"];
-                    if (axis.showLabel !== undefined) this.showLabel = axis["showLabel"];
                     if (axis.fontSize !== undefined) this.fontSize = axis["fontSize"];
                     if (axis.yAxisMinValue !== undefined) this.yAxisMinValue = axis["yAxisMinValue"];
                 }
@@ -419,10 +427,12 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
         }
 
         private findAvailableMetadata(metadata) {
-            this.hasValue = false;
+            this.hasBar = false;
+            this.hasArea = false;
+            this.hasLine = false;
+            this.hasDot = false;
             this.hasColor = false;
             this.hasAxis = false;
-            this.hasSize = false;
 
             metadata.map((d, i) => {
                 if (d.roles["axis"]) {
@@ -434,60 +444,57 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
                     this.colorFormat = d.format;
                     this.colorTitle = d.displayName;
                 }
-                if (d.roles["values"]) {
-                    this.hasValue = true;
+                if (d.roles["bar"]) {
+                    this.hasBar = true;
+                    this.barFormat = d.format;
                 }
-                if (d.roles["size"]) {
-                    this.hasSize = true;
+                if (d.roles["area"]) {
+                    this.hasArea = true;
+                    this.areaFormat = d.format;
+                }
+                if (d.roles["line"]) {
+                    this.hasLine = true;
+                    this.lineFormat = d.format;
+                }
+                if (d.roles["dot"]) {
+                    this.hasDot = true;
+                    this.dotFormat = d.format;
                 }
             });
-
-
-
         }
 
         private getDimensions(vp, data) {
             let xlegendOffset = 0;
             let ylegendOffset = 0;
+            let yRightOff = 0;
 
             if (this.legendPosition == "right") ylegendOffset = d3.max(data.legend.map(d => d.width)) + (4 * this.legendFontSize);
             if (this.legendPosition == "top" || this.legendPosition === "bottom") xlegendOffset = this.legendFontSize * 3;
-
+           
             let xdata = data.xAxis;
             let xDomain = d3.scale.ordinal().domain(xdata).domain();
 
-            let xT: any = this.axisLabelArray(xDomain.slice(0), (vp.width - this.getYOffset(data) - ylegendOffset), this.element, this.orientation);
+            let yOff = this.getYOffset(data);
+            yRightOff = this.getYRightOffset(data);
+          
+            let xT: any = this.axisLabelArray(xDomain.slice(0), (vp.width - yOff - ylegendOffset), this.element, "vertical");
 
             let xOffset, yOffset, chartWidth, chartHeight, xFilter, xTickval;
-            if (this.orientation == 'vertical') {
-                xOffset = xT.Space + 20;
-                if (xOffset > vp.height / 4) xOffset = vp.height / 4 > 100 ? 100 : vp.height / 4;
-                yOffset = this.getYOffset(data);
-                chartWidth = vp.width - yOffset - ylegendOffset;
-                chartHeight = vp.height - xOffset - xlegendOffset;
-                xFilter = (xT.Rotate === true) ? (chartWidth / xDomain.length < 12 ? (Math.ceil(xDomain.length / chartWidth * 20)) : 1) : 1;
-                xTickval = xDomain.filter((d, i) => (i % xFilter === 0));
-
-            }
-            else {
-
-                yOffset = xT.Space + 15;
-                if (yOffset > vp.width / 4) yOffset = vp.width / 4 > 100 ? 100 : vp.width / 4;
-                xOffset = 30;
-                chartWidth = vp.width - yOffset - ylegendOffset;
-                chartHeight = vp.height - xOffset - xlegendOffset;
-                xFilter = chartHeight / xDomain.length < this.fontSize ? Math.round((xDomain.length / chartHeight * 20)) : 1;
-                xTickval = xDomain.filter((d, i) => (i % xFilter === 0));
-
-
-            }
-
-
+           
+            xOffset = xT.Space + 20;
+            if (xOffset > vp.height / 4) xOffset = vp.height / 4 > 100 ? 100 : vp.height / 4;
+            yOffset = yOff;
+            chartWidth = vp.width - yOffset - ylegendOffset - yRightOff;
+            chartHeight = vp.height - xOffset - xlegendOffset;
+            xFilter = (xT.Rotate === true) ? (chartWidth / xDomain.length < 12 ? (Math.ceil(xDomain.length / chartWidth * 20)) : 1) : 1;
+            xTickval = xDomain.filter((d, i) => (i % xFilter === 0));
+           
             return {
                 width: vp.width,
                 height: vp.height,
                 xOffset: xOffset,
                 yOffset: yOffset,
+                yRightOff: yRightOff,
                 chartWidth: chartWidth,
                 chartHeight: chartHeight,
                 xRotate: xT.Rotate,
@@ -496,52 +503,53 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
         }
 
         private setXScale(data, dimension) {
-            let rg = this.orientation == 'vertical' ? dimension.chartWidth : dimension.chartHeight;
-            var scale = d3.scale.ordinal().rangeBands([0, rg]).domain(data.xAxis);
+            var scale = d3.scale.ordinal()
+                .rangeBands([0, dimension.chartWidth])
+                .domain(data.xAxis);
+
             return scale;
         }
 
         private setYScale(data, dimension) {
-            let yDomain = data.yAxis;
+            let yDomain = data.leftAxis.data;
 
             let valueDomain = this.setValueDomain(d3.min(yDomain), d3.max(yDomain));
-            let rg = this.orientation == 'vertical' ? dimension.chartHeight : dimension.chartWidth;
-            let rng = this.orientation == 'vertical' ? [rg, 0] : [0, rg];
 
             let scale = d3.scale.linear()
-                .range(rng)
+                .range([dimension.chartHeight, 0])
+                .domain([valueDomain.Min, valueDomain.Max]);
+
+            return scale;
+        }
+
+        private setRightYScale(data, dimension) {
+            let yDomain = data.rightAxis.data;
+
+            let valueDomain = this.setValueDomain(d3.min(yDomain), d3.max(yDomain));
+
+            let scale = d3.scale.linear()
+                .range([dimension.chartHeight, 0])
                 .domain([valueDomain.Min, valueDomain.Max]);
 
             return scale;
         }
 
         private drawXScale(xScale, chartSvg, dimension) {
-            let direction = this.orientation == 'vertical' ? "bottom" : "left";
-
-            let translate = this.orientation == 'vertical' ?
-                "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight) + ")" :
-                "translate(" + (dimension.yOffset) + "," + 0 + ")";
 
             var xaxis = d3.svg.axis()
                 .scale(xScale)
-                .orient(direction)
+                .orient("bottom")
                 .tickValues(dimension.xTickval);
 
             var xAxisG = chartSvg
                 .append("g")
-                .attr("transform", translate)
+                .attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight) + ")")
                 .attr("class", "axis")
                 .call(xaxis)
 
             xAxisG.selectAll("text").text(d => {
-                if (this.orientation == 'vertical') {
-                    if (this.getTextWidth(chartSvg, d, this.fontSize) > dimension.xOffset - this.fontSize && dimension.xRotate == true) return (d.substring(0, Math.floor(dimension.xOffset / (this.fontSize / 2))) + "..");
-                    else return d;
-                }
-                else {
-                    if (this.getTextWidth(chartSvg, d, this.fontSize) > dimension.yOffset - this.fontSize) return (d.substring(0, Math.floor(dimension.yOffset / (this.fontSize / 1.6))) + "..");
-                    else return d;
-                }
+                if (this.getTextWidth(chartSvg, d, this.fontSize) > dimension.xOffset - this.fontSize && dimension.xRotate == true) return (d.substring(0, Math.floor(dimension.xOffset / (this.fontSize / 2))) + "..");
+                else return d;
             })
                 .attr("fill", "rgb(119, 119, 119)")
                 .append("title")
@@ -565,22 +573,35 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
         }
 
         private drawYScale(yScale, chartSvg, dimension, data) {
-            var self = this;
-            let direction = this.orientation == 'vertical' ? "left" : "bottom";
-            let translate = this.orientation == 'vertical' ?
-                "translate(" + (dimension.yOffset) + "," + (0) + ")" :
-                "translate(" + (dimension.yOffset) + "," + dimension.chartHeight + ")";
 
             var yaxis = d3.svg.axis()
                 .scale(yScale)
-                .orient(direction)
+                .orient("left")
                 .ticks(5)
-                .tickFormat(data.yFormat);
+                .tickFormat(data.leftAxis.format.format);
 
             var yAxisG = chartSvg
                 .append("g")
                 .attr("fill", "rgb(119, 119, 119)")
-                .attr("transform", translate)
+                .attr("transform", "translate(" + (dimension.yOffset) + "," + (0) + ")")
+                .attr("class", "axis")
+                .call(yaxis);
+
+            yAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
+        }
+
+        private drawRightYScale(yScale, chartSvg, dimension, data) {
+
+            var yaxis = d3.svg.axis()
+                .scale(yScale)
+                .orient("right")
+                .ticks(5)
+                .tickFormat(data.rightAxis.format.format);
+
+            var yAxisG = chartSvg
+                .append("g")
+                .attr("fill", "rgb(119, 119, 119)")
+                .attr("transform", "translate(" + (dimension.yOffset + dimension.chartWidth) + "," + (0) + ")")
                 .attr("class", "axis")
                 .call(yaxis);
 
@@ -596,26 +617,18 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
                 .enter()
                 .append("g")
 
-            var circle = this.circles = circleG.selectAll(".dots")
+            var circle = circleG.selectAll(".dots")
                 .data(d => d.values.filter(d => d.yValue.value !== null))
                 .enter()
                 .append("circle");
 
-            if (this.orientation == 'vertical') {
 
-                circleG.attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+            circleG.attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
 
-                circle
-                    .attr("cx", d => xScale(d.xValue.value))
-                    .attr("cy", d => yScale(d.yValue.value))
-            }
-            else {
-                circleG.attr("transform", "translate(0," + (xScale.rangeBand() / 2) + ")");
+            circle
+                .attr("cx", d => xScale(d.xValue.value))
+                .attr("cy", d => yScale(d.yValue.value))
 
-                circle
-                    .attr("cy", d => xScale(d.xValue.value))
-                    .attr("cx", d => dimension.yOffset + yScale(d.yValue.value))
-            }
 
             circle
                 .attr("r", this.dotRadius)
@@ -633,45 +646,26 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
                 this.setFilterOpacity(circle);
                 (<Event>d3.event).stopPropagation();
             });
-           
-            if (this.showLabel == true) {
-                var text = circleG.selectAll(".dotText")
-                    .data(d => d.values.filter(d => d.yValue.value !== null))
-                    .enter()
-                    .append("text");
 
 
-                text.text(d => d.yValue.caption)
+            var text = circleG.selectAll(".dotText")
+                .data(d => d.values.filter(d => d.yValue.value !== null))
+                .enter()
+                .append("text");
 
 
-                if (this.orientation == 'vertical') {
-
-                    text.attr("x", d => xScale(d.xValue.value) + 2)
-                        .attr("dx", this.dotRadius)
-                        .attr("dy", this.dotRadius / 2)
-                        .attr("y", d => yScale(d.yValue.value))
-                }
-                else {
-                    text.attr("y", d => xScale(d.xValue.value) + 2)
-                        .attr("dy", -this.dotRadius * 2)
-                        .style("text-anchor", "middle")
-                        .attr("x", d => dimension.yOffset + yScale(d.yValue.value))
-                }
+            text.text(d => d.yValue.caption)
 
 
-            }
 
-            if (this.hasSize) {
 
-                var sizeScale = d3.scale.linear()
-                    .range([this.dotRadius, d3.min([25, (5 * this.dotRadius)])])
-                    .domain([d3.min(data.sizeValues), d3.max(data.sizeValues)]);
+            text.attr("x", d => xScale(d.xValue.value) + 2)
+                .attr("dx", this.dotRadius)
+                .attr("dy", this.dotRadius / 2)
+                .attr("y", d => yScale(d.yValue.value))
 
-                circle.attr("r", d => {
-                    return d.size.value !== null ? sizeScale(Math.abs(d.size.value)) : 0
-                });
 
-            }
+
 
             this.tooltipServiceWrapper.addTooltip(circle,
                 (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
@@ -684,23 +678,12 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
             if (this.constantLineValue.length > 0) {
                 var constLine = this.constantLineValue;
 
-
-                if (this.orientation == 'vertical') {
-                    var constantLine = chartSvg.append("line")
-                        .attr("x1", dimension.yOffset)
-                        .attr("x2", dimension.yOffset + dimension.chartWidth)
-                        .attr("y1", yScale(constLine))
-                        .attr("y2", yScale(constLine))
-                }
-                else {
-                    var constantLine = chartSvg.append("line")
-                        .attr("y1", 0)
-                        .attr("y2", dimension.chartHeight)
-                        .attr("x1", dimension.yOffset + yScale(constLine))
-                        .attr("x2", dimension.yOffset + yScale(constLine))
-                }
-
-                constantLine.style("stroke", this.constantLineColor.solid.color)
+                var constantLine = chartSvg.append("line")
+                    .attr("x1", dimension.yOffset)
+                    .attr("x2", dimension.yOffset + dimension.chartWidth)
+                    .attr("y1", yScale(constLine))
+                    .attr("y2", yScale(constLine))
+                    .style("stroke", this.constantLineColor.solid.color)
                     .style("stroke-width", this.constantLineStrokeWidth + "px");
             }
         }
@@ -723,7 +706,7 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
 
         private drawLegend(chartLegend, chartSvg, dimension, data) {
             if (this.legendPosition == "right") {
-                chartLegend.attr("transform", "translate(" + (dimension.chartWidth + dimension.yOffset + (this.legendFontSize * 2)) + "," + (5) + ")");
+                chartLegend.attr("transform", "translate(" + (dimension.chartWidth + dimension.yOffset + dimension.yRightOff + (this.legendFontSize * 2)) + "," + (5) + ")");
             }
             if (this.legendPosition == "top") {
                 chartSvg.attr("transform", "translate(0," + this.legendFontSize * 3 + ")");
@@ -786,12 +769,6 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
                 value: data.yValue.caption,
             });
 
-            if (this.hasSize === true) {
-                retData.push({
-                    displayName: data.size.title,
-                    value: data.size.caption,
-                });
-            }
             if (this.hasColor === true) {
                 retData.push({
                     displayName: data.colorValue.title,
@@ -943,17 +920,6 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
                 }
             });
 
-            if (orientation === "Horizontal") {
-                var spans = text.selectAll("tspan")._groups[0];
-                var margin = spans.length > 1 ? (spans.length / 2) * 8 : 0.5;
-                text.selectAll("tspan").attr("y", text.selectAll("tspan").attr("y") - margin);
-            }
-            if (orientation === "HeatVertical") {
-                var spans = text.selectAll("tspan")._groups[0];
-                var margin = spans.length > 1 ? (spans.length) * 8 : 0;
-                text.selectAll("tspan").attr("y", text.selectAll("tspan").attr("y") - margin);
-            }
-
             if (alignment !== undefined) {
                 var textAnchor = alignment === "Right" ? "end" : "start";
                 if (alignment === "middle") textAnchor = "middle";
@@ -972,7 +938,7 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
             let valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
             let iValueFormatter = valueFormatter.create({});
             let valF = null;
-            switch (this.valFormat) {
+            switch (this.leftValFormat) {
                 case 'thousand':
                     valF = 1001;
                     break;
@@ -989,19 +955,25 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
                     valF = max;
                     break;
                 case 'none':
-                    return { format: d3.format(",." + this.valPrecision + "f") }
+                    return { format: d3.format(",." + this.leftValPrecision + "f") }
             }
 
-            iValueFormatter = valueFormatter.create({ format: val, value: valF, precision: this.valPrecision });
+            iValueFormatter = valueFormatter.create({ format: val, value: valF, precision: this.leftValPrecision });
 
             return iValueFormatter;
         }
 
         private getYOffset(data) {
+           
+            let max = d3.max(data.leftAxis.data);
+            return 2 + (data.leftAxis.format.format(max).length + 1) * this.fontSize / 1.5;
+        }
 
-            let max = d3.max(data.yAxis);
+        private getYRightOffset(data) {
 
-            return 2 + (data.yFormat(max).length + 1) * this.fontSize / 1.5;
+            let max = d3.max(data.rightAxis.data);
+            console.log(data.rightAxis.format.format(max));
+            return 2 + (data.rightAxis.format.format(max).length + 1) * this.fontSize / 1.5;
         }
 
         private setValueDomain = function (Min, Max) {
@@ -1034,49 +1006,9 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
             return domain;
         };
 
-        private drawDumbellLines(data, chartSvg, dimension, xScale, yScale) {
-
-            if (this.connectDots == true) {
-                var line: any;
-                line = d3.svg.line();
-
-                var dumbellG = chartSvg.selectAll(".dots")
-                    .data(data.dumbellData)
-                    .enter()
-                    .append("g")
-
-                if (this.orientation == 'vertical') {
-                    line
-                        .y((d: any) => yScale(this.connectDotsBy == 'axis' ? d.yValue : d.yValue.value))
-                        .x((d: any) => xScale(this.connectDotsBy == 'axis' ? d.xValue : d.xValue.value));
-
-                    dumbellG.attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
-
-                }
-                else {
-                    line
-                        .x((d: any) => yScale(this.connectDotsBy == 'axis' ? d.yValue : d.yValue.value))
-                        .y((d: any) => xScale(this.connectDotsBy == 'axis' ? d.xValue : d.xValue.value));
-
-                    dumbellG.attr("transform", "translate(" + dimension.yOffset + "," + (xScale.rangeBand() / 2) + ")");
-
-                }
-
-                var dumbell = dumbellG.append("path")
-                    .attr("style", "fill:none;")
-                    .style("stroke", "#b3b3b3")
-                    .attr("stroke-width", this.dumbbellLineStroke + "px")
-                    .attr("d", d => line(d.values));
-
-                if (this.connectDotsBy === "color") dumbell.style("stroke", d => d.color)
-            }
-
-
-        };
-
         private setUpAnalyticData(data) {
             var retData;
-            var cdata = JSON.parse(JSON.stringify(data)); 
+            var cdata = JSON.parse(JSON.stringify(data));
             switch (this.showAs) {
 
                 case "runningTotal":
@@ -1158,16 +1090,16 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
 
                 case "perAxisValue":
                     var axisTotalValue;
-                   
+
                     retData = cdata.map(function (d, j) {
                         d.values.map(function (d, i) {
-                           
+
                             axisTotalValue = d3.sum(data.map(function (d) {
                                 return d.values[i].yValue.value
                             }));
-                           
+
                             if (d.yValue.value !== null) d.yValue.value = d.yValue.value / axisTotalValue;
-                          
+
                         });
                         return d;
                     });
@@ -1229,13 +1161,13 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
                 let mean = d3.mean(data.yAxis);
                 statData.push({
                     title: 'Mean:' + data.yFormat(mean),
-                    x: this.orientation === 'vertical' ? dimension.yOffset : dimension.yOffset + yScale(mean),
-                    y: this.orientation === 'vertical' ? yScale(mean) : 0,
-                    dx: this.orientation === 'vertical' ? dimension.chartWidth - 5 : 5,
-                    dy: this.orientation === 'vertical' ? -5 : 15,
+                    x: dimension.yOffset,
+                    y: yScale(mean),
+                    dx: dimension.chartWidth - 5,
+                    dy: -5,
                     color: "#ff6f69",
-                    width: this.orientation === 'vertical' ? dimension.chartWidth : 2,
-                    height: this.orientation === 'vertical' ? 2 : dimension.chartHeight,
+                    width: dimension.chartWidth,
+                    height: 2,
                 })
             }
 
@@ -1243,13 +1175,13 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
                 let median = d3.median(data.yAxis);
                 statData.push({
                     title: 'Median:' + data.yFormat(median),
-                    x: this.orientation === 'vertical' ? dimension.yOffset : dimension.yOffset + yScale(median),
-                    y: this.orientation === 'vertical' ? yScale(median) : 0,
-                    dx: this.orientation === 'vertical' ? dimension.chartWidth - 5 : 5,
-                    dy: this.orientation === 'vertical' ? -5 : dimension.chartHeight / 2,
+                    x: dimension.yOffset,
+                    y: yScale(median),
+                    dx: dimension.chartWidth - 5,
+                    dy: -5,
                     color: "#010c0e",
-                    width: this.orientation === 'vertical' ? dimension.chartWidth : 2,
-                    height: this.orientation === 'vertical' ? 2 : dimension.chartHeight,
+                    width: dimension.chartWidth,
+                    height: 2,
                 })
             }
 
@@ -1257,13 +1189,13 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
                 let mode = data.yAxis[Math.ceil(data.yAxis.length / 2)];
                 statData.push({
                     title: 'Mode:' + data.yFormat(mode),
-                    x: this.orientation === 'vertical' ? dimension.yOffset : dimension.yOffset + yScale(mode),
-                    y: this.orientation === 'vertical' ? yScale(mode) : 0,
-                    dx: this.orientation === 'vertical' ? dimension.chartWidth - 5 : 5,
-                    dy: this.orientation === 'vertical' ? -5 : dimension.chartHeight - 15,
+                    x: dimension.yOffset,
+                    y: yScale(mode),
+                    dx: dimension.chartWidth - 5,
+                    dy: -5,
                     color: "#74002f",
-                    width: this.orientation === 'vertical' ? dimension.chartWidth : 2,
-                    height: this.orientation === 'vertical' ? 2 : dimension.chartHeight,
+                    width: dimension.chartWidth,
+                    height: 2,
                 })
             }
 
@@ -1281,7 +1213,7 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
 
             statG.append("text")
                 .style("fill", d => d.color)
-                .style("text-anchor", this.orientation === 'vertical' ? "end" : "start")
+                .style("text-anchor", "end")
                 .attr("x", d => d.x)
                 .attr("y", d => d.y)
                 .attr("dx", d => d.dx)
@@ -1387,20 +1319,12 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
                 .append("line")
                 .attr("class", "regression-line");
 
-            if (this.orientation === 'vertical') {
-                trendLine
-                    .attr("x1", d => xScale(d[0]) + dimension.yOffset)
-                    .attr("y1", d => yScale(d[1]))
-                    .attr("x2", d => xScale(d[2]) + dimension.yOffset + (xScale.rangeBand()))
-                    .attr("y2", d => yScale(d[3]));
-            }
-            else {
-                trendLine
-                    .attr("y1", d => xScale(d[0]))
-                    .attr("x1", d => yScale(d[1]) + dimension.yOffset)
-                    .attr("y2", d => xScale(d[2]) + (xScale.rangeBand()))
-                    .attr("x2", d => yScale(d[3]) + dimension.yOffset);
-            }
+            trendLine
+                .attr("x1", d => xScale(d[0]) + dimension.yOffset)
+                .attr("y1", d => yScale(d[1]))
+                .attr("x2", d => xScale(d[2]) + dimension.yOffset + (xScale.rangeBand()))
+                .attr("y2", d => yScale(d[3]));
+
 
             trendLine.style("stroke", "#000")
                 .style("stroke-width", 3)
@@ -1418,19 +1342,10 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
 
             var expExpRegressionLineData = this.getExponentialRegressionLine(ySeries, '').data;
 
-            if (this.orientation === 'vertical') {
-
-                var expExpRegressionLine = d3.svg.line()
-                    .x((d, i) => { return xScale(xSeries[i]) + dimension.yOffset; })
-                    .y(d => yScale(d[1]))
-                    .interpolate('monotone');
-            }
-            else {
-                var expExpRegressionLine = d3.svg.line()
-                    .y((d, i) => { return xScale(xSeries[i]); })
-                    .x(d => yScale(d[1]) + dimension.yOffset)
-                    .interpolate('monotone');
-            }
+            var expExpRegressionLine = d3.svg.line()
+                .x((d, i) => { return xScale(xSeries[i]) + dimension.yOffset; })
+                .y(d => yScale(d[1]))
+                .interpolate('monotone');
 
             chartSvg.append("path")
                 .attr("fill", "none")
@@ -1448,19 +1363,10 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
             var expExpSmoothLine;
             var expExpSmoothLineData = this.getExponentialSmoothingLine(ySeries, ySeries.length);
 
-            if (this.orientation === 'vertical') {
-
-                expExpSmoothLine = d3.svg.line()
-                    .x((d, i) => xScale(xSeries[i]) + dimension.yOffset)
-                    .y(d => yScale(d))
-                    .interpolate('monotone');
-            }
-            else {
-                expExpSmoothLine = d3.svg.line()
-                    .y((d, i) => { return xScale(xSeries[i]); })
-                    .x((d, i) => { return yScale(d) + dimension.yOffset; })
-                    .interpolate('monotone');
-            }
+            expExpSmoothLine = d3.svg.line()
+                .x((d, i) => xScale(xSeries[i]) + dimension.yOffset)
+                .y(d => yScale(d))
+                .interpolate('monotone');
 
             chartSvg.append("path")
                 .attr("fill", "none")
@@ -1469,7 +1375,6 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
                 .style("stroke-dasharray", "3,3")
                 .attr("class", "ExponentialSmoothingLine")
                 .attr("d", expExpSmoothLine(expExpSmoothLineData.slice(0, -1)));
-
         }
 
         private getYSeries(data, xScale) {
@@ -1632,88 +1537,41 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
 
             let stdDevGText = stdDevG.append("text").style("fill", "#000000");
 
+            var upper = yScale(mean - sd) > yScale.range()[0] ? yScale.range()[0] : yScale(mean - sd);
+            var lower = yScale(mean + sd) < yScale.range()[1] ? yScale.range()[1] : yScale(mean + sd);
 
-            if (this.orientation === "vertical") {
+            stdDevGMeanLine
+                .attr("x", dimension.yOffset)
+                .attr("width", dimension.chartWidth)
+                .attr("height", 2)
+                .attr("y", yScale(mean));
 
-                var upper = yScale(mean - sd) > yScale.range()[0] ? yScale.range()[0] : yScale(mean - sd);
-                var lower = yScale(mean + sd) < yScale.range()[1] ? yScale.range()[1] : yScale(mean + sd);
+            stdDevGRect
+                .attr("x", dimension.yOffset)
+                .attr("width", dimension.chartWidth)
+                .attr("y", lower)
+                .attr("height", upper - lower)
 
-                stdDevGMeanLine
-                    .attr("x", dimension.yOffset)
-                    .attr("width", dimension.chartWidth)
-                    .attr("height", 2)
-                    .attr("y", yScale(mean));
+            stdDevGText
+                .attr("y", yScale(mean) - 5)
+                .append("tspan")
+                .attr("x", dimension.yOffset + 5)
+                .text("Std dev: " + format(sd));
 
-                stdDevGRect
-                    .attr("x", dimension.yOffset)
-                    .attr("width", dimension.chartWidth)
-                    .attr("y", lower)
-                    .attr("height", upper - lower)
+            stdDevGText.append("tspan")
+                .attr("text-anchor", "end")
+                .attr("x", dimension.chartWidth + dimension.yOffset - 5)
+                .text("Mean + Std dev: " + format(mean + sd));
 
-                stdDevGText
-                    .attr("y", yScale(mean) - 5)
-                    .append("tspan")
-                    .attr("x", dimension.yOffset + 5)
-                    .text("Std dev: " + format(sd));
+            stdDevGText.append("tspan")
+                .attr("x", dimension.yOffset + 5)
+                .attr("dy", 20)
+                .text("Mean: " + format(mean));
 
-                stdDevGText.append("tspan")
-                    .attr("text-anchor", "end")
-                    .attr("x", dimension.chartWidth + dimension.yOffset - 5)
-                    .text("Mean + Std dev: " + format(mean + sd));
-
-                stdDevGText.append("tspan")
-                    .attr("x", dimension.yOffset + 5)
-                    .attr("dy", 20)
-                    .text("Mean: " + format(mean));
-
-                stdDevGText.append("tspan")
-                    .attr("x", dimension.chartWidth + dimension.yOffset - 5)
-                    .attr("text-anchor", "end")
-                    .text("Mean - Std dev: " + format(mean - sd));
-            }
-            else {
-
-                var lower = yScale(mean - sd) < yScale.range()[0] ? yScale.range()[0] : yScale(mean - sd);
-                var upper = yScale(mean + sd) > yScale.range()[1] ? yScale.range()[1] : yScale(mean + sd);
-
-                stdDevGMeanLine
-                    .attr("width", 2)
-                    .attr("height", dimension.chartHeight - dimension.xOffset)
-                    .attr("x", yScale(mean) + dimension.yOffset);
-
-                stdDevGRect
-                    .attr("height", dimension.chartHeight - dimension.xOffset)
-                    .attr("x", lower + dimension.yOffset)
-                    .attr("width", Math.abs(upper - lower))
-
-                var xpos = yScale(mean) + dimension.xOffset + 5;
-
-                stdDevGText
-                    .attr("y", 15)
-                    .append("tspan")
-                    .attr("x", xpos)
-                    .text("Std dev: " + format(sd));
-
-                stdDevGText.append("tspan")
-                    .attr("dy", 15)
-                    .attr("x", xpos)
-                    .text("Mean + Std dev: " + format(mean + sd));
-
-                stdDevGText.append("tspan")
-                    .attr("x", xpos)
-                    .attr("dy", 15)
-                    .text("Mean: " + format(mean));
-
-                stdDevGText.append("tspan")
-                    .attr("dy", 15)
-                    .attr("x", xpos)
-                    .text("Mean - Std dev: " + format(mean - sd));
-            }
-
-
-
-
-
+            stdDevGText.append("tspan")
+                .attr("x", dimension.chartWidth + dimension.yOffset - 5)
+                .attr("text-anchor", "end")
+                .text("Mean - Std dev: " + format(mean - sd));
         }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {
@@ -1724,15 +1582,30 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
             switch (objectName) {
 
                 case 'Basic':
-                    objectEnumeration.push({ objectName: objectName, properties: { orientation: this.orientation }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { circlestroke: this.circlestroke }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { valFormat: this.valFormat }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { constantLineValue: this.constantLineValue }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { leftValFormat: this.leftValFormat }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { leftValPrecision: this.leftValPrecision }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { rightValFormat: this.rightValFormat }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { rightValPrecision: this.rightValPrecision }, selector: null });
+                    break;
 
+                case 'Bar':
+                    objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showBarLabel }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { axis: this.barAxis }, selector: null });
+                    break;
+
+                case 'Area':
+                    objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showAreaLabel }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { axis: this.areaAxis }, selector: null });
+                    break;
+
+                case 'Line':
+                    objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLineLabel }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { axis: this.lineAxis }, selector: null });
+                    break;
+
+                case 'Dot':
+                    objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showDotLabel }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { axis: this.dotAxis }, selector: null });
                     break;
 
                 case 'colorSelector':
@@ -1753,16 +1626,7 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
                     }
                     break;
 
-                case 'Dumbbell':
-                    objectEnumeration.push({ objectName: objectName, properties: { connectDots: this.connectDots }, selector: null });
-                    if (this.connectDots == true) {
-                        objectEnumeration.push({ objectName: objectName, properties: { connectDotsBy: this.connectDotsBy }, selector: null });
-                        if (this.connectDotsBy == "axis") objectEnumeration.push({ objectName: objectName, properties: { dumbbellSort: this.dumbbellSort }, selector: null });
-                        objectEnumeration.push({ objectName: objectName, properties: { dumbbellLineStroke: this.dumbbellLineStroke }, selector: null });
 
-                        
-                    }
-                    break;
                 case 'Legend':
 
                     objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });

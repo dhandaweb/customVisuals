@@ -1,4 +1,4 @@
-module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
+module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
     export interface TooltipEventArgs<TData> {
         data: TData;

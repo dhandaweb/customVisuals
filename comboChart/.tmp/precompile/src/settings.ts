@@ -24,7 +24,7 @@
  *  THE SOFTWARE.
  */
 
-module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
+module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
     "use strict";
 
     import DataViewObjectsParser = powerbi.extensibility.utils.dataview.DataViewObjectsParser;

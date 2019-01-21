@@ -10381,8 +10381,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.dotPlotD9885417F9AAF5BB8D45B007E = {
-                name: 'dotPlotD9885417F9AAF5BB8D45B007E',
+            plugins.dotPlotD9885417F9AAF5BB8D45B007E_DEBUG = {
+                name: 'dotPlotD9885417F9AAF5BB8D45B007E_DEBUG',
                 displayName: 'DotPlot',
                 class: 'Visual',
                 version: '1.0.0',
