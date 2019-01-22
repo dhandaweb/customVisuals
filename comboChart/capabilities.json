@@ -100,10 +100,26 @@
                     "group": {
                         "by": "color",
                         "select": [
-                            { "bind": { "to": "bar" } },
-                            { "bind": { "to": "area" } },
-                            { "bind": { "to": "line" } },
-                            { "bind": { "to": "dot" } }
+                            {
+                                "bind": {
+                                    "to": "bar"
+                                }
+                            },
+                            {
+                                "bind": {
+                                    "to": "area"
+                                }
+                            },
+                            {
+                                "bind": {
+                                    "to": "line"
+                                }
+                            },
+                            {
+                                "bind": {
+                                    "to": "dot"
+                                }
+                            }
                         ]
                     }
                 }
@@ -265,7 +281,9 @@
             "properties": {
                 "showLabel": {
                     "displayName": "Data Labels",
-                    "type": { "bool": true }
+                    "type": {
+                        "bool": true
+                    }
                 },
                 "axis": {
                     "displayName": "Axis",
@@ -289,7 +307,23 @@
             "properties": {
                 "showLabel": {
                     "displayName": "Data Labels",
-                    "type": { "bool": true }
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "showAreaDots": {
+                    "displayName": "Show area dots",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "areaDotRadius": {
+                    "displayName": "Area dot radius",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
                 },
                 "axis": {
                     "displayName": "Axis",
@@ -313,7 +347,23 @@
             "properties": {
                 "showLabel": {
                     "displayName": "Data Labels",
-                    "type": { "bool": true }
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "showLineDots": {
+                    "displayName": "Show line dots",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "lineDotRadius": {
+                    "displayName": "Line dot radius",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
                 },
                 "axis": {
                     "displayName": "Axis",
@@ -337,7 +387,9 @@
             "properties": {
                 "showLabel": {
                     "displayName": "Data Labels",
-                    "type": { "bool": true }
+                    "type": {
+                        "bool": true
+                    }
                 },
                 "axis": {
                     "displayName": "Axis",
@@ -352,6 +404,30 @@
                                 "displayName": "Right"
                             }
                         ]
+                    }
+                },
+                "dotRadius": {
+                    "displayName": "Dot radius",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                },
+                "circleOpacity": {
+                    "displayName": "Circle Opacity",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                },
+                "circlestroke": {
+                    "displayName": "Circle Stroke",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
                     }
                 }
             }
@@ -376,7 +452,9 @@
             "properties": {
                 "yAxisMinValue": {
                     "displayName": "Y Axis Start From Min Value",
-                    "type": { "bool": true }
+                    "type": {
+                        "bool": true
+                    }
                 },
                 "fontSize": {
                     "displayName": "Text Size",
@@ -387,7 +465,6 @@
                         }
                     }
                 }
-
             }
         },
         "Legend": {
@@ -414,7 +491,9 @@
                 },
                 "legendName": {
                     "displayName": "Legend Name",
-                    "type": { "text": true }
+                    "type": {
+                        "text": true
+                    }
                 },
                 "legendColor": {
                     "displayName": "Legend Color",
@@ -525,23 +604,33 @@
                 },
                 "showMean": {
                     "displayName": "Show Mean",
-                    "type": { "bool": true }
+                    "type": {
+                        "bool": true
+                    }
                 },
                 "showMedian": {
                     "displayName": "Show Median",
-                    "type": { "bool": true }
+                    "type": {
+                        "bool": true
+                    }
                 },
                 "showMode": {
                     "displayName": "Show Mode",
-                    "type": { "bool": true }
+                    "type": {
+                        "bool": true
+                    }
                 },
                 "exponentialSmoothingLine": {
                     "displayName": "Exponential Smoothing Line",
-                    "type": { "bool": true }
+                    "type": {
+                        "bool": true
+                    }
                 },
                 "regressionLine": {
                     "displayName": "Regression Line",
-                    "type": { "bool": true }
+                    "type": {
+                        "bool": true
+                    }
                 },
                 "regressionCurveType": {
                     "displayName": "Regression Curve Type",
@@ -555,7 +644,6 @@
                                 "value": "exponential",
                                 "displayName": "Exponential"
                             }
-
                         ]
                     }
                 },
@@ -571,13 +659,14 @@
                                 "value": "multiple",
                                 "displayName": "Multiple"
                             }
-
                         ]
                     }
                 },
                 "standardDeviation": {
                     "displayName": "StandardDeviation",
-                    "type": { "bool": true }
+                    "type": {
+                        "bool": true
+                    }
                 },
                 "noOfStandardDeviation": {
                     "displayName": "No of Standard Deviation",
@@ -620,7 +709,9 @@
                 },
                 "constantLineValue": {
                     "displayName": "Constant line value",
-                    "type": { "text": true }
+                    "type": {
+                        "text": true
+                    }
                 },
                 "constantLineStrokeWidth": {
                     "displayName": "Constant line width",
@@ -642,7 +733,5 @@
                 }
             }
         }
-
     }
-} 
-
+}
