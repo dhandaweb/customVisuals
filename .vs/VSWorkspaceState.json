@@ -1,10 +1,13 @@
 {
   "ExpandedNodes": [
     "",
-    "\\histogram",
-    "\\histogram\\style",
-    "\\slopeChart\\src"
+    "\\comboChart",
+    "\\comboChart\\src",
+    "\\comboChart\\style",
+    "\\dotPlot",
+    "\\dotPlot\\src",
+    "\\histogram\\style"
   ],
-  "SelectedNode": "\\histogram\\style\\visual.less",
+  "SelectedNode": "\\dotPlot\\src\\visual.ts",
   "PreviewInSolutionExplorer": false
 }

@@ -55,17 +55,23 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
         private showAreaLabel: any = false;
         private areaAxis: any = "left";
         private areaFormat: any;
+        private showAreaDots: any = false;
+        private areaDotRadius: any = 5;
 
         private hasLine: any = false;
         private showLineLabel: any = false;
         private lineAxis: any = "left";
         private lineFormat: any;
+        private lineDotRadius: any = 5;
 
         private hasDot: any = false;
+        private showLineDots: any = false;
         private showDotLabel: any = false;
         private dotAxis: any = "left";
         private dotFormat: any;
-        
+        private dotRadius: any = 5;
+        private circleOpacity: any = 100;
+        private circlestroke: any = 1;
 
         private colorTitle: any = '';
         private legendPosition: any = "right";
@@ -109,10 +115,6 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
         private showAxis: any = true;
 
-        private dotRadius: any = 6;
-        private circleOpacity: any = 100;
-        private circlestroke: any = 1;
-
 
         private fontSize: any = 11;
         private legendFontSize: any = 10;
@@ -142,9 +144,9 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
         }
 
         public draw(options) {
-            
-            
+
             this.findAvailableMetadata(options.dataViews[0].metadata.columns);
+
             var chartContainer = this.element
                 .append("div")
                 .attr("class", "dotPlot")
@@ -154,11 +156,11 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                 chartContainer.append("span").html("Axis and Value is required to draw the chart");
                 return;
             }
-           
+
             this.setProperties(options);
             var data = this.formatData(options.dataViews[0]);
             var dimension = this.getDimensions(options.viewport, data);
-           
+
             var chart = chartContainer
                 .append("svg")
                 .attr("height", dimension.height)
@@ -181,7 +183,12 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
             this.drawYScale(yScale, chartSvg, dimension, data);
             this.drawRightYScale(yRightScale, chartSvg, dimension, data);
 
-            // this.drawCircles(xScale, yScale, chartSvg, data, dimension);
+            this.drawAreaChart(xScale, yScale, yRightScale, chartSvg, data.areaData, dimension);
+
+            this.drawBarChart(xScale, yScale, yRightScale, chartSvg, data.barData, dimension);
+
+            this.drawLineChart(xScale, yScale, yRightScale, chartSvg, data.lineData, dimension);
+            this.drawDotChart(xScale, yScale, yRightScale, chartSvg, data.dotData, dimension);
 
             // this.drawConstantLine(yScale, chartSvg, data, dimension);
 
@@ -210,10 +217,10 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                 }
 
                 var grouped = rawData.categorical.values.grouped();
-               
+
                 if (this.hasBar) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.bar);
-                    barData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata);
+                    barData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "bar");
                     barData.map(d => {
                         d.values.map(d => {
                             if (this.barAxis === "left") leftAxisData.push(d.yValue.value);
@@ -223,7 +230,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                 }
                 if (this.hasArea) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.area);
-                    areaData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata);
+                    areaData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "area");
                     areaData.map(d => {
                         d.values.map(d => {
                             if (this.areaAxis === "left") leftAxisData.push(d.yValue.value);
@@ -231,10 +238,10 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                         })
                     });
                 }
-              
+
                 if (this.hasLine) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.line);
-                    lineData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata);
+                    lineData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "line");
                     lineData.map(d => {
                         d.values.map(d => {
                             if (this.lineAxis === "left") leftAxisData.push(d.yValue.value);
@@ -244,7 +251,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                 }
                 if (this.hasDot) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.dot);
-                    dotData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata);
+                    dotData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata,"dot");
                     dotData.map(d => {
                         d.values.map(d => {
                             if (this.dotAxis === "left") leftAxisData.push(d.yValue.value);
@@ -253,9 +260,9 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                     });
                 }
             };
-           
+
             allData = barData.concat(lineData.concat(areaData.concat(dotData)));
-           
+
             legendD = allData.map(d => { return { key: d.key, color: d.color } });
 
             if (this.hasColor) legendD.unshift({ key: legendName, color: "transparent" });
@@ -264,7 +271,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
             rightAxisFormat = this.getValueFormat(this.lineFormat, d3.max(rightAxisData));
 
             var legend = this.setLegendWidth(this.element, legendD);
-           
+
             return {
                 xAxis: xAxis,
                 leftAxis: { data: leftAxisData, format: leftAxisFormat },
@@ -277,12 +284,12 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
             }
         }
 
-        private getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata) {
+        private getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, type) {
 
             var formattedData = [];
 
             if (this.hasColor) {
-                var valuesMetadata = metadata.filter(d => d.roles["bar"])[0].displayName;
+                var valuesMetadata = metadata.filter(d => d.roles[type])[0].displayName;
                 var filteredValues = valuesG.filter(d => d.source.displayName == valuesMetadata);
 
                 formattedData = this.getColorData(filteredValues, grouped, rawData, xMetadata, xAxis);
@@ -376,16 +383,26 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                     var area = options.dataViews[0].metadata.objects["Area"];
                     if (area.showLabel !== undefined) this.showAreaLabel = area["showLabel"];
                     if (area.axis !== undefined) this.areaAxis = area["axis"];
+                    if (area.showAreaDots !== undefined) this.showAreaDots = area["showAreaDots"];
+                    if (area.areaDotRadius !== undefined) this.areaDotRadius = area["areaDotRadius"];
                 }
                 if (options.dataViews[0].metadata.objects["Line"]) {
                     var line = options.dataViews[0].metadata.objects["Line"];
                     if (line.showLabel !== undefined) this.showLineLabel = line["showLabel"];
+                    if (line.showLineDots !== undefined) this.showLineDots = line["showLineDots"];
+                    if (line.lineDotRadius !== undefined) this.lineDotRadius = line["lineDotRadius"];
+
+
                     if (line.axis !== undefined) this.lineAxis = line["axis"];
                 }
                 if (options.dataViews[0].metadata.objects["Dot"]) {
                     var dot = options.dataViews[0].metadata.objects["Dot"];
                     if (dot.showLabel !== undefined) this.showDotLabel = dot["showLabel"];
                     if (dot.axis !== undefined) this.dotAxis = dot["axis"];
+                    if (dot.dotRadius !== undefined) this.dotRadius = dot["dotRadius"];
+                    if (dot.circleOpacity !== undefined) this.circleOpacity = dot["circleOpacity"];
+                    if (dot.circlestroke !== undefined) this.circlestroke = dot["circlestroke"];
+
                 }
                 if (options.dataViews[0].metadata.objects["Legend"]) {
                     var legend = options.dataViews[0].metadata.objects["Legend"];
@@ -470,17 +487,17 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
             if (this.legendPosition == "right") ylegendOffset = d3.max(data.legend.map(d => d.width)) + (4 * this.legendFontSize);
             if (this.legendPosition == "top" || this.legendPosition === "bottom") xlegendOffset = this.legendFontSize * 3;
-           
+
             let xdata = data.xAxis;
             let xDomain = d3.scale.ordinal().domain(xdata).domain();
 
             let yOff = this.getYOffset(data);
             yRightOff = this.getYRightOffset(data);
-          
+
             let xT: any = this.axisLabelArray(xDomain.slice(0), (vp.width - yOff - ylegendOffset), this.element, "vertical");
 
             let xOffset, yOffset, chartWidth, chartHeight, xFilter, xTickval;
-           
+
             xOffset = xT.Space + 20;
             if (xOffset > vp.height / 4) xOffset = vp.height / 4 > 100 ? 100 : vp.height / 4;
             yOffset = yOff;
@@ -488,7 +505,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
             chartHeight = vp.height - xOffset - xlegendOffset;
             xFilter = (xT.Rotate === true) ? (chartWidth / xDomain.length < 12 ? (Math.ceil(xDomain.length / chartWidth * 20)) : 1) : 1;
             xTickval = xDomain.filter((d, i) => (i % xFilter === 0));
-           
+
             return {
                 width: vp.width,
                 height: vp.height,
@@ -504,7 +521,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
         private setXScale(data, dimension) {
             var scale = d3.scale.ordinal()
-                .rangeBands([0, dimension.chartWidth])
+                .rangeBands([0, dimension.chartWidth], .05)
                 .domain(data.xAxis);
 
             return scale;
@@ -573,7 +590,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
         }
 
         private drawYScale(yScale, chartSvg, dimension, data) {
-
+            if (data.leftAxis.data.length === 0) return;
             var yaxis = d3.svg.axis()
                 .scale(yScale)
                 .orient("left")
@@ -591,7 +608,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
         }
 
         private drawRightYScale(yScale, chartSvg, dimension, data) {
-
+            if (data.rightAxis.data.length === 0) return;
             var yaxis = d3.svg.axis()
                 .scale(yScale)
                 .orient("right")
@@ -608,71 +625,247 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
             yAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
         }
 
-        private drawCircles(xScale, yScale, chartSvg, data, dimension) {
-
-            var circleData = data.data;
-
-            var circleG = chartSvg.selectAll(".dots")
-                .data(circleData)
-                .enter()
-                .append("g")
-
-            var circle = circleG.selectAll(".dots")
-                .data(d => d.values.filter(d => d.yValue.value !== null))
-                .enter()
-                .append("circle");
 
 
-            circleG.attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+        private drawBarChart(xScale, yScale, yRightScale, chartSvg, data, dimension) {
+            if (this.hasBar) {
 
-            circle
-                .attr("cx", d => xScale(d.xValue.value))
-                .attr("cy", d => yScale(d.yValue.value))
+                var scale = this.barAxis === "left" ? yScale : yRightScale;
 
+                var x1 = d3.scale.ordinal()
+                    .domain(data.map(d => d.key))
+                    .rangeBands([0, xScale.rangeBand()], .05);
 
-            circle
-                .attr("r", this.dotRadius)
-                .attr("fill", d => d.color)
-                .style("stroke", d => d.color)
-                .style("stroke-width", this.circlestroke + "px")
-                .style("fill-opacity", this.circleOpacity / 100);
+                var barG = chartSvg.selectAll(".BarG")
+                    .data(data)
+                    .enter()
+                    .append("g")
+                    .attr("transform", d => "translate(" + (dimension.yOffset + x1(d.key)) + ",0)");
 
+                barG.selectAll("rect")
+                    .data(d => d.values)
+                    .enter()
+                    .append("rect")
+                    .attr("width", x1.rangeBand())
+                    .attr("x", d => xScale(d.xValue.value))
+                    .attr("y", d => scale(0) - scale(d.yValue.value))
+                    .attr("fill", d => d.color)
+                    .attr("height", d => scale(d.yValue.value));
 
-            circle.on("click", (d, i) => {
-                d.isFiltered = !d.isFiltered;
-
-                this.selectionManager.select(d.selectionId, true);
-
-                this.setFilterOpacity(circle);
-                (<Event>d3.event).stopPropagation();
-            });
-
-
-            var text = circleG.selectAll(".dotText")
-                .data(d => d.values.filter(d => d.yValue.value !== null))
-                .enter()
-                .append("text");
-
-
-            text.text(d => d.yValue.caption)
-
-
-
-
-            text.attr("x", d => xScale(d.xValue.value) + 2)
-                .attr("dx", this.dotRadius)
-                .attr("dy", this.dotRadius / 2)
-                .attr("y", d => yScale(d.yValue.value))
-
-
-
-
-            this.tooltipServiceWrapper.addTooltip(circle,
-                (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
-                (tooltipEvent: TooltipEventArgs<any>) => null
-            );
+            }
 
         }
+
+
+        private drawAreaChart(xScale, yScale, yRightScale, chartSvg, data, dimension) {
+            if (this.hasArea) {
+
+                var scale = this.areaAxis === "left" ? yScale : yRightScale;
+               
+                var areaG = chartSvg.selectAll(".AreaG")
+                    .data(data)
+                    .enter()
+                    .append("g")
+                    .attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+
+                var linePath = d3.svg.line()
+                    .x((d: any) => xScale(d.xValue.value))
+                    .y((d: any) => scale(d.yValue.value));
+
+                var areaPath = d3.svg.area()
+                    .x((d: any) => xScale(d.xValue.value))
+                    .y0(scale(0))
+                    .y1((d: any) => scale(d.yValue.value));
+
+                areaG.append("path")
+                    .attr("fill", d => d.color)
+                    .attr("fill-opacity", ".1")
+                    .attr("d", d => areaPath(d.values));
+
+                areaG.append("path")
+                    .attr("class", "line")
+                    .attr("fill", "none")
+                    .attr("stroke", d => d.color)
+                    .attr("d", d => linePath(d.values));
+
+                if (this.showAreaDots) {
+                    var circle = areaG.selectAll(".dots")
+                        .data(d => d.values.filter(d => d.yValue.value !== null))
+                        .enter()
+                        .append("circle");
+
+                    circle
+                        .attr("cx", d => xScale(d.xValue.value))
+                        .attr("cy", d => scale(d.yValue.value))
+                        .attr("r", this.areaDotRadius)
+                        .attr("fill", d => d.color);
+
+                    circle.on("click", (d, i) => {
+                        d.isFiltered = !d.isFiltered;
+
+                        this.selectionManager.select(d.selectionId, true);
+
+                        this.setFilterOpacity(circle);
+                        (<Event>d3.event).stopPropagation();
+                    });
+
+                    this.tooltipServiceWrapper.addTooltip(circle,
+                        (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
+                        (tooltipEvent: TooltipEventArgs<any>) => null
+                    );
+                }
+
+                if (this.showAreaLabel) {
+                    var text = areaG.selectAll(".areaText")
+                        .data(d => d.values.filter(d => d.yValue.value !== null))
+                        .enter()
+                        .append("text")
+                        .text(d => d.yValue.caption)
+
+                    text.attr("x", d => xScale(d.xValue.value) + 2)
+                        .attr("dx", this.areaDotRadius)
+                        .attr("dy", this.areaDotRadius / 2)
+                        .attr("y", d => scale(d.yValue.value))
+
+                }
+
+            }
+
+        }
+
+        private drawLineChart(xScale, yScale, yRightScale, chartSvg, data, dimension) {
+            if (this.hasLine) {
+
+                var scale = this.lineAxis === "left" ? yScale : yRightScale;
+
+                var lineG = chartSvg.selectAll(".lineG")
+                    .data(data)
+                    .enter()
+                    .append("g")
+                    .attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+
+                var linePath = d3.svg.line()
+                    .x((d: any) => xScale(d.xValue.value))
+                    .y((d: any) => scale(d.yValue.value));
+
+                lineG.append("path")
+                    .attr("class", "line")
+                    .attr("fill", "none")
+                    .attr("stroke", d => d.color)
+                    .attr("d", d => linePath(d.values));
+
+                if (this.showLineDots) {
+                    var circle = lineG.selectAll(".dots")
+                        .data(d => d.values.filter(d => d.yValue.value !== null))
+                        .enter()
+                        .append("circle");
+
+                    circle
+                        .attr("cx", d => xScale(d.xValue.value))
+                        .attr("cy", d => scale(d.yValue.value))
+                        .attr("r", this.lineDotRadius)
+                        .attr("fill", d => d.color);
+
+                    circle.on("click", (d, i) => {
+                        d.isFiltered = !d.isFiltered;
+
+                        this.selectionManager.select(d.selectionId, true);
+
+                        this.setFilterOpacity(circle);
+                        (<Event>d3.event).stopPropagation();
+                    });
+
+                    this.tooltipServiceWrapper.addTooltip(circle,
+                        (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
+                        (tooltipEvent: TooltipEventArgs<any>) => null
+                    );
+                }
+
+                if (this.showLineLabel) {
+                    var text = lineG.selectAll(".dotText")
+                        .data(d => d.values.filter(d => d.yValue.value !== null))
+                        .enter()
+                        .append("text")
+                        .text(d => d.yValue.caption)
+
+                    text.attr("x", d => xScale(d.xValue.value) + 2)
+                        .attr("dx", this.lineDotRadius)
+                        .attr("dy", this.lineDotRadius / 2)
+                        .attr("y", d => scale(d.yValue.value))
+
+
+                }
+
+            }
+
+        }
+
+        private drawDotChart(xScale, yScale, yRightScale, chartSvg, data, dimension) {
+            if (this.hasDot) {
+
+                var scale = this.dotAxis === "left" ? yScale : yRightScale;
+
+                var circleG = chartSvg.selectAll(".dots")
+                    .data(data)
+                    .enter()
+                    .append("g")
+
+                var circle = circleG.selectAll(".dots")
+                    .data(d => d.values.filter(d => d.yValue.value !== null))
+                    .enter()
+                    .append("circle");
+
+
+                circleG.attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+
+                circle
+                    .attr("cx", d => xScale(d.xValue.value))
+                    .attr("cy", d => scale(d.yValue.value))
+
+
+                circle
+                    .attr("r", this.dotRadius)
+                    .attr("fill", d => d.color)
+                    .style("stroke", d => d.color)
+                    .style("stroke-width", this.circlestroke + "px")
+                    .style("fill-opacity", this.circleOpacity / 100);
+
+
+                circle.on("click", (d, i) => {
+                    d.isFiltered = !d.isFiltered;
+
+                    this.selectionManager.select(d.selectionId, true);
+
+                    this.setFilterOpacity(circle);
+                    (<Event>d3.event).stopPropagation();
+                });
+
+                if (this.showDotLabel) {
+                    var text = circleG.selectAll(".dotText")
+                        .data(d => d.values.filter(d => d.yValue.value !== null))
+                        .enter()
+                        .append("text");
+
+                    text.text(d => d.yValue.caption)
+
+                    text.attr("x", d => xScale(d.xValue.value) + 2)
+                        .attr("dx", this.dotRadius)
+                        .attr("dy", this.dotRadius / 2)
+                        .attr("y", d => scale(d.yValue.value))
+
+                    this.tooltipServiceWrapper.addTooltip(circle,
+                        (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
+                        (tooltipEvent: TooltipEventArgs<any>) => null
+                    );
+                }
+            }
+
+        }
+
+
+
+
+
 
         private drawConstantLine(yScale, chartSvg, data, dimension) {
             if (this.constantLineValue.length > 0) {
@@ -964,15 +1157,15 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
         }
 
         private getYOffset(data) {
-           
+            if (data.leftAxis.data.length === 0) return 0;
             let max = d3.max(data.leftAxis.data);
             return 2 + (data.leftAxis.format.format(max).length + 1) * this.fontSize / 1.5;
         }
 
         private getYRightOffset(data) {
-
+            if (data.rightAxis.data.length === 0) return 0;
             let max = d3.max(data.rightAxis.data);
-            console.log(data.rightAxis.format.format(max));
+
             return 2 + (data.rightAxis.format.format(max).length + 1) * this.fontSize / 1.5;
         }
 
@@ -1596,16 +1789,26 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                 case 'Area':
                     objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showAreaLabel }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { axis: this.areaAxis }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { showAreaDots: this.showAreaDots }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { areaDotRadius: this.areaDotRadius }, selector: null });
+
                     break;
 
                 case 'Line':
                     objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLineLabel }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { axis: this.lineAxis }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { showLineDots: this.showLineDots }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { lineDotRadius: this.lineDotRadius }, selector: null });
+
                     break;
 
                 case 'Dot':
                     objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showDotLabel }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { axis: this.dotAxis }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { circlestroke: this.circleOpacity }, selector: null });
+
                     break;
 
                 case 'colorSelector':

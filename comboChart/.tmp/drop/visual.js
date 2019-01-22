@@ -8931,12 +8931,19 @@ var powerbi;
                         this.hasArea = false;
                         this.showAreaLabel = false;
                         this.areaAxis = "left";
+                        this.showAreaDots = false;
+                        this.areaDotRadius = 5;
                         this.hasLine = false;
                         this.showLineLabel = false;
                         this.lineAxis = "left";
+                        this.lineDotRadius = 5;
                         this.hasDot = false;
+                        this.showLineDots = false;
                         this.showDotLabel = false;
                         this.dotAxis = "left";
+                        this.dotRadius = 5;
+                        this.circleOpacity = 100;
+                        this.circlestroke = 1;
                         this.colorTitle = '';
                         this.legendPosition = "right";
                         this.showAs = "default";
@@ -8957,9 +8964,6 @@ var powerbi;
                         this.yAxisMinValue = false;
                         this.legendColor = 'Category1';
                         this.showAxis = true;
-                        this.dotRadius = 6;
-                        this.circleOpacity = 100;
-                        this.circlestroke = 1;
                         this.fontSize = 11;
                         this.legendFontSize = 10;
                         this.constantLineValue = '';
@@ -9118,7 +9122,10 @@ var powerbi;
                         this.drawXScale(xScale, chartSvg, dimension);
                         this.drawYScale(yScale, chartSvg, dimension, data);
                         this.drawRightYScale(yRightScale, chartSvg, dimension, data);
-                        // this.drawCircles(xScale, yScale, chartSvg, data, dimension);
+                        this.drawAreaChart(xScale, yScale, yRightScale, chartSvg, data.areaData, dimension);
+                        this.drawBarChart(xScale, yScale, yRightScale, chartSvg, data.barData, dimension);
+                        this.drawLineChart(xScale, yScale, yRightScale, chartSvg, data.lineData, dimension);
+                        this.drawDotChart(xScale, yScale, yRightScale, chartSvg, data.dotData, dimension);
                         // this.drawConstantLine(yScale, chartSvg, data, dimension);
                         this.drawLegend(chartLegend, chartSvg, dimension, data);
                         this.setFontSize(chartSvg);
@@ -9141,7 +9148,7 @@ var powerbi;
                             var grouped = rawData.categorical.values.grouped();
                             if (this.hasBar) {
                                 var valuesG = rawData.categorical.values.filter(function (d) { return d.source.roles.bar; });
-                                barData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata);
+                                barData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "bar");
                                 barData.map(function (d) {
                                     d.values.map(function (d) {
                                         if (_this.barAxis === "left")
@@ -9153,7 +9160,7 @@ var powerbi;
                             }
                             if (this.hasArea) {
                                 var valuesG = rawData.categorical.values.filter(function (d) { return d.source.roles.area; });
-                                areaData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata);
+                                areaData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "area");
                                 areaData.map(function (d) {
                                     d.values.map(function (d) {
                                         if (_this.areaAxis === "left")
@@ -9165,7 +9172,7 @@ var powerbi;
                             }
                             if (this.hasLine) {
                                 var valuesG = rawData.categorical.values.filter(function (d) { return d.source.roles.line; });
-                                lineData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata);
+                                lineData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "line");
                                 lineData.map(function (d) {
                                     d.values.map(function (d) {
                                         if (_this.lineAxis === "left")
@@ -9177,7 +9184,7 @@ var powerbi;
                             }
                             if (this.hasDot) {
                                 var valuesG = rawData.categorical.values.filter(function (d) { return d.source.roles.dot; });
-                                dotData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata);
+                                dotData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "dot");
                                 dotData.map(function (d) {
                                     d.values.map(function (d) {
                                         if (_this.dotAxis === "left")
@@ -9207,10 +9214,10 @@ var powerbi;
                             legend: legend,
                         };
                     };
-                    Visual.prototype.getMeasureColorData = function (grouped, valuesG, metadata, rawData, xAxis, xMetadata) {
+                    Visual.prototype.getMeasureColorData = function (grouped, valuesG, metadata, rawData, xAxis, xMetadata, type) {
                         var formattedData = [];
                         if (this.hasColor) {
-                            var valuesMetadata = metadata.filter(function (d) { return d.roles["bar"]; })[0].displayName;
+                            var valuesMetadata = metadata.filter(function (d) { return d.roles[type]; })[0].displayName;
                             var filteredValues = valuesG.filter(function (d) { return d.source.displayName == valuesMetadata; });
                             formattedData = this.getColorData(filteredValues, grouped, rawData, xMetadata, xAxis);
                         }
@@ -9296,11 +9303,19 @@ var powerbi;
                                     this.showAreaLabel = area["showLabel"];
                                 if (area.axis !== undefined)
                                     this.areaAxis = area["axis"];
+                                if (area.showAreaDots !== undefined)
+                                    this.showAreaDots = area["showAreaDots"];
+                                if (area.areaDotRadius !== undefined)
+                                    this.areaDotRadius = area["areaDotRadius"];
                             }
                             if (options.dataViews[0].metadata.objects["Line"]) {
                                 var line = options.dataViews[0].metadata.objects["Line"];
                                 if (line.showLabel !== undefined)
                                     this.showLineLabel = line["showLabel"];
+                                if (line.showLineDots !== undefined)
+                                    this.showLineDots = line["showLineDots"];
+                                if (line.lineDotRadius !== undefined)
+                                    this.lineDotRadius = line["lineDotRadius"];
                                 if (line.axis !== undefined)
                                     this.lineAxis = line["axis"];
                             }
@@ -9310,6 +9325,12 @@ var powerbi;
                                     this.showDotLabel = dot["showLabel"];
                                 if (dot.axis !== undefined)
                                     this.dotAxis = dot["axis"];
+                                if (dot.dotRadius !== undefined)
+                                    this.dotRadius = dot["dotRadius"];
+                                if (dot.circleOpacity !== undefined)
+                                    this.circleOpacity = dot["circleOpacity"];
+                                if (dot.circlestroke !== undefined)
+                                    this.circlestroke = dot["circlestroke"];
                             }
                             if (options.dataViews[0].metadata.objects["Legend"]) {
                                 var legend = options.dataViews[0].metadata.objects["Legend"];
@@ -9437,7 +9458,7 @@ var powerbi;
                     };
                     Visual.prototype.setXScale = function (data, dimension) {
                         var scale = d3.scale.ordinal()
-                            .rangeBands([0, dimension.chartWidth])
+                            .rangeBands([0, dimension.chartWidth], .05)
                             .domain(data.xAxis);
                         return scale;
                     };
@@ -9490,6 +9511,8 @@ var powerbi;
                         xAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
                     };
                     Visual.prototype.drawYScale = function (yScale, chartSvg, dimension, data) {
+                        if (data.leftAxis.data.length === 0)
+                            return;
                         var yaxis = d3.svg.axis()
                             .scale(yScale)
                             .orient("left")
@@ -9504,6 +9527,8 @@ var powerbi;
                         yAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
                     };
                     Visual.prototype.drawRightYScale = function (yScale, chartSvg, dimension, data) {
+                        if (data.rightAxis.data.length === 0)
+                            return;
                         var yaxis = d3.svg.axis()
                             .scale(yScale)
                             .orient("right")
@@ -9517,43 +9542,173 @@ var powerbi;
                             .call(yaxis);
                         yAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
                     };
-                    Visual.prototype.drawCircles = function (xScale, yScale, chartSvg, data, dimension) {
+                    Visual.prototype.drawBarChart = function (xScale, yScale, yRightScale, chartSvg, data, dimension) {
+                        if (this.hasBar) {
+                            var scale = this.barAxis === "left" ? yScale : yRightScale;
+                            var x1 = d3.scale.ordinal()
+                                .domain(data.map(function (d) { return d.key; }))
+                                .rangeBands([0, xScale.rangeBand()], .05);
+                            var barG = chartSvg.selectAll(".BarG")
+                                .data(data)
+                                .enter()
+                                .append("g")
+                                .attr("transform", function (d) { return "translate(" + (dimension.yOffset + x1(d.key)) + ",0)"; });
+                            barG.selectAll("rect")
+                                .data(function (d) { return d.values; })
+                                .enter()
+                                .append("rect")
+                                .attr("width", x1.rangeBand())
+                                .attr("x", function (d) { return xScale(d.xValue.value); })
+                                .attr("y", function (d) { return scale(0) - scale(d.yValue.value); })
+                                .attr("fill", function (d) { return d.color; })
+                                .attr("height", function (d) { return scale(d.yValue.value); });
+                        }
+                    };
+                    Visual.prototype.drawAreaChart = function (xScale, yScale, yRightScale, chartSvg, data, dimension) {
                         var _this = this;
-                        var circleData = data.data;
-                        var circleG = chartSvg.selectAll(".dots")
-                            .data(circleData)
-                            .enter()
-                            .append("g");
-                        var circle = circleG.selectAll(".dots")
-                            .data(function (d) { return d.values.filter(function (d) { return d.yValue.value !== null; }); })
-                            .enter()
-                            .append("circle");
-                        circleG.attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
-                        circle
-                            .attr("cx", function (d) { return xScale(d.xValue.value); })
-                            .attr("cy", function (d) { return yScale(d.yValue.value); });
-                        circle
-                            .attr("r", this.dotRadius)
-                            .attr("fill", function (d) { return d.color; })
-                            .style("stroke", function (d) { return d.color; })
-                            .style("stroke-width", this.circlestroke + "px")
-                            .style("fill-opacity", this.circleOpacity / 100);
-                        circle.on("click", function (d, i) {
-                            d.isFiltered = !d.isFiltered;
-                            _this.selectionManager.select(d.selectionId, true);
-                            _this.setFilterOpacity(circle);
-                            d3.event.stopPropagation();
-                        });
-                        var text = circleG.selectAll(".dotText")
-                            .data(function (d) { return d.values.filter(function (d) { return d.yValue.value !== null; }); })
-                            .enter()
-                            .append("text");
-                        text.text(function (d) { return d.yValue.caption; });
-                        text.attr("x", function (d) { return xScale(d.xValue.value) + 2; })
-                            .attr("dx", this.dotRadius)
-                            .attr("dy", this.dotRadius / 2)
-                            .attr("y", function (d) { return yScale(d.yValue.value); });
-                        this.tooltipServiceWrapper.addTooltip(circle, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
+                        if (this.hasArea) {
+                            var scale = this.areaAxis === "left" ? yScale : yRightScale;
+                            var areaG = chartSvg.selectAll(".AreaG")
+                                .data(data)
+                                .enter()
+                                .append("g")
+                                .attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+                            var linePath = d3.svg.line()
+                                .x(function (d) { return xScale(d.xValue.value); })
+                                .y(function (d) { return scale(d.yValue.value); });
+                            var areaPath = d3.svg.area()
+                                .x(function (d) { return xScale(d.xValue.value); })
+                                .y0(scale(0))
+                                .y1(function (d) { return scale(d.yValue.value); });
+                            areaG.append("path")
+                                .attr("fill", function (d) { return d.color; })
+                                .attr("fill-opacity", ".1")
+                                .attr("d", function (d) { return areaPath(d.values); });
+                            areaG.append("path")
+                                .attr("class", "line")
+                                .attr("fill", "none")
+                                .attr("stroke", function (d) { return d.color; })
+                                .attr("d", function (d) { return linePath(d.values); });
+                            if (this.showAreaDots) {
+                                var circle = areaG.selectAll(".dots")
+                                    .data(function (d) { return d.values.filter(function (d) { return d.yValue.value !== null; }); })
+                                    .enter()
+                                    .append("circle");
+                                circle
+                                    .attr("cx", function (d) { return xScale(d.xValue.value); })
+                                    .attr("cy", function (d) { return scale(d.yValue.value); })
+                                    .attr("r", this.areaDotRadius)
+                                    .attr("fill", function (d) { return d.color; });
+                                circle.on("click", function (d, i) {
+                                    d.isFiltered = !d.isFiltered;
+                                    _this.selectionManager.select(d.selectionId, true);
+                                    _this.setFilterOpacity(circle);
+                                    d3.event.stopPropagation();
+                                });
+                                this.tooltipServiceWrapper.addTooltip(circle, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
+                            }
+                            if (this.showAreaLabel) {
+                                var text = areaG.selectAll(".areaText")
+                                    .data(function (d) { return d.values.filter(function (d) { return d.yValue.value !== null; }); })
+                                    .enter()
+                                    .append("text")
+                                    .text(function (d) { return d.yValue.caption; });
+                                text.attr("x", function (d) { return xScale(d.xValue.value) + 2; })
+                                    .attr("dx", this.areaDotRadius)
+                                    .attr("dy", this.areaDotRadius / 2)
+                                    .attr("y", function (d) { return scale(d.yValue.value); });
+                            }
+                        }
+                    };
+                    Visual.prototype.drawLineChart = function (xScale, yScale, yRightScale, chartSvg, data, dimension) {
+                        var _this = this;
+                        if (this.hasLine) {
+                            var scale = this.lineAxis === "left" ? yScale : yRightScale;
+                            var lineG = chartSvg.selectAll(".lineG")
+                                .data(data)
+                                .enter()
+                                .append("g")
+                                .attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+                            var linePath = d3.svg.line()
+                                .x(function (d) { return xScale(d.xValue.value); })
+                                .y(function (d) { return scale(d.yValue.value); });
+                            lineG.append("path")
+                                .attr("class", "line")
+                                .attr("fill", "none")
+                                .attr("stroke", function (d) { return d.color; })
+                                .attr("d", function (d) { return linePath(d.values); });
+                            if (this.showLineDots) {
+                                var circle = lineG.selectAll(".dots")
+                                    .data(function (d) { return d.values.filter(function (d) { return d.yValue.value !== null; }); })
+                                    .enter()
+                                    .append("circle");
+                                circle
+                                    .attr("cx", function (d) { return xScale(d.xValue.value); })
+                                    .attr("cy", function (d) { return scale(d.yValue.value); })
+                                    .attr("r", this.lineDotRadius)
+                                    .attr("fill", function (d) { return d.color; });
+                                circle.on("click", function (d, i) {
+                                    d.isFiltered = !d.isFiltered;
+                                    _this.selectionManager.select(d.selectionId, true);
+                                    _this.setFilterOpacity(circle);
+                                    d3.event.stopPropagation();
+                                });
+                                this.tooltipServiceWrapper.addTooltip(circle, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
+                            }
+                            if (this.showLineLabel) {
+                                var text = lineG.selectAll(".dotText")
+                                    .data(function (d) { return d.values.filter(function (d) { return d.yValue.value !== null; }); })
+                                    .enter()
+                                    .append("text")
+                                    .text(function (d) { return d.yValue.caption; });
+                                text.attr("x", function (d) { return xScale(d.xValue.value) + 2; })
+                                    .attr("dx", this.lineDotRadius)
+                                    .attr("dy", this.lineDotRadius / 2)
+                                    .attr("y", function (d) { return scale(d.yValue.value); });
+                            }
+                        }
+                    };
+                    Visual.prototype.drawDotChart = function (xScale, yScale, yRightScale, chartSvg, data, dimension) {
+                        var _this = this;
+                        if (this.hasDot) {
+                            var scale = this.dotAxis === "left" ? yScale : yRightScale;
+                            var circleG = chartSvg.selectAll(".dots")
+                                .data(data)
+                                .enter()
+                                .append("g");
+                            var circle = circleG.selectAll(".dots")
+                                .data(function (d) { return d.values.filter(function (d) { return d.yValue.value !== null; }); })
+                                .enter()
+                                .append("circle");
+                            circleG.attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+                            circle
+                                .attr("cx", function (d) { return xScale(d.xValue.value); })
+                                .attr("cy", function (d) { return scale(d.yValue.value); });
+                            circle
+                                .attr("r", this.dotRadius)
+                                .attr("fill", function (d) { return d.color; })
+                                .style("stroke", function (d) { return d.color; })
+                                .style("stroke-width", this.circlestroke + "px")
+                                .style("fill-opacity", this.circleOpacity / 100);
+                            circle.on("click", function (d, i) {
+                                d.isFiltered = !d.isFiltered;
+                                _this.selectionManager.select(d.selectionId, true);
+                                _this.setFilterOpacity(circle);
+                                d3.event.stopPropagation();
+                            });
+                            if (this.showDotLabel) {
+                                var text = circleG.selectAll(".dotText")
+                                    .data(function (d) { return d.values.filter(function (d) { return d.yValue.value !== null; }); })
+                                    .enter()
+                                    .append("text");
+                                text.text(function (d) { return d.yValue.caption; });
+                                text.attr("x", function (d) { return xScale(d.xValue.value) + 2; })
+                                    .attr("dx", this.dotRadius)
+                                    .attr("dy", this.dotRadius / 2)
+                                    .attr("y", function (d) { return scale(d.yValue.value); });
+                                this.tooltipServiceWrapper.addTooltip(circle, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
+                            }
+                        }
                     };
                     Visual.prototype.drawConstantLine = function (yScale, chartSvg, data, dimension) {
                         if (this.constantLineValue.length > 0) {
@@ -9784,12 +9939,15 @@ var powerbi;
                         return iValueFormatter;
                     };
                     Visual.prototype.getYOffset = function (data) {
+                        if (data.leftAxis.data.length === 0)
+                            return 0;
                         var max = d3.max(data.leftAxis.data);
                         return 2 + (data.leftAxis.format.format(max).length + 1) * this.fontSize / 1.5;
                     };
                     Visual.prototype.getYRightOffset = function (data) {
+                        if (data.rightAxis.data.length === 0)
+                            return 0;
                         var max = d3.max(data.rightAxis.data);
-                        console.log(data.rightAxis.format.format(max));
                         return 2 + (data.rightAxis.format.format(max).length + 1) * this.fontSize / 1.5;
                     };
                     Visual.prototype.setUpAnalyticData = function (data) {
@@ -10192,14 +10350,21 @@ var powerbi;
                             case 'Area':
                                 objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showAreaLabel }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { axis: this.areaAxis }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { showAreaDots: this.showAreaDots }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { areaDotRadius: this.areaDotRadius }, selector: null });
                                 break;
                             case 'Line':
                                 objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLineLabel }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { axis: this.lineAxis }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { showLineDots: this.showLineDots }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { lineDotRadius: this.lineDotRadius }, selector: null });
                                 break;
                             case 'Dot':
                                 objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showDotLabel }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { axis: this.dotAxis }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { circlestroke: this.circleOpacity }, selector: null });
                                 break;
                             case 'colorSelector':
                                 for (var _i = 0, _a = this.formattedData; _i < _a.length; _i++) {

@@ -116,9 +116,6 @@ module powerbi.extensibility.visual {
         private showAxis: any = true;
 
 
-
-
-
         private fontSize: any = 11;
         private legendFontSize: any = 10;
 
@@ -187,7 +184,9 @@ module powerbi.extensibility.visual {
             this.drawRightYScale(yRightScale, chartSvg, dimension, data);
 
             this.drawAreaChart(xScale, yScale, yRightScale, chartSvg, data.areaData, dimension);
-            this.drawBarChart(xScale, yScale, yRightScale, chartSvg, data, dimension);
+
+            this.drawBarChart(xScale, yScale, yRightScale, chartSvg, data.barData, dimension);
+
             this.drawLineChart(xScale, yScale, yRightScale, chartSvg, data.lineData, dimension);
             this.drawDotChart(xScale, yScale, yRightScale, chartSvg, data.dotData, dimension);
 
@@ -221,7 +220,7 @@ module powerbi.extensibility.visual {
 
                 if (this.hasBar) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.bar);
-                    barData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata);
+                    barData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "bar");
                     barData.map(d => {
                         d.values.map(d => {
                             if (this.barAxis === "left") leftAxisData.push(d.yValue.value);
@@ -231,7 +230,7 @@ module powerbi.extensibility.visual {
                 }
                 if (this.hasArea) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.area);
-                    areaData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata);
+                    areaData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "area");
                     areaData.map(d => {
                         d.values.map(d => {
                             if (this.areaAxis === "left") leftAxisData.push(d.yValue.value);
@@ -242,7 +241,7 @@ module powerbi.extensibility.visual {
 
                 if (this.hasLine) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.line);
-                    lineData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata);
+                    lineData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "line");
                     lineData.map(d => {
                         d.values.map(d => {
                             if (this.lineAxis === "left") leftAxisData.push(d.yValue.value);
@@ -252,7 +251,7 @@ module powerbi.extensibility.visual {
                 }
                 if (this.hasDot) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.dot);
-                    dotData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata);
+                    dotData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata,"dot");
                     dotData.map(d => {
                         d.values.map(d => {
                             if (this.dotAxis === "left") leftAxisData.push(d.yValue.value);
@@ -285,12 +284,12 @@ module powerbi.extensibility.visual {
             }
         }
 
-        private getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata) {
+        private getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, type) {
 
             var formattedData = [];
 
             if (this.hasColor) {
-                var valuesMetadata = metadata.filter(d => d.roles["bar"])[0].displayName;
+                var valuesMetadata = metadata.filter(d => d.roles[type])[0].displayName;
                 var filteredValues = valuesG.filter(d => d.source.displayName == valuesMetadata);
 
                 formattedData = this.getColorData(filteredValues, grouped, rawData, xMetadata, xAxis);
@@ -522,7 +521,7 @@ module powerbi.extensibility.visual {
 
         private setXScale(data, dimension) {
             var scale = d3.scale.ordinal()
-                .rangeBands([0, dimension.chartWidth])
+                .rangeBands([0, dimension.chartWidth], .05)
                 .domain(data.xAxis);
 
             return scale;
@@ -591,7 +590,7 @@ module powerbi.extensibility.visual {
         }
 
         private drawYScale(yScale, chartSvg, dimension, data) {
-
+            if (data.leftAxis.data.length === 0) return;
             var yaxis = d3.svg.axis()
                 .scale(yScale)
                 .orient("left")
@@ -609,7 +608,7 @@ module powerbi.extensibility.visual {
         }
 
         private drawRightYScale(yScale, chartSvg, dimension, data) {
-
+            if (data.rightAxis.data.length === 0) return;
             var yaxis = d3.svg.axis()
                 .scale(yScale)
                 .orient("right")
@@ -635,13 +634,13 @@ module powerbi.extensibility.visual {
 
                 var x1 = d3.scale.ordinal()
                     .domain(data.map(d => d.key))
-                    .rangeRoundBands([0, xScale.rangeBand()]);
+                    .rangeBands([0, xScale.rangeBand()], .05);
 
-                var barG = chartSvg.selectAll(".AreaG")
+                var barG = chartSvg.selectAll(".BarG")
                     .data(data)
                     .enter()
                     .append("g")
-                    .attr("transform", "translate(" + (dimension.yOffset) + ",0)");
+                    .attr("transform", d => "translate(" + (dimension.yOffset + x1(d.key)) + ",0)");
 
                 barG.selectAll("rect")
                     .data(d => d.values)
@@ -649,9 +648,9 @@ module powerbi.extensibility.visual {
                     .append("rect")
                     .attr("width", x1.rangeBand())
                     .attr("x", d => xScale(d.xValue.value))
-                    .attr("y", scale(0))
+                    .attr("y", d => scale(0) - scale(d.yValue.value))
                     .attr("fill", d => d.color)
-                    .attr("height", d => dimension.chartHeight - scale(d.yValue.value));
+                    .attr("height", d => scale(d.yValue.value));
 
             }
 
@@ -662,7 +661,7 @@ module powerbi.extensibility.visual {
             if (this.hasArea) {
 
                 var scale = this.areaAxis === "left" ? yScale : yRightScale;
-
+               
                 var areaG = chartSvg.selectAll(".AreaG")
                     .data(data)
                     .enter()
@@ -676,17 +675,18 @@ module powerbi.extensibility.visual {
                 var areaPath = d3.svg.area()
                     .x((d: any) => xScale(d.xValue.value))
                     .y0(scale(0))
-                    .y((d: any) => scale(d.yValue.value));
+                    .y1((d: any) => scale(d.yValue.value));
 
                 areaG.append("path")
-                    .attr("class", "area")
                     .attr("fill", d => d.color)
-                    .attr("d", areaPath(data));
+                    .attr("fill-opacity", ".1")
+                    .attr("d", d => areaPath(d.values));
 
                 areaG.append("path")
                     .attr("class", "line")
-                    .attr("fill", d => d.color)
-                    .attr("d", linePath(data));
+                    .attr("fill", "none")
+                    .attr("stroke", d => d.color)
+                    .attr("d", d => linePath(d.values));
 
                 if (this.showAreaDots) {
                     var circle = areaG.selectAll(".dots")
@@ -746,12 +746,13 @@ module powerbi.extensibility.visual {
 
                 var linePath = d3.svg.line()
                     .x((d: any) => xScale(d.xValue.value))
-                    .y((d: any) => xScale(d.yValue.value));
+                    .y((d: any) => scale(d.yValue.value));
 
                 lineG.append("path")
                     .attr("class", "line")
-                    .attr("fill", d => d.color)
-                    .attr("d", linePath(data));
+                    .attr("fill", "none")
+                    .attr("stroke", d => d.color)
+                    .attr("d", d => linePath(d.values));
 
                 if (this.showLineDots) {
                     var circle = lineG.selectAll(".dots")
@@ -839,7 +840,7 @@ module powerbi.extensibility.visual {
                     (<Event>d3.event).stopPropagation();
                 });
 
-                if (this.showLineDots) {
+                if (this.showDotLabel) {
                     var text = circleG.selectAll(".dotText")
                         .data(d => d.values.filter(d => d.yValue.value !== null))
                         .enter()
@@ -1156,13 +1157,13 @@ module powerbi.extensibility.visual {
         }
 
         private getYOffset(data) {
-
+            if (data.leftAxis.data.length === 0) return 0;
             let max = d3.max(data.leftAxis.data);
             return 2 + (data.leftAxis.format.format(max).length + 1) * this.fontSize / 1.5;
         }
 
         private getYRightOffset(data) {
-
+            if (data.rightAxis.data.length === 0) return 0;
             let max = d3.max(data.rightAxis.data);
 
             return 2 + (data.rightAxis.format.format(max).length + 1) * this.fontSize / 1.5;
