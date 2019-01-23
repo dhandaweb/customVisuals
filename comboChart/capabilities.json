@@ -126,7 +126,6 @@
             },
             "conditions": [
                 {
-                    
                     "axis": {
                         "min": 0,
                         "max": 1
@@ -143,122 +142,17 @@
         "Basic": {
             "displayName": "Basic",
             "properties": {
-                "leftValFormat": {
-                    "displayName": "Value Format",
+                "fontSize": {
+                    "displayName": "Text Size",
+                    "displayNameKey": "Visual_TextSize",
                     "type": {
-                        "enumeration": [
-                            {
-                                "value": "default",
-                                "displayName": "Default"
-                            },
-                            {
-                                "value": "thousand",
-                                "displayName": "Thousand"
-                            },
-                            {
-                                "value": "million",
-                                "displayName": "Million"
-                            },
-                            {
-                                "value": "billion",
-                                "displayName": "Billion"
-                            },
-                            {
-                                "value": "trillion",
-                                "displayName": "Trillion"
-                            },
-                            {
-                                "value": "none",
-                                "displayName": "None"
-                            }
-                        ]
-                    }
-                },
-                "leftValPrecision": {
-                    "displayName": "Value Precision",
-                    "type": {
-                        "enumeration": [
-                            {
-                                "value": "0",
-                                "displayName": "0"
-                            },
-                            {
-                                "value": "1",
-                                "displayName": "1"
-                            },
-                            {
-                                "value": "2",
-                                "displayName": "2"
-                            },
-                            {
-                                "value": "3",
-                                "displayName": "3"
-                            },
-                            {
-                                "value": "4",
-                                "displayName": "4"
-                            }
-                        ]
-                    }
-                },
-                "rightValFormat": {
-                    "displayName": "Value Format",
-                    "type": {
-                        "enumeration": [
-                            {
-                                "value": "default",
-                                "displayName": "Default"
-                            },
-                            {
-                                "value": "thousand",
-                                "displayName": "Thousand"
-                            },
-                            {
-                                "value": "million",
-                                "displayName": "Million"
-                            },
-                            {
-                                "value": "billion",
-                                "displayName": "Billion"
-                            },
-                            {
-                                "value": "trillion",
-                                "displayName": "Trillion"
-                            },
-                            {
-                                "value": "none",
-                                "displayName": "None"
-                            }
-                        ]
-                    }
-                },
-                "rightValPrecision": {
-                    "displayName": "Value Precision",
-                    "type": {
-                        "enumeration": [
-                            {
-                                "value": "0",
-                                "displayName": "0"
-                            },
-                            {
-                                "value": "1",
-                                "displayName": "1"
-                            },
-                            {
-                                "value": "2",
-                                "displayName": "2"
-                            },
-                            {
-                                "value": "3",
-                                "displayName": "3"
-                            },
-                            {
-                                "value": "4",
-                                "displayName": "4"
-                            }
-                        ]
+                        "formatting": {
+                            "fontSize": true
+                        }
                     }
                 }
+               
+              
             }
         },
         "Bar": {
@@ -281,6 +175,21 @@
                             {
                                 "value": "right",
                                 "displayName": "Right"
+                            }
+                        ]
+                    }
+                },
+                "barGroupType": {
+                    "displayName": "Group type",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "group",
+                                "displayName": "Group"
+                            },
+                            {
+                                "value": "stacked",
+                                "displayName": "Stacked"
                             }
                         ]
                     }
@@ -432,21 +341,188 @@
                 }
             }
         },
-        "Axis": {
-            "displayName": "Axis",
+        "leftAxis": {
+            "displayName": "Left axis",
             "properties": {
-                "yAxisMinValue": {
-                    "displayName": "Y Axis Start From Min Value",
+                "leftAxisMinValue": {
+                    "displayName": "Axis start from nin value",
+                    "type": {
+                        "bool": true
+                    }
+                }
+               
+            },
+            "leftValFormat": {
+                "displayName": "Value Format",
+                "type": {
+                    "enumeration": [
+                        {
+                            "value": "default",
+                            "displayName": "Default"
+                        },
+                        {
+                            "value": "thousand",
+                            "displayName": "Thousand"
+                        },
+                        {
+                            "value": "million",
+                            "displayName": "Million"
+                        },
+                        {
+                            "value": "billion",
+                            "displayName": "Billion"
+                        },
+                        {
+                            "value": "trillion",
+                            "displayName": "Trillion"
+                        },
+                        {
+                            "value": "none",
+                            "displayName": "None"
+                        }
+                    ]
+                }
+            },
+            "leftValPrecision": {
+                "displayName": "Value Precision",
+                "type": {
+                    "enumeration": [
+                        {
+                            "value": "0",
+                            "displayName": "0"
+                        },
+                        {
+                            "value": "1",
+                            "displayName": "1"
+                        },
+                        {
+                            "value": "2",
+                            "displayName": "2"
+                        },
+                        {
+                            "value": "3",
+                            "displayName": "3"
+                        },
+                        {
+                            "value": "4",
+                            "displayName": "4"
+                        }
+                    ]
+                }
+            },
+            "constantLineValue": {
+                "displayName": "Constant line value",
+                "type": {
+                    "text": true
+                }
+            },
+            "constantLineStrokeWidth": {
+                "displayName": "Constant line width",
+                "type": {
+                    "formatting": {
+                        "fontSize": true
+                    }
+                }
+            },
+            "constantLineColor": {
+                "displayName": "Constant line color",
+                "type": {
+                    "fill": {
+                        "solid": {
+                            "color": true
+                        }
+                    }
+                }
+            }
+        },
+        "rightAxis": {
+            "displayName": "Right axis",
+            "properties": {
+                "rightAxisMinValue": {
+                    "displayName": "Axis start from nin value",
                     "type": {
                         "bool": true
                     }
                 },
-                "fontSize": {
-                    "displayName": "Text Size",
-                    "displayNameKey": "Visual_TextSize",
+                "rightValFormat": {
+                    "displayName": "Value Format",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "thousand",
+                                "displayName": "Thousand"
+                            },
+                            {
+                                "value": "million",
+                                "displayName": "Million"
+                            },
+                            {
+                                "value": "billion",
+                                "displayName": "Billion"
+                            },
+                            {
+                                "value": "trillion",
+                                "displayName": "Trillion"
+                            },
+                            {
+                                "value": "none",
+                                "displayName": "None"
+                            }
+                        ]
+                    }
+                },
+                "rightValPrecision": {
+                    "displayName": "Value Precision",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "0",
+                                "displayName": "0"
+                            },
+                            {
+                                "value": "1",
+                                "displayName": "1"
+                            },
+                            {
+                                "value": "2",
+                                "displayName": "2"
+                            },
+                            {
+                                "value": "3",
+                                "displayName": "3"
+                            },
+                            {
+                                "value": "4",
+                                "displayName": "4"
+                            }
+                        ]
+                    }
+                },
+                "constantLineValue": {
+                    "displayName": "Constant line value",
+                    "type": {
+                        "text": true
+                    }
+                },
+                "constantLineStrokeWidth": {
+                    "displayName": "Constant line width",
                     "type": {
                         "formatting": {
                             "fontSize": true
+                        }
+                    }
+                },
+                "constantLineColor": {
+                    "displayName": "Constant line color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
                         }
                     }
                 }
@@ -480,53 +556,7 @@
                         "text": true
                     }
                 },
-                "legendColor": {
-                    "displayName": "Legend Color",
-                    "type": {
-                        "enumeration": [
-                            {
-                                "value": "Category1",
-                                "displayName": "Category1"
-                            },
-                            {
-                                "value": "Category2",
-                                "displayName": "Category2"
-                            },
-                            {
-                                "value": "Category3",
-                                "displayName": "Category3"
-                            },
-                            {
-                                "value": "Category4",
-                                "displayName": "Category4"
-                            },
-                            {
-                                "value": "Category5",
-                                "displayName": "Category5"
-                            },
-                            {
-                                "value": "Category6",
-                                "displayName": "Category6"
-                            },
-                            {
-                                "value": "Category7",
-                                "displayName": "Category7"
-                            },
-                            {
-                                "value": "Category8",
-                                "displayName": "Category8"
-                            },
-                            {
-                                "value": "Category9",
-                                "displayName": "Category9"
-                            },
-                            {
-                                "value": "Category10",
-                                "displayName": "Category10"
-                            }
-                        ]
-                    }
-                },
+               
                 "fontSize": {
                     "displayName": "Legend Font Size",
                     "type": {
@@ -670,50 +700,6 @@
                                 "displayName": "3"
                             }
                         ]
-                    }
-                }
-            }
-        },
-        "ConstantLine": {
-            "displayName": "Constant Line",
-            "properties": {
-                "axis": {
-                    "displayName": "Axis",
-                    "type": {
-                        "enumeration": [
-                            {
-                                "value": "left",
-                                "displayName": "Left"
-                            },
-                            {
-                                "value": "right",
-                                "displayName": "Right"
-                            }
-                        ]
-                    }
-                },
-                "constantLineValue": {
-                    "displayName": "Constant line value",
-                    "type": {
-                        "text": true
-                    }
-                },
-                "constantLineStrokeWidth": {
-                    "displayName": "Constant line width",
-                    "type": {
-                        "formatting": {
-                            "fontSize": true
-                        }
-                    }
-                },
-                "constantLineColor": {
-                    "displayName": "Constant line color",
-                    "type": {
-                        "fill": {
-                            "solid": {
-                                "color": true
-                            }
-                        }
                     }
                 }
             }
