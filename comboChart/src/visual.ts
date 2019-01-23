@@ -152,7 +152,7 @@ module powerbi.extensibility.visual {
         }
 
         public draw(options) {
-
+            this.colorIndex = 0;
             this.findAvailableMetadata(options.dataViews[0].metadata.columns);
 
             var chartContainer = this.element
@@ -230,12 +230,35 @@ module powerbi.extensibility.visual {
                 if (this.hasBar) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.bar);
                     barData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "bar");
+
+                    if (this.barGroupType === "stacked") {
+
+                        var stackFunction = d3.layout.stack()
+                            //.offset("wiggle")
+                            .values((d: any) => d.values);
+
+                        stackFunction(barData);
+
+                    }
+
+
                     barData.map(d => {
                         d.values.map(d => {
-                            if (this.barAxis === "left") leftAxisData.push(d.yValue.value);
-                            else rightAxisData.push(d.yValue.value);
+                            if (this.barAxis === "left") {
+                                
+                                if (this.barGroupType === "stacked") leftAxisData.push(d.y0 + d.y);
+                                else leftAxisData.push(d.yValue.value);
+                            }
+                            else {
+                                if (this.barGroupType === "stacked") rightAxisData.push(d.y0 + d.y);
+                                else rightAxisData.push(d.yValue.value);
+                            }
                         })
                     });
+
+                    
+
+
                 }
 
                 if (this.hasArea) {
@@ -649,8 +672,6 @@ module powerbi.extensibility.visual {
             yAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
         }
 
-
-
         private drawBarChart(xScale, yScale, yRightScale, chartSvg, data, dimension) {
             if (this.hasBar) {
 
@@ -675,19 +696,19 @@ module powerbi.extensibility.visual {
                         .append("rect")
                         .attr("width", x1.rangeBand())
                         .attr("x", d => xScale(d.xValue.value))
-                        .attr("y", d => scale(0) - scale(d.y))
+                        .attr("y", d => {
+                            return d.y < 0 ? scale(0) : scale(d.y);
+                        })
                         .attr("fill", d => d.color)
-                        .attr("height", d => scale(d.y));
+                        .attr("height", d => {
+                            return d.y < 0 ? (scale(d.y) - scale(0)) : (scale(0) - scale(d.y));
+                        });
                 }
 
                 else if (this.barGroupType === "stacked") {
 
-                    var stackFunction = d3.layout.stack()
-                        .offset("wiggle")
-                        .values((d: any) => d.values);
-
                     var barG = chartSvg.selectAll(".BarG")
-                        .data(stackFunction(data))
+                        .data(data)
                         .enter()
                         .append("g");
 
@@ -699,9 +720,13 @@ module powerbi.extensibility.visual {
                         .append("rect")
                         .attr("width", xScale.rangeBand())
                         .attr("x", d => xScale(d.xValue.value))
-                        .attr("y", d => scale(0) - scale(d.y0 + d.y))
+                        .attr("y", d => {
+                            return d.y < 0 ? scale(d.y0) : scale(d.y0 + d.y);
+                        })
                         .attr("fill", d => d.color)
-                        .attr("height", d => scale(d.y));
+                        .attr("height", d => {
+                            return d.y < 0 ? (scale(d.y) - scale(0)) : (scale(0) - scale(d.y));
+                        });
                 }
                 // else if (this.barGroupType === "stacked100") {
 
@@ -932,9 +957,6 @@ module powerbi.extensibility.visual {
 
         }
 
-
-
-
         private drawLeftConstantLine(scale, chartSvg, data, dimension) {
             if (this.leftConstantLineValue.length > 0 && data.leftAxis.data.length > 0) {
                 var constLine = this.leftConstantLineValue;
@@ -962,7 +984,6 @@ module powerbi.extensibility.visual {
                     .style("stroke-width", this.rightConstantLineStrokeWidth + "px");
             }
         }
-
 
         public setFilterOpacity(element) {
 
@@ -1856,7 +1877,6 @@ module powerbi.extensibility.visual {
             let objectEnumeration: VisualObjectInstance[] = [];
 
             switch (objectName) {
-
                 case 'Basic':
                     objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.fontSize }, selector: null });
                     break;
@@ -1927,7 +1947,7 @@ module powerbi.extensibility.visual {
                     objectEnumeration.push({ objectName: objectName, properties: { leftValPrecision: this.leftValPrecision }, selector: null });
 
                     objectEnumeration.push({ objectName: objectName, properties: { constantLineValue: this.leftConstantLineValue }, selector: null });
-                    if (this.constantLineValue.length > 0) {
+                    if (this.leftConstantLineValue.length > 0) {
                         objectEnumeration.push({ objectName: objectName, properties: { constantLineStrokeWidth: this.leftConstantLineStrokeWidth }, selector: null });
                         objectEnumeration.push({ objectName: objectName, properties: { constantLineColor: this.leftConstantLineColor }, selector: null });
                     }
@@ -1941,7 +1961,7 @@ module powerbi.extensibility.visual {
                     objectEnumeration.push({ objectName: objectName, properties: { rightValPrecision: this.rightValPrecision }, selector: null });
 
                     objectEnumeration.push({ objectName: objectName, properties: { constantLineValue: this.rightConstantLineValue }, selector: null });
-                    if (this.constantLineValue.length > 0) {
+                    if (this.rightConstantLineValue.length > 0) {
                         objectEnumeration.push({ objectName: objectName, properties: { constantLineStrokeWidth: this.rightConstantLineStrokeWidth }, selector: null });
                         objectEnumeration.push({ objectName: objectName, properties: { constantLineColor: this.rightConstantLineColor }, selector: null });
                     }

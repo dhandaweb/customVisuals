@@ -50,6 +50,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
         private showBarLabel: any = false;
         private barAxis: any = "left";
         private barFormat: any;
+        private barGroupType: any = "group";
 
         private hasArea: any = false;
         private showAreaLabel: any = false;
@@ -99,18 +100,27 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
         private element: d3.Selection<SVGElement>;
         private container: d3.Selection<SVGElement>;
 
+        private leftAxisMinValue: any = false;
         private leftValFormat: any = 'default';
         private leftValPrecision: any = 0;
+        private leftConstantLineValue: any = '';
+        private leftConstantLineStrokeWidth: any = 1;
+        private leftConstantLineColor: any = { solid: { color: "#000000" } };
 
+
+        private rightAxisMinValue: any = false;
         private rightValFormat: any = 'default';
         private rightValPrecision: any = 0;
+        private rightConstantLineValue: any = '';
+        private rightConstantLineStrokeWidth: any = 1;
+        private rightConstantLineColor: any = { solid: { color: "#000000" } };
 
         private tooltipServiceWrapper: ITooltipServiceWrapper;
         private TooltipEventArgs: any;
         public TooltipEnabledDataPoint: any;
 
         private yAxisMinValue: boolean = false;;
-        private legendColor: any = 'Category1';
+        private colorIndex: any = 0;
         private colorPalette: any;
 
         private showAxis: any = true;
@@ -119,9 +129,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
         private fontSize: any = 11;
         private legendFontSize: any = 10;
 
-        private constantLineValue: any = '';
-        private constantLineStrokeWidth: any = 1;
-        private constantLineColor: any = { solid: { color: "#000000" } };
+      
 
 
         constructor(options: VisualConstructorOptions) {
@@ -136,7 +144,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
         public update(options: VisualUpdateOptions) {
 
             this.element.style("overflow", "hidden");
-            this.element.select('.dotPlot').remove();
+            this.element.select('.comboChart').remove();
 
             this.colorPalette.reset();
 
@@ -144,12 +152,12 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
         }
 
         public draw(options) {
-
+            this.colorIndex = 0;
             this.findAvailableMetadata(options.dataViews[0].metadata.columns);
 
             var chartContainer = this.element
                 .append("div")
-                .attr("class", "dotPlot")
+                .attr("class", "comboChart")
                 .attr("style", "width:100%;");
 
             if (this.hasAxis == false || (this.hasBar || this.hasArea || this.hasLine || this.hasDot) == false) {
@@ -190,7 +198,8 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
             this.drawLineChart(xScale, yScale, yRightScale, chartSvg, data.lineData, dimension);
             this.drawDotChart(xScale, yScale, yRightScale, chartSvg, data.dotData, dimension);
 
-            // this.drawConstantLine(yScale, chartSvg, data, dimension);
+            this.drawLeftConstantLine(yScale, chartSvg, data, dimension);
+            this.drawRightConstantLine(yRightScale, chartSvg, data, dimension);
 
             this.drawLegend(chartLegend, chartSvg, dimension, data);
 
@@ -221,13 +230,37 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                 if (this.hasBar) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.bar);
                     barData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "bar");
+
+                    if (this.barGroupType === "stacked") {
+
+                        var stackFunction = d3.layout.stack()
+                            //.offset("wiggle")
+                            .values((d: any) => d.values);
+
+                        stackFunction(barData);
+
+                    }
+
+
                     barData.map(d => {
                         d.values.map(d => {
-                            if (this.barAxis === "left") leftAxisData.push(d.yValue.value);
-                            else rightAxisData.push(d.yValue.value);
+                            if (this.barAxis === "left") {
+                                
+                                if (this.barGroupType === "stacked") leftAxisData.push(d.y0 + d.y);
+                                else leftAxisData.push(d.yValue.value);
+                            }
+                            else {
+                                if (this.barGroupType === "stacked") rightAxisData.push(d.y0 + d.y);
+                                else rightAxisData.push(d.yValue.value);
+                            }
                         })
                     });
+
+                    
+
+
                 }
+
                 if (this.hasArea) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.area);
                     areaData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "area");
@@ -249,9 +282,10 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                         })
                     });
                 }
+
                 if (this.hasDot) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.dot);
-                    dotData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata,"dot");
+                    dotData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "dot");
                     dotData.map(d => {
                         d.values.map(d => {
                             if (this.dotAxis === "left") leftAxisData.push(d.yValue.value);
@@ -259,6 +293,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                         })
                     });
                 }
+
             };
 
             allData = barData.concat(lineData.concat(areaData.concat(dotData)));
@@ -323,6 +358,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                         return {
                             xValue: { title: xMetadata.displayName, value: xAxis[j], caption: xAxis[j] },
                             yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
+                            y: t,
                             legend: d.source.groupName,
                             selectionId: this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], i).withSeries(rawData.categorical.values, rawData.categorical.values[i]).createSelectionId(),
                             color: color,
@@ -339,12 +375,12 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                 var valFormat = this.getValueFormat(d.source.format, d3.max(d.values.map(d => d)));
 
-                var color = this.colorPalette.colors[i].value;
+                var color = this.colorPalette.colors[this.colorIndex].value;
 
                 if (grouped[0].values[i].source.objects) {
                     color = grouped[0].values[i].source.objects.colorSelector.fill.solid.color;
                 }
-
+                this.colorIndex = this.colorIndex + 1;
                 return {
                     key: d.source.displayName,
                     color: color,
@@ -354,6 +390,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                         return {
                             xValue: { title: xMetadata.displayName, value: xAxis[j], caption: xAxis[j] },
                             yValue: { title: d.source.displayName, value: t, caption: valFormat.format(t) },
+                            y: t,
                             legend: d.source.displayName,
                             color: color,
                             selectionId: this.host.createSelectionIdBuilder().withCategory(rawData.categorical.categories[0], j).createSelectionId(),
@@ -369,15 +406,14 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                 if (options.dataViews[0].metadata.objects["Basic"]) {
                     var basic = options.dataViews[0].metadata.objects["Basic"];
-                    if (basic.leftValFormat !== undefined) this.leftValFormat = basic["leftValFormat"];
-                    if (basic.leftValPrecision !== undefined) this.leftValPrecision = basic["leftValPrecision"];
-                    if (basic.rightValFormat !== undefined) this.rightValFormat = basic["rightValFormat"];
-                    if (basic.rightValPrecision !== undefined) this.rightValPrecision = basic["rightValPrecision"];
+                    if (basic.fontSize !== undefined) this.fontSize = basic["fontSize"];
                 }
                 if (options.dataViews[0].metadata.objects["Bar"]) {
                     var bar = options.dataViews[0].metadata.objects["Bar"];
                     if (bar.showLabel !== undefined) this.showBarLabel = bar["showLabel"];
                     if (bar.axis !== undefined) this.barAxis = bar["axis"];
+                    if (bar.barGroupType !== undefined) this.barGroupType = bar["barGroupType"];
+
                 }
                 if (options.dataViews[0].metadata.objects["Area"]) {
                     var area = options.dataViews[0].metadata.objects["Area"];
@@ -407,17 +443,30 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                 if (options.dataViews[0].metadata.objects["Legend"]) {
                     var legend = options.dataViews[0].metadata.objects["Legend"];
                     if (legend.legendPosition !== undefined) this.legendPosition = legend["legendPosition"];
-                    if (legend.legendColor !== undefined) this.legendColor = legend["legendColor"];
                     if (legend.fontSize !== undefined) this.legendFontSize = legend["fontSize"];
                     if (legend.legendName !== undefined) this.legendName = legend["legendName"];
 
                 }
-                if (options.dataViews[0].metadata.objects["Axis"]) {
-                    var axis = options.dataViews[0].metadata.objects["Axis"];
-                    if (axis.showAxis !== undefined) this.showAxis = axis["showAxis"];
-                    if (axis.fontSize !== undefined) this.fontSize = axis["fontSize"];
-                    if (axis.yAxisMinValue !== undefined) this.yAxisMinValue = axis["yAxisMinValue"];
+                if (options.dataViews[0].metadata.objects["leftAxis"]) {
+                    var leftAxis = options.dataViews[0].metadata.objects["leftAxis"];
+                    if (leftAxis.leftValFormat !== undefined) this.leftValFormat = leftAxis["leftValFormat"];
+                    if (leftAxis.leftValPrecision !== undefined) this.leftValPrecision = leftAxis["leftValPrecision"];
+                    if (leftAxis.leftAxisMinValue !== undefined) this.leftAxisMinValue = leftAxis["leftAxisMinValue"];
+                    if (leftAxis.constantLineValue !== undefined) this.leftConstantLineValue = leftAxis["constantLineValue"];
+                    if (leftAxis.constantLineStrokeWidth !== undefined) this.leftConstantLineStrokeWidth = leftAxis["constantLineStrokeWidth"];
+                    if (leftAxis.constantLineColor !== undefined) this.leftConstantLineColor = leftAxis["constantLineColor"];
                 }
+
+                if (options.dataViews[0].metadata.objects["rightAxis"]) {
+                    var rightAxis = options.dataViews[0].metadata.objects["rightAxis"];
+                    if (rightAxis.rightValFormat !== undefined) this.rightValFormat = rightAxis["rightValFormat"];
+                    if (rightAxis.rightValPrecision !== undefined) this.rightValPrecision = rightAxis["rightValPrecision"];
+                    if (rightAxis.rightAxisMinValue !== undefined) this.rightAxisMinValue = rightAxis["rightAxisMinValue"];
+                    if (rightAxis.constantLineValue !== undefined) this.rightConstantLineValue = rightAxis["constantLineValue"];
+                    if (rightAxis.constantLineStrokeWidth !== undefined) this.rightConstantLineStrokeWidth = rightAxis["constantLineStrokeWidth"];
+                    if (rightAxis.constantLineColor !== undefined) this.rightConstantLineColor = rightAxis["constantLineColor"];
+                }
+
                 if (options.dataViews[0].metadata.objects["Statistics"]) {
                     var statistics = options.dataViews[0].metadata.objects["Statistics"];
                     if (statistics.showAs !== undefined) this.showAs = statistics["showAs"];
@@ -433,10 +482,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                 }
                 if (options.dataViews[0].metadata.objects["ConstantLine"]) {
-                    var constantLineObj = options.dataViews[0].metadata.objects["ConstantLine"];
-                    if (constantLineObj.constantLineValue !== undefined) this.constantLineValue = constantLineObj["constantLineValue"];
-                    if (constantLineObj.constantLineStrokeWidth !== undefined) this.constantLineStrokeWidth = constantLineObj["constantLineStrokeWidth"];
-                    if (constantLineObj.constantLineColor !== undefined) this.constantLineColor = constantLineObj["constantLineColor"];
+                   
                 }
 
 
@@ -530,11 +576,12 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
         private setYScale(data, dimension) {
             let yDomain = data.leftAxis.data;
 
-            let valueDomain = this.setValueDomain(d3.min(yDomain), d3.max(yDomain));
+            let valueDomain = this.setValueDomain(d3.min(yDomain), d3.max(yDomain), this.leftAxisMinValue);
 
             let scale = d3.scale.linear()
                 .range([dimension.chartHeight, 0])
                 .domain([valueDomain.Min, valueDomain.Max]);
+
 
             return scale;
         }
@@ -542,7 +589,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
         private setRightYScale(data, dimension) {
             let yDomain = data.rightAxis.data;
 
-            let valueDomain = this.setValueDomain(d3.min(yDomain), d3.max(yDomain));
+            let valueDomain = this.setValueDomain(d3.min(yDomain), d3.max(yDomain),this.rightAxisMinValue);
 
             let scale = d3.scale.linear()
                 .range([dimension.chartHeight, 0])
@@ -625,43 +672,91 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
             yAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
         }
 
-
-
         private drawBarChart(xScale, yScale, yRightScale, chartSvg, data, dimension) {
             if (this.hasBar) {
 
                 var scale = this.barAxis === "left" ? yScale : yRightScale;
 
-                var x1 = d3.scale.ordinal()
-                    .domain(data.map(d => d.key))
-                    .rangeBands([0, xScale.rangeBand()], .05);
+                if (this.barGroupType === "group") {
 
-                var barG = chartSvg.selectAll(".BarG")
-                    .data(data)
-                    .enter()
-                    .append("g")
-                    .attr("transform", d => "translate(" + (dimension.yOffset + x1(d.key)) + ",0)");
+                    var barG = chartSvg.selectAll(".BarG")
+                        .data(data)
+                        .enter()
+                        .append("g");
 
-                barG.selectAll("rect")
-                    .data(d => d.values)
-                    .enter()
-                    .append("rect")
-                    .attr("width", x1.rangeBand())
-                    .attr("x", d => xScale(d.xValue.value))
-                    .attr("y", d => scale(0) - scale(d.yValue.value))
-                    .attr("fill", d => d.color)
-                    .attr("height", d => scale(d.yValue.value));
+                    var x1 = d3.scale.ordinal()
+                        .domain(data.map(d => d.key))
+                        .rangeBands([0, xScale.rangeBand()], .05);
+
+                    barG.attr("transform", d => "translate(" + (dimension.yOffset + x1(d.key)) + ",0)");
+
+                    barG.selectAll("rect")
+                        .data(d => d.values)
+                        .enter()
+                        .append("rect")
+                        .attr("width", x1.rangeBand())
+                        .attr("x", d => xScale(d.xValue.value))
+                        .attr("y", d => {
+                            return d.y < 0 ? scale(0) : scale(d.y);
+                        })
+                        .attr("fill", d => d.color)
+                        .attr("height", d => {
+                            return d.y < 0 ? (scale(d.y) - scale(0)) : (scale(0) - scale(d.y));
+                        });
+                }
+
+                else if (this.barGroupType === "stacked") {
+
+                    var barG = chartSvg.selectAll(".BarG")
+                        .data(data)
+                        .enter()
+                        .append("g");
+
+                    barG.attr("transform", d => "translate(" + (dimension.yOffset) + ",0)");
+
+                    barG.selectAll("rect")
+                        .data(d => d.values)
+                        .enter()
+                        .append("rect")
+                        .attr("width", xScale.rangeBand())
+                        .attr("x", d => xScale(d.xValue.value))
+                        .attr("y", d => {
+                            return d.y < 0 ? scale(d.y0) : scale(d.y0 + d.y);
+                        })
+                        .attr("fill", d => d.color)
+                        .attr("height", d => {
+                            return d.y < 0 ? (scale(d.y) - scale(0)) : (scale(0) - scale(d.y));
+                        });
+                }
+                // else if (this.barGroupType === "stacked100") {
+
+                //     var barG = chartSvg.selectAll(".BarG")
+                //         .data(data)
+                //         .enter()
+                //         .append("g");
+
+                //     barG.attr("transform", d => "translate(" + (dimension.yOffset) + ",0)");
+
+                //     barG.selectAll("rect")
+                //         .data(d => d.values)
+                //         .enter()
+                //         .append("rect")
+                //         .attr("width", x1.rangeBand())
+                //         .attr("x", d => xScale(d.xValue.value))
+                //         .attr("y", d => scale(0) - scale(d.y))
+                //         .attr("fill", d => d.color)
+                //         .attr("height", d => scale(d.y));
+                // }
 
             }
 
         }
 
-
         private drawAreaChart(xScale, yScale, yRightScale, chartSvg, data, dimension) {
             if (this.hasArea) {
 
                 var scale = this.areaAxis === "left" ? yScale : yRightScale;
-               
+
                 var areaG = chartSvg.selectAll(".AreaG")
                     .data(data)
                     .enter()
@@ -862,22 +957,31 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
         }
 
+        private drawLeftConstantLine(scale, chartSvg, data, dimension) {
+            if (this.leftConstantLineValue.length > 0 && data.leftAxis.data.length > 0) {
+                var constLine = this.leftConstantLineValue;
 
-
-
-
-
-        private drawConstantLine(yScale, chartSvg, data, dimension) {
-            if (this.constantLineValue.length > 0) {
-                var constLine = this.constantLineValue;
-
-                var constantLine = chartSvg.append("line")
+                chartSvg.append("line")
                     .attr("x1", dimension.yOffset)
                     .attr("x2", dimension.yOffset + dimension.chartWidth)
-                    .attr("y1", yScale(constLine))
-                    .attr("y2", yScale(constLine))
-                    .style("stroke", this.constantLineColor.solid.color)
-                    .style("stroke-width", this.constantLineStrokeWidth + "px");
+                    .attr("y1", scale(constLine))
+                    .attr("y2", scale(constLine))
+                    .style("stroke", this.leftConstantLineColor.solid.color)
+                    .style("stroke-width", this.leftConstantLineStrokeWidth + "px");
+            }
+        }
+
+        private drawRightConstantLine(scale, chartSvg, data, dimension) {
+            if (this.rightConstantLineValue.length > 0 && data.rightAxis.data.length > 0) {
+                var constLine = this.rightConstantLineValue;
+
+                chartSvg.append("line")
+                    .attr("x1", dimension.yOffset)
+                    .attr("x2", dimension.yOffset + dimension.chartWidth)
+                    .attr("y1", scale(constLine))
+                    .attr("y2", scale(constLine))
+                    .style("stroke", this.rightConstantLineColor.solid.color)
+                    .style("stroke-width", this.rightConstantLineStrokeWidth + "px");
             }
         }
 
@@ -903,10 +1007,10 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
             }
             if (this.legendPosition == "top") {
                 chartSvg.attr("transform", "translate(0," + this.legendFontSize * 3 + ")");
-                chartLegend.attr("transform", "translate(" + (dimension.yOffset) + "," + this.legendFontSize + ")");
+                chartLegend.attr("transform", "translate(" + (10 + dimension.yOffset) + "," + this.legendFontSize + ")");
             }
             if (this.legendPosition == "bottom") {
-                chartLegend.attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight + dimension.xOffset + (this.legendFontSize * 2)) + ")");
+                chartLegend.attr("transform", "translate(" + (10 + dimension.yOffset) + "," + (dimension.chartHeight + dimension.xOffset + (this.legendFontSize * 2)) + ")");
             }
             var fontSize = parseInt(this.legendFontSize);
 
@@ -1169,7 +1273,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
             return 2 + (data.rightAxis.format.format(max).length + 1) * this.fontSize / 1.5;
         }
 
-        private setValueDomain = function (Min, Max) {
+        private setValueDomain = function (Min, Max, minTrue) {
             var domain: any = {};
 
             if (Min > 0) {
@@ -1191,7 +1295,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                 domain.OMax = Max;
             }
 
-            if (this.yAxisMinValue == true) {
+            if (minTrue == true) {
                 domain.Min = Min > 0 ? Min - ((Min * 10) / 100) : Min + ((Min * 10) / 100);
                 domain.Max = Max + ((Max * 10) / 100);
             }
@@ -1773,17 +1877,15 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
             let objectEnumeration: VisualObjectInstance[] = [];
 
             switch (objectName) {
-
                 case 'Basic':
-                    objectEnumeration.push({ objectName: objectName, properties: { leftValFormat: this.leftValFormat }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { leftValPrecision: this.leftValPrecision }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { rightValFormat: this.rightValFormat }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { rightValPrecision: this.rightValPrecision }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.fontSize }, selector: null });
                     break;
 
                 case 'Bar':
                     objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showBarLabel }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { axis: this.barAxis }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { barGroupType: this.barGroupType }, selector: null });
+
                     break;
 
                 case 'Area':
@@ -1838,9 +1940,32 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                     objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.legendFontSize }, selector: null });
                     break;
 
-                case 'Axis':
-                    objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.fontSize }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { yAxisMinValue: this.yAxisMinValue }, selector: null });
+                case 'leftAxis':
+
+                    objectEnumeration.push({ objectName: objectName, properties: { leftAxisMinValue: this.leftAxisMinValue }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { leftValFormat: this.leftValFormat }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { leftValPrecision: this.leftValPrecision }, selector: null });
+
+                    objectEnumeration.push({ objectName: objectName, properties: { constantLineValue: this.leftConstantLineValue }, selector: null });
+                    if (this.leftConstantLineValue.length > 0) {
+                        objectEnumeration.push({ objectName: objectName, properties: { constantLineStrokeWidth: this.leftConstantLineStrokeWidth }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { constantLineColor: this.leftConstantLineColor }, selector: null });
+                    }
+
+                    break;
+
+                case 'rightAxis':
+
+                    objectEnumeration.push({ objectName: objectName, properties: { rightAxisMinValue: this.rightAxisMinValue }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { rightValFormat: this.rightValFormat }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { rightValPrecision: this.rightValPrecision }, selector: null });
+
+                    objectEnumeration.push({ objectName: objectName, properties: { constantLineValue: this.rightConstantLineValue }, selector: null });
+                    if (this.rightConstantLineValue.length > 0) {
+                        objectEnumeration.push({ objectName: objectName, properties: { constantLineStrokeWidth: this.rightConstantLineStrokeWidth }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { constantLineColor: this.rightConstantLineColor }, selector: null });
+                    }
+
                     break;
 
                 case 'Statistics':
@@ -1859,14 +1984,6 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                     objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.standardDeviation }, selector: null });
                     if (this.standardDeviation == true) objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.noOfStandardDeviation }, selector: null });
-                    break;
-
-                case 'ConstantLine':
-                    objectEnumeration.push({ objectName: objectName, properties: { constantLineValue: this.constantLineValue }, selector: null });
-                    if (this.constantLineValue.length > 0) {
-                        objectEnumeration.push({ objectName: objectName, properties: { constantLineStrokeWidth: this.constantLineStrokeWidth }, selector: null });
-                        objectEnumeration.push({ objectName: objectName, properties: { constantLineColor: this.constantLineColor }, selector: null });
-                    }
                     break;
 
 
