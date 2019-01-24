@@ -8934,6 +8934,7 @@ var powerbi;
                         this.areaAxis = "left";
                         this.showAreaDots = false;
                         this.areaDotRadius = 5;
+                        this.areaGroupType = "horizon";
                         this.hasLine = false;
                         this.showLineLabel = false;
                         this.lineAxis = "left";
@@ -8943,6 +8944,7 @@ var powerbi;
                         this.showDotLabel = false;
                         this.dotAxis = "left";
                         this.dotRadius = 5;
+                        this.dotShape = "circle";
                         this.circleOpacity = 100;
                         this.circlestroke = 1;
                         this.colorTitle = '';
@@ -9182,12 +9184,25 @@ var powerbi;
                             if (this.hasArea) {
                                 var valuesG = rawData.categorical.values.filter(function (d) { return d.source.roles.area; });
                                 areaData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "area");
+                                if (this.areaGroupType === "stacked") {
+                                    var stackFunction = d3.layout.stack()
+                                        .values(function (d) { return d.values; });
+                                    stackFunction(areaData);
+                                }
                                 areaData.map(function (d) {
                                     d.values.map(function (d) {
-                                        if (_this.areaAxis === "left")
-                                            leftAxisData.push(d.yValue.value);
-                                        else
-                                            rightAxisData.push(d.yValue.value);
+                                        if (_this.areaAxis === "left") {
+                                            if (_this.areaGroupType === "stacked")
+                                                leftAxisData.push(d.y0 + d.y);
+                                            else
+                                                leftAxisData.push(d.yValue.value);
+                                        }
+                                        else {
+                                            if (_this.areaGroupType === "stacked")
+                                                rightAxisData.push(d.y0 + d.y);
+                                            else
+                                                rightAxisData.push(d.yValue.value);
+                                        }
                                     });
                                 });
                             }
@@ -9323,6 +9338,8 @@ var powerbi;
                                     this.showAreaLabel = area["showLabel"];
                                 if (area.axis !== undefined)
                                     this.areaAxis = area["axis"];
+                                if (area.areaGroupType !== undefined)
+                                    this.areaGroupType = area["areaGroupType"];
                                 if (area.showAreaDots !== undefined)
                                     this.showAreaDots = area["showAreaDots"];
                                 if (area.areaDotRadius !== undefined)
@@ -9351,6 +9368,8 @@ var powerbi;
                                     this.circleOpacity = dot["circleOpacity"];
                                 if (dot.circlestroke !== undefined)
                                     this.circlestroke = dot["circlestroke"];
+                                if (dot.dotShape !== undefined)
+                                    this.dotShape = dot["dotShape"];
                             }
                             if (options.dataViews[0].metadata.objects["Legend"]) {
                                 var legend = options.dataViews[0].metadata.objects["Legend"];
@@ -9575,6 +9594,7 @@ var powerbi;
                         yAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
                     };
                     Visual.prototype.drawBarChart = function (xScale, yScale, yRightScale, chartSvg, data, dimension) {
+                        var _this = this;
                         if (this.hasBar) {
                             var scale = this.barAxis === "left" ? yScale : yRightScale;
                             if (this.barGroupType === "group") {
@@ -9636,6 +9656,19 @@ var powerbi;
                             //         .attr("fill", d => d.color)
                             //         .attr("height", d => scale(d.y));
                             // }
+                            if (this.showBarLabel) {
+                                var text = barG.selectAll(".barText")
+                                    .data(function (d) { return d.values.filter(function (d) { return d.yValue.value !== null; }); })
+                                    .enter()
+                                    .append("text")
+                                    .text(function (d) { return d.yValue.caption; });
+                                text.attr("x", function (d) { return xScale(d.xValue.value); })
+                                    .attr("dx", this.barGroupType === "stacked" ? xScale.rangeBand() / 2 : x1.rangeBand() / 2)
+                                    .attr("text-anchor", "middle")
+                                    .attr("fill", "#fff")
+                                    .attr("dy", 15)
+                                    .attr("y", function (d) { return _this.barGroupType === "stacked" ? scale(d.y0 + d.y) : scale(d.y); });
+                            }
                         }
                     };
                     Visual.prototype.drawAreaChart = function (xScale, yScale, yRightScale, chartSvg, data, dimension) {
@@ -9649,11 +9682,11 @@ var powerbi;
                                 .attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
                             var linePath = d3.svg.line()
                                 .x(function (d) { return xScale(d.xValue.value); })
-                                .y(function (d) { return scale(d.yValue.value); });
+                                .y(function (d) { return _this.areaGroupType === "stacked" ? scale(d.y0 + d.y) : scale(d.y); });
                             var areaPath = d3.svg.area()
                                 .x(function (d) { return xScale(d.xValue.value); })
-                                .y0(scale(0))
-                                .y1(function (d) { return scale(d.yValue.value); });
+                                .y0(function (d) { return _this.areaGroupType === "stacked" ? scale(d.y0) : scale(0); })
+                                .y1(function (d) { return _this.areaGroupType === "stacked" ? scale(d.y0 + d.y) : scale(d.y); });
                             areaG.append("path")
                                 .attr("fill", function (d) { return d.color; })
                                 .attr("fill-opacity", ".1")
@@ -9670,7 +9703,7 @@ var powerbi;
                                     .append("circle");
                                 circle
                                     .attr("cx", function (d) { return xScale(d.xValue.value); })
-                                    .attr("cy", function (d) { return scale(d.yValue.value); })
+                                    .attr("cy", function (d) { return _this.areaGroupType === "stacked" ? scale(d.y0 + d.y) : scale(d.y); })
                                     .attr("r", this.areaDotRadius)
                                     .attr("fill", function (d) { return d.color; });
                                 circle.on("click", function (d, i) {
@@ -9690,7 +9723,7 @@ var powerbi;
                                 text.attr("x", function (d) { return xScale(d.xValue.value) + 2; })
                                     .attr("dx", this.areaDotRadius)
                                     .attr("dy", this.areaDotRadius / 2)
-                                    .attr("y", function (d) { return scale(d.yValue.value); });
+                                    .attr("y", function (d) { return _this.areaGroupType === "stacked" ? scale(d.y0 + d.y) : scale(d.y); });
                             }
                         }
                     };
@@ -9750,16 +9783,27 @@ var powerbi;
                                 .data(data)
                                 .enter()
                                 .append("g");
-                            var circle = circleG.selectAll(".dots")
-                                .data(function (d) { return d.values.filter(function (d) { return d.yValue.value !== null; }); })
-                                .enter()
-                                .append("circle");
                             circleG.attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+                            if (this.dotShape === "circle") {
+                                var circle = circleG.selectAll(".dots")
+                                    .data(function (d) { return d.values.filter(function (d) { return d.yValue.value !== null; }); })
+                                    .enter()
+                                    .append("circle")
+                                    .attr("cx", function (d) { return xScale(d.xValue.value); })
+                                    .attr("cy", function (d) { return scale(d.yValue.value); })
+                                    .attr("r", this.dotRadius);
+                            }
+                            else {
+                                var arc = d3.svg.symbol().type(this.dotShape)
+                                    .size(this.dotRadius * 5);
+                                var circle = circleG.selectAll(".dots")
+                                    .data(function (d) { return d.values.filter(function (d) { return d.yValue.value !== null; }); })
+                                    .enter()
+                                    .append("path")
+                                    .attr('d', arc)
+                                    .attr("transform", function (d) { return "translate(" + xScale(d.xValue.value) + "," + scale(d.yValue.value) + ")"; });
+                            }
                             circle
-                                .attr("cx", function (d) { return xScale(d.xValue.value); })
-                                .attr("cy", function (d) { return scale(d.yValue.value); });
-                            circle
-                                .attr("r", this.dotRadius)
                                 .attr("fill", function (d) { return d.color; })
                                 .style("stroke", function (d) { return d.color; })
                                 .style("stroke-width", this.circlestroke + "px")
@@ -10427,28 +10471,38 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.fontSize }, selector: null });
                                 break;
                             case 'Bar':
-                                objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showBarLabel }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { axis: this.barAxis }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { barGroupType: this.barGroupType }, selector: null });
+                                if (this.hasBar) {
+                                    objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showBarLabel }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { axis: this.barAxis }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { barGroupType: this.barGroupType }, selector: null });
+                                }
                                 break;
                             case 'Area':
-                                objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showAreaLabel }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { axis: this.areaAxis }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { showAreaDots: this.showAreaDots }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { areaDotRadius: this.areaDotRadius }, selector: null });
+                                if (this.hasArea) {
+                                    objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showAreaLabel }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { axis: this.areaAxis }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { areaGroupType: this.areaGroupType }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { showAreaDots: this.showAreaDots }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { areaDotRadius: this.areaDotRadius }, selector: null });
+                                }
                                 break;
                             case 'Line':
-                                objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLineLabel }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { axis: this.lineAxis }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { showLineDots: this.showLineDots }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { lineDotRadius: this.lineDotRadius }, selector: null });
+                                if (this.hasLine) {
+                                    objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLineLabel }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { axis: this.lineAxis }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { showLineDots: this.showLineDots }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { lineDotRadius: this.lineDotRadius }, selector: null });
+                                }
                                 break;
                             case 'Dot':
-                                objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showDotLabel }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { axis: this.dotAxis }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { circlestroke: this.circleOpacity }, selector: null });
+                                if (this.hasDot) {
+                                    objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showDotLabel }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { axis: this.dotAxis }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { dotShape: this.dotShape }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { circlestroke: this.circlestroke }, selector: null });
+                                }
                                 break;
                             case 'colorSelector':
                                 for (var _i = 0, _a = this.formattedData; _i < _a.length; _i++) {
@@ -10494,22 +10548,6 @@ var powerbi;
                                     objectEnumeration.push({ objectName: objectName, properties: { constantLineColor: this.rightConstantLineColor }, selector: null });
                                 }
                                 break;
-                            case 'Statistics':
-                                objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAs }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showMean }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showMedian }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showMode }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.regressionLine }, selector: null });
-                                if (this.regressionLine === true) {
-                                    objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.regressionCurveType }, selector: null });
-                                    if (this.regressionCurveType == 'linear')
-                                        objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.regressionLineType }, selector: null });
-                                }
-                                objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.exponentialSmoothingLine }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.standardDeviation }, selector: null });
-                                if (this.standardDeviation == true)
-                                    objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.noOfStandardDeviation }, selector: null });
-                                break;
                         }
                         ;
                         return objectEnumeration;
@@ -10528,8 +10566,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.comboChartD9885417F9AAF5BB8D45B007E_DEBUG = {
-                name: 'comboChartD9885417F9AAF5BB8D45B007E_DEBUG',
+            plugins.comboChartD9885417F9AAF5BB8D45B007E = {
+                name: 'comboChartD9885417F9AAF5BB8D45B007E',
                 displayName: 'Combo Chart',
                 class: 'Visual',
                 version: '1.0.0',

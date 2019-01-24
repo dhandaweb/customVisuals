@@ -116,7 +116,6 @@ module powerbi.extensibility.visual {
                 .append("g")
             .attr("transform","translate(20,20)")
 
-            console.log(data);
             this.drawHistrogram(data, options.viewport.height-50, options.viewport.width-20, chart);
         }
 

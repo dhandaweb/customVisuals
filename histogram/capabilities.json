@@ -51,6 +51,19 @@
         }
     ],
     "objects": {
-      
+        "Basic": {
+            "displayName": "Basic",
+            "properties": {
+                "fontSize": {
+                    "displayName": "Text Size",
+                    "displayNameKey": "Visual_TextSize",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                }
+            }
+        }
     }
 }

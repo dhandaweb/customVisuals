@@ -233,6 +233,21 @@
                             }
                         ]
                     }
+                },
+                "areaGroupType": {
+                    "displayName": "Group type",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "horizon",
+                                "displayName": "Horizon"
+                            },
+                            {
+                                "value": "stacked",
+                                "displayName": "Stacked"
+                            }
+                        ]
+                    }
                 }
             }
         },
@@ -322,6 +337,37 @@
                         "formatting": {
                             "fontSize": true
                         }
+                    }
+                },
+                "dotShape": {
+                    "displayName": "Dot Shape",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "circle",
+                                "displayName": "Circle"
+                            },
+                            {
+                                "value": "diamond",
+                                "displayName": "Diamond"
+                            },
+                            {
+                                "value": "square",
+                                "displayName": "Square"
+                            },
+                            {
+                                "value": "cross",
+                                "displayName": "Cross"
+                            },
+                            {
+                                "value": "triangle-up",
+                                "displayName": "Triangle up"
+                            },
+                            {
+                                "value": "triangle-down",
+                                "displayName": "Triangle down"
+                            }
+                        ]
                     }
                 }
             }

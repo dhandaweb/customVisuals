@@ -58,6 +58,7 @@ module powerbi.extensibility.visual {
         private areaFormat: any;
         private showAreaDots: any = false;
         private areaDotRadius: any = 5;
+        private areaGroupType: any = "horizon";
 
         private hasLine: any = false;
         private showLineLabel: any = false;
@@ -71,6 +72,8 @@ module powerbi.extensibility.visual {
         private dotAxis: any = "left";
         private dotFormat: any;
         private dotRadius: any = 5;
+        private dotShape: any = "circle";
+
         private circleOpacity: any = 100;
         private circlestroke: any = 1;
 
@@ -129,7 +132,6 @@ module powerbi.extensibility.visual {
         private fontSize: any = 11;
         private legendFontSize: any = 10;
 
-      
 
 
         constructor(options: VisualConstructorOptions) {
@@ -245,7 +247,7 @@ module powerbi.extensibility.visual {
                     barData.map(d => {
                         d.values.map(d => {
                             if (this.barAxis === "left") {
-                                
+
                                 if (this.barGroupType === "stacked") leftAxisData.push(d.y0 + d.y);
                                 else leftAxisData.push(d.yValue.value);
                             }
@@ -256,7 +258,7 @@ module powerbi.extensibility.visual {
                         })
                     });
 
-                    
+
 
 
                 }
@@ -264,10 +266,30 @@ module powerbi.extensibility.visual {
                 if (this.hasArea) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.area);
                     areaData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "area");
+
+
+                    if (this.areaGroupType === "stacked") {
+
+                        var stackFunction = d3.layout.stack()
+                            //.offset("wiggle")
+                            .values((d: any) => d.values);
+
+                        stackFunction(areaData);
+
+                    }
+
                     areaData.map(d => {
                         d.values.map(d => {
-                            if (this.areaAxis === "left") leftAxisData.push(d.yValue.value);
-                            else rightAxisData.push(d.yValue.value);
+
+                            if (this.areaAxis === "left") {
+
+                                if (this.areaGroupType === "stacked") leftAxisData.push(d.y0 + d.y);
+                                else leftAxisData.push(d.yValue.value);
+                            }
+                            else {
+                                if (this.areaGroupType === "stacked") rightAxisData.push(d.y0 + d.y);
+                                else rightAxisData.push(d.yValue.value);
+                            }
                         })
                     });
                 }
@@ -419,6 +441,8 @@ module powerbi.extensibility.visual {
                     var area = options.dataViews[0].metadata.objects["Area"];
                     if (area.showLabel !== undefined) this.showAreaLabel = area["showLabel"];
                     if (area.axis !== undefined) this.areaAxis = area["axis"];
+                    if (area.areaGroupType !== undefined) this.areaGroupType = area["areaGroupType"];
+
                     if (area.showAreaDots !== undefined) this.showAreaDots = area["showAreaDots"];
                     if (area.areaDotRadius !== undefined) this.areaDotRadius = area["areaDotRadius"];
                 }
@@ -438,6 +462,7 @@ module powerbi.extensibility.visual {
                     if (dot.dotRadius !== undefined) this.dotRadius = dot["dotRadius"];
                     if (dot.circleOpacity !== undefined) this.circleOpacity = dot["circleOpacity"];
                     if (dot.circlestroke !== undefined) this.circlestroke = dot["circlestroke"];
+                    if (dot.dotShape !== undefined) this.dotShape = dot["dotShape"];
 
                 }
                 if (options.dataViews[0].metadata.objects["Legend"]) {
@@ -482,7 +507,7 @@ module powerbi.extensibility.visual {
 
                 }
                 if (options.dataViews[0].metadata.objects["ConstantLine"]) {
-                   
+
                 }
 
 
@@ -589,7 +614,7 @@ module powerbi.extensibility.visual {
         private setRightYScale(data, dimension) {
             let yDomain = data.rightAxis.data;
 
-            let valueDomain = this.setValueDomain(d3.min(yDomain), d3.max(yDomain),this.rightAxisMinValue);
+            let valueDomain = this.setValueDomain(d3.min(yDomain), d3.max(yDomain), this.rightAxisMinValue);
 
             let scale = d3.scale.linear()
                 .range([dimension.chartHeight, 0])
@@ -703,6 +728,8 @@ module powerbi.extensibility.visual {
                         .attr("height", d => {
                             return d.y < 0 ? (scale(d.y) - scale(0)) : (scale(0) - scale(d.y));
                         });
+
+
                 }
 
                 else if (this.barGroupType === "stacked") {
@@ -748,6 +775,23 @@ module powerbi.extensibility.visual {
                 //         .attr("height", d => scale(d.y));
                 // }
 
+                if (this.showBarLabel) {
+
+                    var text = barG.selectAll(".barText")
+                        .data(d => d.values.filter(d => d.yValue.value !== null))
+                        .enter()
+                        .append("text")
+                        .text(d => d.yValue.caption)
+
+                    text.attr("x", d => xScale(d.xValue.value))
+                        .attr("dx", this.barGroupType === "stacked" ? xScale.rangeBand() / 2 : x1.rangeBand() / 2)
+                        .attr("text-anchor", "middle")
+                        .attr("fill", "#fff")
+                        .attr("dy", 15)
+                        .attr("y", d => this.barGroupType === "stacked" ? scale(d.y0 + d.y) : scale(d.y))
+
+                }
+
             }
 
         }
@@ -765,12 +809,12 @@ module powerbi.extensibility.visual {
 
                 var linePath = d3.svg.line()
                     .x((d: any) => xScale(d.xValue.value))
-                    .y((d: any) => scale(d.yValue.value));
+                    .y((d: any) => this.areaGroupType === "stacked" ? scale(d.y0 + d.y) : scale(d.y));
 
                 var areaPath = d3.svg.area()
                     .x((d: any) => xScale(d.xValue.value))
-                    .y0(scale(0))
-                    .y1((d: any) => scale(d.yValue.value));
+                    .y0((d: any) => this.areaGroupType === "stacked" ? scale(d.y0) : scale(0))
+                    .y1((d: any) => this.areaGroupType === "stacked" ? scale(d.y0 + d.y) : scale(d.y));
 
                 areaG.append("path")
                     .attr("fill", d => d.color)
@@ -791,7 +835,7 @@ module powerbi.extensibility.visual {
 
                     circle
                         .attr("cx", d => xScale(d.xValue.value))
-                        .attr("cy", d => scale(d.yValue.value))
+                        .attr("cy", d => this.areaGroupType === "stacked" ? scale(d.y0 + d.y) : scale(d.y))
                         .attr("r", this.areaDotRadius)
                         .attr("fill", d => d.color);
 
@@ -820,7 +864,7 @@ module powerbi.extensibility.visual {
                     text.attr("x", d => xScale(d.xValue.value) + 2)
                         .attr("dx", this.areaDotRadius)
                         .attr("dy", this.areaDotRadius / 2)
-                        .attr("y", d => scale(d.yValue.value))
+                        .attr("y", d => this.areaGroupType === "stacked" ? scale(d.y0 + d.y) : scale(d.y))
 
                 }
 
@@ -905,21 +949,31 @@ module powerbi.extensibility.visual {
                     .enter()
                     .append("g")
 
-                var circle = circleG.selectAll(".dots")
-                    .data(d => d.values.filter(d => d.yValue.value !== null))
-                    .enter()
-                    .append("circle");
-
-
                 circleG.attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
 
-                circle
-                    .attr("cx", d => xScale(d.xValue.value))
-                    .attr("cy", d => scale(d.yValue.value))
+                if (this.dotShape === "circle") {
+                    var circle = circleG.selectAll(".dots")
+                        .data(d => d.values.filter(d => d.yValue.value !== null))
+                        .enter()
+                        .append("circle")
+                        .attr("cx", d => xScale(d.xValue.value))
+                        .attr("cy", d => scale(d.yValue.value))
+                        .attr("r", this.dotRadius)
+                }
 
+                else {
+                    var arc = d3.svg.symbol().type(this.dotShape)
+                        .size(this.dotRadius *5);
+
+                    var circle = circleG.selectAll(".dots")
+                        .data(d => d.values.filter(d => d.yValue.value !== null))
+                        .enter()
+                        .append("path")
+                        .attr('d', arc)
+                        .attr("transform", d => "translate(" + xScale(d.xValue.value) + "," + scale(d.yValue.value) + ")");
+                }
 
                 circle
-                    .attr("r", this.dotRadius)
                     .attr("fill", d => d.color)
                     .style("stroke", d => d.color)
                     .style("stroke-width", this.circlestroke + "px")
@@ -1882,35 +1936,41 @@ module powerbi.extensibility.visual {
                     break;
 
                 case 'Bar':
-                    objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showBarLabel }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { axis: this.barAxis }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { barGroupType: this.barGroupType }, selector: null });
-
+                    if (this.hasBar) {
+                        objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showBarLabel }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { axis: this.barAxis }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { barGroupType: this.barGroupType }, selector: null });
+                    }
                     break;
 
                 case 'Area':
-                    objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showAreaLabel }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { axis: this.areaAxis }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showAreaDots: this.showAreaDots }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { areaDotRadius: this.areaDotRadius }, selector: null });
-
+                    if (this.hasArea) {
+                        objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showAreaLabel }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { axis: this.areaAxis }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { areaGroupType: this.areaGroupType }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showAreaDots: this.showAreaDots }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { areaDotRadius: this.areaDotRadius }, selector: null });
+                    }
                     break;
 
                 case 'Line':
-                    objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLineLabel }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { axis: this.lineAxis }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showLineDots: this.showLineDots }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { lineDotRadius: this.lineDotRadius }, selector: null });
-
+                    if (this.hasLine) {
+                        objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLineLabel }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { axis: this.lineAxis }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showLineDots: this.showLineDots }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { lineDotRadius: this.lineDotRadius }, selector: null });
+                    }
                     break;
 
                 case 'Dot':
-                    objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showDotLabel }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { axis: this.dotAxis }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { circlestroke: this.circleOpacity }, selector: null });
-
+                    if (this.hasDot) {
+                        objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showDotLabel }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { axis: this.dotAxis }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { dotShape: this.dotShape }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { circlestroke: this.circlestroke }, selector: null });
+                    }
                     break;
 
                 case 'colorSelector':
@@ -1968,23 +2028,23 @@ module powerbi.extensibility.visual {
 
                     break;
 
-                case 'Statistics':
-                    objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAs }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showMean }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showMedian }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showMode }, selector: null });
+                //case 'Statistics':
+                //    objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAs }, selector: null });
+                //    objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showMean }, selector: null });
+                //    objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showMedian }, selector: null });
+                //    objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showMode }, selector: null });
 
-                    objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.regressionLine }, selector: null });
-                    if (this.regressionLine === true) {
-                        objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.regressionCurveType }, selector: null });
-                        if (this.regressionCurveType == 'linear') objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.regressionLineType }, selector: null });
+                //    objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.regressionLine }, selector: null });
+                //    if (this.regressionLine === true) {
+                //        objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.regressionCurveType }, selector: null });
+                //        if (this.regressionCurveType == 'linear') objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.regressionLineType }, selector: null });
 
-                    }
-                    objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.exponentialSmoothingLine }, selector: null });
+                //    }
+                //    objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.exponentialSmoothingLine }, selector: null });
 
-                    objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.standardDeviation }, selector: null });
-                    if (this.standardDeviation == true) objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.noOfStandardDeviation }, selector: null });
-                    break;
+                //    objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.standardDeviation }, selector: null });
+                //    if (this.standardDeviation == true) objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.noOfStandardDeviation }, selector: null });
+                //    break;
 
 
             };
