@@ -9105,8 +9105,8 @@ var powerbi;
                         var yScale = d3.scale.ordinal().domain(ydata);
                         var xDomain = d3.scale.ordinal().domain(xdata).domain();
                         var yDomain = yScale.domain();
-                        var xT = this.axisLabelArray(xDomain.slice(0), vp.width, this.element, "Vertical");
-                        var yT = this.axisLabelArray(yDomain.slice(0), vp.height, this.element, "Horizontal");
+                        var xT = this.axisLabelArray(xDomain.slice(0).filter(function (d) { return d !== null; }), vp.width, this.element, "Vertical");
+                        var yT = this.axisLabelArray(yDomain.slice(0).filter(function (d) { return d !== null; }), vp.height, this.element, "Horizontal");
                         var xOffset = this.showYAxis ? yT.Space + 22 : 0;
                         var yOffset = this.showXAxis ? xT.Space + 15 : 0;
                         if (yOffset > vp.height / 4)

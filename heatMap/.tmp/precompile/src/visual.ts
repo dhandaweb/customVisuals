@@ -101,10 +101,10 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
         public update(options: VisualUpdateOptions) {
 
            this.columns = options.dataViews[0].metadata.columns;
-           
+          
            this.setProperties(options);
            this.setIndex(options);
-
+            
            var data = [], identityData;
            var yFormat, xFormat;
            
@@ -164,9 +164,9 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                 chartContainer.append("span").html("One dimension is required to draw visual");
                 return;
             }
-
+           
             var dimension = this.getDimensions(options.viewport,data);
-
+           
             var chart = chartContainer
                             .append("svg")
                             .attr("height", dimension.height)
@@ -178,19 +178,19 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                                     return 1;
                                 });
                             });
-           
+          
             var chartSvg = chart.append("g")
             var chartLegend = chart.append("g")
             var xScale = this.setXScale(data, dimension);
             var yScale = this.setYScale(data, dimension);
-
+          
             this.drawXScale(xScale, chartSvg, dimension);
             this.drawYScale(yScale, chartSvg, dimension);
-         
+           
             this.setHeatScale(data);
            
             this.drawHeatRect(chartSvg, xScale, yScale, data, dimension);
-          
+           
             this.drawLegend(chartLegend, chartSvg, dimension, data);
             this.setFontSize(chartSvg);
         }
@@ -260,22 +260,22 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
             let ylegendOffset = 0;
             if (this.legendPosition == "right") xlegendOffset = 80;
             if (this.legendPosition == "top" || this.legendPosition === "bottom") ylegendOffset = 50;
-
+           
             let xdata = data.map(d => d.xValue);
             let ydata = data.map(d => d.yValue);
             let yScale = d3.scale.ordinal().domain(ydata);
             let xDomain = d3.scale.ordinal().domain(xdata).domain();
             let yDomain = yScale.domain();
-           
-            let xT:any = this.axisLabelArray(xDomain.slice(0), vp.width, this.element, "Vertical");
-            let yT:any = this.axisLabelArray(yDomain.slice(0), vp.height, this.element, "Horizontal");
             
+            let xT:any = this.axisLabelArray(xDomain.slice(0).filter(d=>d !== null), vp.width, this.element, "Vertical");
+            let yT: any = this.axisLabelArray(yDomain.slice(0).filter(d => d !== null), vp.height, this.element, "Horizontal");
+           
             let xOffset = this.showYAxis ? yT.Space + 22 : 0;
             let yOffset = this.showXAxis ? xT.Space + 15 : 0;
-
+           
             if (yOffset > vp.height / 4) yOffset = vp.height / 4 > 100 ? 100 : vp.height / 4;
             if (xOffset > vp.width / 4) xOffset = vp.width / 4 > 100 ? 100 : vp.width / 4;
-
+           
             if (this.xAxisLabel === "firstLast" || this.xAxisLabel === "firstMiddleLast") yOffset = 25;
             if (this.xAxisLabel === "firstLast" || this.xAxisLabel === "firstMiddleLast") xT.Rotate = false;
 
@@ -283,7 +283,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
             let chartHeight = vp.height - yOffset - ylegendOffset;
 
             yScale.rangeRoundBands([0, chartHeight]);
-         
+           
             //let xFilter = (xT.Rotate === true) ? Math.round((xDomain.length / chartWidth * 100) / 8) : 1;
             let xFilter = (xT.Rotate === true) ? (chartWidth / xDomain.length < 12 ? (Math.ceil(xDomain.length / chartWidth * 20)) : 1) : 1;
             let yFilter = ((chartHeight / yDomain.length) < 15) ? Math.ceil((yDomain.length / chartHeight * 20)) : 1;

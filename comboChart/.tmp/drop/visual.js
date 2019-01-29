@@ -10566,8 +10566,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.comboChartD9885417F9AAF5BB8D45B007E = {
-                name: 'comboChartD9885417F9AAF5BB8D45B007E',
+            plugins.comboChartD9885417F9AAF5BB8D45B007E_DEBUG = {
+                name: 'comboChartD9885417F9AAF5BB8D45B007E_DEBUG',
                 displayName: 'Combo Chart',
                 class: 'Visual',
                 version: '1.0.0',

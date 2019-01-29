@@ -405,9 +405,10 @@ module powerbi.extensibility.visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E  {
                var xDomain = [];
                var yDomain = [];
 
-               data.map(function (d) {
+               data.map(d=>{
                    xDomain.push(d.period);
                    yDomain.push(d.actual);
+                   if (this.showTargetLine === true && this.hasTarget === true) yDomain.push(d.target);
                });
                var xScale = d3.scale.ordinal().rangePoints([0, width]).domain(xDomain);
                var yScale = d3.scale.linear().range([height, 0]).domain([d3.min(yDomain), d3.max(yDomain)]);
@@ -463,6 +464,7 @@ module powerbi.extensibility.visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E  {
                    });
 
                if (this.showTargetLine === true) {
+                   
                    sparklineSelectionG.append("path")
                        .attr("class", "line")
                        .attr("style", "stroke: red; fill: none;stroke-dasharray: 3")
@@ -477,6 +479,7 @@ module powerbi.extensibility.visual.kpiCardCCFC224D9885417F9AAF5BB8D45B007E  {
 
            }
         }
+
 
         public drawActual(container: any) {
 

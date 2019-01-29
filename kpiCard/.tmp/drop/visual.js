@@ -9194,12 +9194,15 @@ var powerbi;
                         }
                     };
                     Visual.prototype.drawSparkline = function (data, sparklineContainer, width, height) {
+                        var _this = this;
                         if (this.hasActual) {
                             var xDomain = [];
                             var yDomain = [];
                             data.map(function (d) {
                                 xDomain.push(d.period);
                                 yDomain.push(d.actual);
+                                if (_this.showTargetLine === true && _this.hasTarget === true)
+                                    yDomain.push(d.target);
                             });
                             var xScale = d3.scale.ordinal().rangePoints([0, width]).domain(xDomain);
                             var yScale = d3.scale.linear().range([height, 0]).domain([d3.min(yDomain), d3.max(yDomain)]);
