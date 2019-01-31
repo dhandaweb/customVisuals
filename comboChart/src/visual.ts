@@ -259,7 +259,7 @@ module powerbi.extensibility.visual {
 
                 if (this.hasBar) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.bar);
-                    barData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "bar");
+                    barData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "bar", this.showBarAs);
 
                     if (this.barGroupType === "stacked") {
 
@@ -293,7 +293,7 @@ module powerbi.extensibility.visual {
 
                 if (this.hasArea) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.area);
-                    areaData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "area");
+                    areaData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "area", this.showAreaAs);
 
 
                     if (this.areaGroupType === "stacked") {
@@ -324,7 +324,7 @@ module powerbi.extensibility.visual {
 
                 if (this.hasLine) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.line);
-                    lineData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "line");
+                    lineData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "line", this.showLineAs);
                     lineData.map(d => {
                         d.values.map(d => {
                             if (this.lineAxis === "left") leftAxisData.push(d.yValue.value);
@@ -335,7 +335,7 @@ module powerbi.extensibility.visual {
 
                 if (this.hasDot) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.dot);
-                    dotData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "dot");
+                    dotData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "dot", this.showDotAs);
                     dotData.map(d => {
                         d.values.map(d => {
                             if (this.dotAxis === "left") leftAxisData.push(d.yValue.value);
@@ -369,7 +369,7 @@ module powerbi.extensibility.visual {
             }
         }
 
-        private getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, type) {
+        private getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, type, showAs) {
 
             var formattedData = [];
 
@@ -382,7 +382,7 @@ module powerbi.extensibility.visual {
             }
             else formattedData = this.getMeasureData(valuesG, grouped, rawData, xMetadata, xAxis);
 
-            var retData = this.setUpAnalyticData(formattedData)
+            var retData = this.setUpAnalyticData(formattedData, showAs)
 
             return retData;
         }
@@ -534,9 +534,9 @@ module powerbi.extensibility.visual {
                     if (barStatistics.noOfStandardDeviation !== undefined) this.barNoOfStandardDeviation = barStatistics["noOfStandardDeviation"];
 
                 }
-               
+
                 if (options.dataViews[0].metadata.objects["areaAnalytics"]) {
-                    var areaStatistics = options.dataViews[0].metadata.objects["barAnalytics"];
+                    var areaStatistics = options.dataViews[0].metadata.objects["areaAnalytics"];
                     if (areaStatistics.showAs !== undefined) this.showAreaAs = areaStatistics["showAs"];
                     if (areaStatistics.showMean !== undefined) this.showAreaMean = areaStatistics["showMean"];
                     if (areaStatistics.showMedian !== undefined) this.showAreaMedian = areaStatistics["showMedian"];
@@ -550,7 +550,7 @@ module powerbi.extensibility.visual {
 
                 }
                 if (options.dataViews[0].metadata.objects["lineAnalytics"]) {
-                    var lineStatistics = options.dataViews[0].metadata.objects["barAnalytics"];
+                    var lineStatistics = options.dataViews[0].metadata.objects["lineAnalytics"];
                     if (lineStatistics.showAs !== undefined) this.showLineAs = lineStatistics["showAs"];
                     if (lineStatistics.showMean !== undefined) this.showLineMean = lineStatistics["showMean"];
                     if (lineStatistics.showMedian !== undefined) this.showLineMedian = lineStatistics["showMedian"];
@@ -561,10 +561,9 @@ module powerbi.extensibility.visual {
                     if (lineStatistics.exponentialSmoothingLine !== undefined) this.lineExponentialSmoothingLine = lineStatistics["exponentialSmoothingLine"];
                     if (lineStatistics.standardDeviation !== undefined) this.lineStandardDeviation = lineStatistics["standardDeviation"];
                     if (lineStatistics.noOfStandardDeviation !== undefined) this.lineNoOfStandardDeviation = lineStatistics["noOfStandardDeviation"];
-
                 }
                 if (options.dataViews[0].metadata.objects["dotAnalytics"]) {
-                    var dotStatistics = options.dataViews[0].metadata.objects["barAnalytics"];
+                    var dotStatistics = options.dataViews[0].metadata.objects["dotAnalytics"];
                     if (dotStatistics.showAs !== undefined) this.showDotAs = dotStatistics["showAs"];
                     if (dotStatistics.showMean !== undefined) this.showDotMean = dotStatistics["showMean"];
                     if (dotStatistics.showMedian !== undefined) this.showDotMedian = dotStatistics["showMedian"];
@@ -899,7 +898,7 @@ module powerbi.extensibility.visual {
                 var scale = this.areaAxis === "left" ? yScale : yRightScale;
                 var axis = this.areaAxis === "left" ? areaData.leftAxis : areaData.rightAxis;
                 var data = areaData.areaData;
-                
+
                 var areaG = chartSvg.selectAll(".AreaG")
                     .data(data)
                     .enter()
@@ -1502,10 +1501,10 @@ module powerbi.extensibility.visual {
             return domain;
         };
 
-        private setUpAnalyticData(data) {
+        private setUpAnalyticData(data, showAs) {
             var retData;
             var cdata = JSON.parse(JSON.stringify(data));
-            switch (this.showAs) {
+            switch (showAs) {
 
                 case "runningTotal":
                     retData = cdata.map(function (d) {
@@ -1646,7 +1645,14 @@ module powerbi.extensibility.visual {
                     break;
             }
 
-            return retData;
+            var rt = retData.map(d => {
+                d.values.map(d => {
+                    d.y = d.yValue.value;
+                });
+                return d;
+            });
+
+            return rt;
         }
 
         private drawStastics(xScale, yScale, chartSvg, data, dimension, stat, axis) {
@@ -2175,75 +2181,83 @@ module powerbi.extensibility.visual {
                     break;
 
                 case 'barAnalytics':
-                    objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showBarAs }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showBarMean }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showBarMedian }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showBarMode }, selector: null });
+                    if (this.hasBar) {
+                        objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showBarAs }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showBarMean }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showBarMedian }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showBarMode }, selector: null });
 
-                    objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.barRegressionLine }, selector: null });
-                    if (this.barRegressionLine === true) {
-                        objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.barRegressionCurveType }, selector: null });
-                        if (this.barRegressionCurveType == 'linear') objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.barRegressionLineType }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.barRegressionLine }, selector: null });
+                        if (this.barRegressionLine === true) {
+                            objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.barRegressionCurveType }, selector: null });
+                            if (this.barRegressionCurveType == 'linear') objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.barRegressionLineType }, selector: null });
 
+                        }
+                        objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.barExponentialSmoothingLine }, selector: null });
+
+                        objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.barStandardDeviation }, selector: null });
+                        if (this.barStandardDeviation == true) objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.barNoOfStandardDeviation }, selector: null });
                     }
-                    objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.barExponentialSmoothingLine }, selector: null });
-
-                    objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.barStandardDeviation }, selector: null });
-                    if (this.barStandardDeviation == true) objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.barNoOfStandardDeviation }, selector: null });
                     break;
 
                 case 'lineAnalytics':
-                    objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showLineAs }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showLineMean }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showLineMedian }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showLineMode }, selector: null });
+                    if (this.hasLine) {
+                        objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showLineAs }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showLineMean }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showLineMedian }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showLineMode }, selector: null });
 
-                    objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.lineRegressionLine }, selector: null });
-                    if (this.lineRegressionLine === true) {
-                        objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.lineRegressionCurveType }, selector: null });
-                        if (this.lineRegressionCurveType == 'linear') objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.lineRegressionLineType }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.lineRegressionLine }, selector: null });
+                        if (this.lineRegressionLine === true) {
+                            objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.lineRegressionCurveType }, selector: null });
+                            if (this.lineRegressionCurveType == 'linear') objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.lineRegressionLineType }, selector: null });
 
+                        }
+                        objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.lineExponentialSmoothingLine }, selector: null });
+
+                        objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.lineStandardDeviation }, selector: null });
+                        if (this.lineStandardDeviation == true) objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.lineNoOfStandardDeviation }, selector: null });
                     }
-                    objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.lineExponentialSmoothingLine }, selector: null });
-
-                    objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.lineStandardDeviation }, selector: null });
-                    if (this.lineStandardDeviation == true) objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.lineNoOfStandardDeviation }, selector: null });
                     break;
 
-                    case 'areaAnalytics':
-                    objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAreaAs }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showAreaMean }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showAreaMedian }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showAreaMode }, selector: null });
+                case 'areaAnalytics':
+                    if (this.hasArea) {
+                        objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAreaAs }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showAreaMean }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showAreaMedian }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showAreaMode }, selector: null });
 
-                    objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.areaRegressionLine }, selector: null });
-                    if (this.areaRegressionLine === true) {
-                        objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.areaRegressionCurveType }, selector: null });
-                        if (this.areaRegressionCurveType == 'linear') objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.areaRegressionLineType }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.areaRegressionLine }, selector: null });
+                        if (this.areaRegressionLine === true) {
+                            objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.areaRegressionCurveType }, selector: null });
+                            if (this.areaRegressionCurveType == 'linear') objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.areaRegressionLineType }, selector: null });
 
+                        }
+                        objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.areaExponentialSmoothingLine }, selector: null });
+
+                        objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.areaStandardDeviation }, selector: null });
+                        if (this.lineStandardDeviation == true) objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.areaNoOfStandardDeviation }, selector: null });
                     }
-                    objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.areaExponentialSmoothingLine }, selector: null });
-
-                    objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.areaStandardDeviation }, selector: null });
-                    if (this.lineStandardDeviation == true) objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.areaNoOfStandardDeviation }, selector: null });
                     break;
 
-                    case 'dotAnalytics':
-                    objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showDotAs }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showDotMean }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showDotMedian }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showDotMode }, selector: null });
+                case 'dotAnalytics':
+                    if (this.hasDot) {
+                        objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showDotAs }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showDotMean }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showDotMedian }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showDotMode }, selector: null });
 
-                    objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.dotRegressionLine }, selector: null });
-                    if (this.dotRegressionLine === true) {
-                        objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.dotRegressionCurveType }, selector: null });
-                        if (this.dotRegressionCurveType == 'linear') objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.dotRegressionLineType }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.dotRegressionLine }, selector: null });
+                        if (this.dotRegressionLine === true) {
+                            objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.dotRegressionCurveType }, selector: null });
+                            if (this.dotRegressionCurveType == 'linear') objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.dotRegressionLineType }, selector: null });
 
+                        }
+                        objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.dotExponentialSmoothingLine }, selector: null });
+
+                        objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.dotStandardDeviation }, selector: null });
+                        if (this.dotStandardDeviation == true) objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.dotNoOfStandardDeviation }, selector: null });
                     }
-                    objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.dotExponentialSmoothingLine }, selector: null });
-
-                    objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.dotStandardDeviation }, selector: null });
-                    if (this.dotStandardDeviation == true) objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.dotNoOfStandardDeviation }, selector: null });
                     break;
 
             };

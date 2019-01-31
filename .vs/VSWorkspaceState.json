@@ -1,11 +1,13 @@
 {
   "ExpandedNodes": [
     "",
-    "\\comboChart",
     "\\comboChart\\style",
-    "\\histogram",
-    "\\histogram\\style"
+    "\\dotPlot",
+    "\\dotPlot\\src",
+    "\\histogram\\style",
+    "\\kpiCard",
+    "\\kpiCard\\src"
   ],
-  "SelectedNode": "\\histogram\\capabilities.json",
+  "SelectedNode": "\\dotPlot\\src\\visual.ts",
   "PreviewInSolutionExplorer": false
 }

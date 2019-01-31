@@ -130,10 +130,10 @@ module powerbi.extensibility.visual {
             var values = data.map(d => d.val);
             var max = d3.max(values);
             var min = d3.min(values);
+
             var xScale = d3.scale.linear()
                 .domain([min, max])
                 .range([0, width]);
-
 
             var data: any = d3.layout.histogram()
                 .bins(xScale.ticks(this.binCount))
@@ -158,7 +158,7 @@ module powerbi.extensibility.visual {
 
             this.drawXAxis(svg, height, xScale, max);
 
-            this.drawYAxis(svg, yScale);
+            //this.drawYAxis(svg, yScale);
 
             this.setFontSize(svg);
         }
@@ -185,6 +185,7 @@ module powerbi.extensibility.visual {
             var xAxis = d3.svg.axis()
                 .scale(xScale)
                 .orient("bottom")
+                .ticks(this.binCount)
                 .tickFormat(format.format);
 
             svg.append("g")

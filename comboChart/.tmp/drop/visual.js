@@ -8949,16 +8949,46 @@ var powerbi;
                         this.circlestroke = 1;
                         this.colorTitle = '';
                         this.legendPosition = "right";
-                        this.showAs = "default";
-                        this.showMean = false;
-                        this.showMedian = false;
-                        this.showMode = false;
-                        this.regressionLine = false;
-                        this.regressionLineType = "single";
-                        this.regressionCurveType = "linear";
-                        this.standardDeviation = false;
-                        this.noOfStandardDeviation = "1";
-                        this.exponentialSmoothingLine = false;
+                        this.showBarAs = "default";
+                        this.showBarMean = false;
+                        this.showBarMedian = false;
+                        this.showBarMode = false;
+                        this.barRegressionLine = false;
+                        this.barRegressionLineType = "single";
+                        this.barRegressionCurveType = "linear";
+                        this.barStandardDeviation = false;
+                        this.barNoOfStandardDeviation = "1";
+                        this.barExponentialSmoothingLine = false;
+                        this.showLineAs = "default";
+                        this.showLineMean = false;
+                        this.showLineMedian = false;
+                        this.showLineMode = false;
+                        this.lineRegressionLine = false;
+                        this.lineRegressionLineType = "single";
+                        this.lineRegressionCurveType = "linear";
+                        this.lineStandardDeviation = false;
+                        this.lineNoOfStandardDeviation = "1";
+                        this.lineExponentialSmoothingLine = false;
+                        this.showAreaAs = "default";
+                        this.showAreaMean = false;
+                        this.showAreaMedian = false;
+                        this.showAreaMode = false;
+                        this.areaRegressionLine = false;
+                        this.areaRegressionLineType = "single";
+                        this.areaRegressionCurveType = "linear";
+                        this.areaStandardDeviation = false;
+                        this.areaNoOfStandardDeviation = "1";
+                        this.areaExponentialSmoothingLine = false;
+                        this.showDotAs = "default";
+                        this.showDotMean = false;
+                        this.showDotMedian = false;
+                        this.showDotMode = false;
+                        this.dotRegressionLine = false;
+                        this.dotRegressionLineType = "single";
+                        this.dotRegressionCurveType = "linear";
+                        this.dotStandardDeviation = false;
+                        this.dotNoOfStandardDeviation = "1";
+                        this.dotExponentialSmoothingLine = false;
                         this.formattedData = [];
                         this.leftAxisMinValue = false;
                         this.leftValFormat = 'default';
@@ -8972,9 +9002,7 @@ var powerbi;
                         this.rightConstantLineValue = '';
                         this.rightConstantLineStrokeWidth = 1;
                         this.rightConstantLineColor = { solid: { color: "#000000" } };
-                        this.yAxisMinValue = false;
                         this.colorIndex = 0;
-                        this.showAxis = true;
                         this.fontSize = 11;
                         this.legendFontSize = 10;
                         this.setValueDomain = function (Min, Max, minTrue) {
@@ -9093,7 +9121,6 @@ var powerbi;
                         this.tooltipServiceWrapper = comboChartD9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
                         this.selectionManager = options.host.createSelectionManager();
                     }
-                    ;
                     Visual.prototype.update = function (options) {
                         this.element.style("overflow", "hidden");
                         this.element.select('.comboChart').remove();
@@ -9131,10 +9158,10 @@ var powerbi;
                         this.drawXScale(xScale, chartSvg, dimension);
                         this.drawYScale(yScale, chartSvg, dimension, data);
                         this.drawRightYScale(yRightScale, chartSvg, dimension, data);
-                        this.drawAreaChart(xScale, yScale, yRightScale, chartSvg, data.areaData, dimension);
-                        this.drawBarChart(xScale, yScale, yRightScale, chartSvg, data.barData, dimension);
-                        this.drawLineChart(xScale, yScale, yRightScale, chartSvg, data.lineData, dimension);
-                        this.drawDotChart(xScale, yScale, yRightScale, chartSvg, data.dotData, dimension);
+                        this.drawAreaChart(xScale, yScale, yRightScale, chartSvg, data, dimension);
+                        this.drawBarChart(xScale, yScale, yRightScale, chartSvg, data, dimension);
+                        this.drawLineChart(xScale, yScale, yRightScale, chartSvg, data, dimension);
+                        this.drawDotChart(xScale, yScale, yRightScale, chartSvg, data, dimension);
                         this.drawLeftConstantLine(yScale, chartSvg, data, dimension);
                         this.drawRightConstantLine(yRightScale, chartSvg, data, dimension);
                         this.drawLegend(chartLegend, chartSvg, dimension, data);
@@ -9158,7 +9185,7 @@ var powerbi;
                             var grouped = rawData.categorical.values.grouped();
                             if (this.hasBar) {
                                 var valuesG = rawData.categorical.values.filter(function (d) { return d.source.roles.bar; });
-                                barData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "bar");
+                                barData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "bar", this.showBarAs);
                                 if (this.barGroupType === "stacked") {
                                     var stackFunction = d3.layout.stack()
                                         .values(function (d) { return d.values; });
@@ -9183,7 +9210,7 @@ var powerbi;
                             }
                             if (this.hasArea) {
                                 var valuesG = rawData.categorical.values.filter(function (d) { return d.source.roles.area; });
-                                areaData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "area");
+                                areaData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "area", this.showAreaAs);
                                 if (this.areaGroupType === "stacked") {
                                     var stackFunction = d3.layout.stack()
                                         .values(function (d) { return d.values; });
@@ -9208,7 +9235,7 @@ var powerbi;
                             }
                             if (this.hasLine) {
                                 var valuesG = rawData.categorical.values.filter(function (d) { return d.source.roles.line; });
-                                lineData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "line");
+                                lineData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "line", this.showLineAs);
                                 lineData.map(function (d) {
                                     d.values.map(function (d) {
                                         if (_this.lineAxis === "left")
@@ -9220,7 +9247,7 @@ var powerbi;
                             }
                             if (this.hasDot) {
                                 var valuesG = rawData.categorical.values.filter(function (d) { return d.source.roles.dot; });
-                                dotData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "dot");
+                                dotData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "dot", this.showDotAs);
                                 dotData.map(function (d) {
                                     d.values.map(function (d) {
                                         if (_this.dotAxis === "left")
@@ -9250,7 +9277,7 @@ var powerbi;
                             legend: legend,
                         };
                     };
-                    Visual.prototype.getMeasureColorData = function (grouped, valuesG, metadata, rawData, xAxis, xMetadata, type) {
+                    Visual.prototype.getMeasureColorData = function (grouped, valuesG, metadata, rawData, xAxis, xMetadata, type, showAs) {
                         var formattedData = [];
                         if (this.hasColor) {
                             var valuesMetadata = metadata.filter(function (d) { return d.roles[type]; })[0].displayName;
@@ -9259,7 +9286,7 @@ var powerbi;
                         }
                         else
                             formattedData = this.getMeasureData(valuesG, grouped, rawData, xMetadata, xAxis);
-                        var retData = this.setUpAnalyticData(formattedData);
+                        var retData = this.setUpAnalyticData(formattedData, showAs);
                         return retData;
                     };
                     Visual.prototype.getColorData = function (filteredValues, grouped, rawData, xMetadata, xAxis) {
@@ -9410,30 +9437,97 @@ var powerbi;
                                 if (rightAxis.constantLineColor !== undefined)
                                     this.rightConstantLineColor = rightAxis["constantLineColor"];
                             }
-                            if (options.dataViews[0].metadata.objects["Statistics"]) {
-                                var statistics = options.dataViews[0].metadata.objects["Statistics"];
-                                if (statistics.showAs !== undefined)
-                                    this.showAs = statistics["showAs"];
-                                if (statistics.showMean !== undefined)
-                                    this.showMean = statistics["showMean"];
-                                if (statistics.showMedian !== undefined)
-                                    this.showMedian = statistics["showMedian"];
-                                if (statistics.showMode !== undefined)
-                                    this.showMode = statistics["showMode"];
-                                if (statistics.regressionLine !== undefined)
-                                    this.regressionLine = statistics["regressionLine"];
-                                if (statistics.regressionLineType !== undefined)
-                                    this.regressionLineType = statistics["regressionLineType"];
-                                if (statistics.regressionCurveType !== undefined)
-                                    this.regressionCurveType = statistics["regressionCurveType"];
-                                if (statistics.exponentialSmoothingLine !== undefined)
-                                    this.exponentialSmoothingLine = statistics["exponentialSmoothingLine"];
-                                if (statistics.standardDeviation !== undefined)
-                                    this.standardDeviation = statistics["standardDeviation"];
-                                if (statistics.noOfStandardDeviation !== undefined)
-                                    this.noOfStandardDeviation = statistics["noOfStandardDeviation"];
+                            if (options.dataViews[0].metadata.objects["barAnalytics"]) {
+                                var barStatistics = options.dataViews[0].metadata.objects["barAnalytics"];
+                                if (barStatistics.showAs !== undefined)
+                                    this.showBarAs = barStatistics["showAs"];
+                                if (barStatistics.showMean !== undefined)
+                                    this.showBarMean = barStatistics["showMean"];
+                                if (barStatistics.showMedian !== undefined)
+                                    this.showBarMedian = barStatistics["showMedian"];
+                                if (barStatistics.showMode !== undefined)
+                                    this.showBarMode = barStatistics["showMode"];
+                                if (barStatistics.regressionLine !== undefined)
+                                    this.barRegressionLine = barStatistics["regressionLine"];
+                                if (barStatistics.regressionLineType !== undefined)
+                                    this.barRegressionLineType = barStatistics["regressionLineType"];
+                                if (barStatistics.regressionCurveType !== undefined)
+                                    this.barRegressionCurveType = barStatistics["regressionCurveType"];
+                                if (barStatistics.exponentialSmoothingLine !== undefined)
+                                    this.barExponentialSmoothingLine = barStatistics["exponentialSmoothingLine"];
+                                if (barStatistics.standardDeviation !== undefined)
+                                    this.barStandardDeviation = barStatistics["standardDeviation"];
+                                if (barStatistics.noOfStandardDeviation !== undefined)
+                                    this.barNoOfStandardDeviation = barStatistics["noOfStandardDeviation"];
                             }
-                            if (options.dataViews[0].metadata.objects["ConstantLine"]) {
+                            if (options.dataViews[0].metadata.objects["areaAnalytics"]) {
+                                var areaStatistics = options.dataViews[0].metadata.objects["areaAnalytics"];
+                                if (areaStatistics.showAs !== undefined)
+                                    this.showAreaAs = areaStatistics["showAs"];
+                                if (areaStatistics.showMean !== undefined)
+                                    this.showAreaMean = areaStatistics["showMean"];
+                                if (areaStatistics.showMedian !== undefined)
+                                    this.showAreaMedian = areaStatistics["showMedian"];
+                                if (areaStatistics.showMode !== undefined)
+                                    this.showAreaMode = areaStatistics["showMode"];
+                                if (areaStatistics.regressionLine !== undefined)
+                                    this.areaRegressionLine = areaStatistics["regressionLine"];
+                                if (areaStatistics.regressionLineType !== undefined)
+                                    this.areaRegressionLineType = areaStatistics["regressionLineType"];
+                                if (areaStatistics.regressionCurveType !== undefined)
+                                    this.areaRegressionCurveType = areaStatistics["regressionCurveType"];
+                                if (areaStatistics.exponentialSmoothingLine !== undefined)
+                                    this.areaExponentialSmoothingLine = areaStatistics["exponentialSmoothingLine"];
+                                if (areaStatistics.standardDeviation !== undefined)
+                                    this.areaStandardDeviation = areaStatistics["standardDeviation"];
+                                if (areaStatistics.noOfStandardDeviation !== undefined)
+                                    this.areaNoOfStandardDeviation = areaStatistics["noOfStandardDeviation"];
+                            }
+                            if (options.dataViews[0].metadata.objects["lineAnalytics"]) {
+                                var lineStatistics = options.dataViews[0].metadata.objects["lineAnalytics"];
+                                if (lineStatistics.showAs !== undefined)
+                                    this.showLineAs = lineStatistics["showAs"];
+                                if (lineStatistics.showMean !== undefined)
+                                    this.showLineMean = lineStatistics["showMean"];
+                                if (lineStatistics.showMedian !== undefined)
+                                    this.showLineMedian = lineStatistics["showMedian"];
+                                if (lineStatistics.showMode !== undefined)
+                                    this.showLineMode = lineStatistics["showMode"];
+                                if (lineStatistics.regressionLine !== undefined)
+                                    this.lineRegressionLine = lineStatistics["regressionLine"];
+                                if (lineStatistics.regressionLineType !== undefined)
+                                    this.lineRegressionLineType = lineStatistics["regressionLineType"];
+                                if (lineStatistics.regressionCurveType !== undefined)
+                                    this.lineRegressionCurveType = lineStatistics["regressionCurveType"];
+                                if (lineStatistics.exponentialSmoothingLine !== undefined)
+                                    this.lineExponentialSmoothingLine = lineStatistics["exponentialSmoothingLine"];
+                                if (lineStatistics.standardDeviation !== undefined)
+                                    this.lineStandardDeviation = lineStatistics["standardDeviation"];
+                                if (lineStatistics.noOfStandardDeviation !== undefined)
+                                    this.lineNoOfStandardDeviation = lineStatistics["noOfStandardDeviation"];
+                            }
+                            if (options.dataViews[0].metadata.objects["dotAnalytics"]) {
+                                var dotStatistics = options.dataViews[0].metadata.objects["dotAnalytics"];
+                                if (dotStatistics.showAs !== undefined)
+                                    this.showDotAs = dotStatistics["showAs"];
+                                if (dotStatistics.showMean !== undefined)
+                                    this.showDotMean = dotStatistics["showMean"];
+                                if (dotStatistics.showMedian !== undefined)
+                                    this.showDotMedian = dotStatistics["showMedian"];
+                                if (dotStatistics.showMode !== undefined)
+                                    this.showDotMode = dotStatistics["showMode"];
+                                if (dotStatistics.regressionLine !== undefined)
+                                    this.dotRegressionLine = dotStatistics["regressionLine"];
+                                if (dotStatistics.regressionLineType !== undefined)
+                                    this.dotRegressionLineType = dotStatistics["regressionLineType"];
+                                if (dotStatistics.regressionCurveType !== undefined)
+                                    this.dotRegressionCurveType = dotStatistics["regressionCurveType"];
+                                if (dotStatistics.exponentialSmoothingLine !== undefined)
+                                    this.dotExponentialSmoothingLine = dotStatistics["exponentialSmoothingLine"];
+                                if (dotStatistics.standardDeviation !== undefined)
+                                    this.dotStandardDeviation = dotStatistics["standardDeviation"];
+                                if (dotStatistics.noOfStandardDeviation !== undefined)
+                                    this.dotNoOfStandardDeviation = dotStatistics["noOfStandardDeviation"];
                             }
                         }
                     };
@@ -9593,10 +9687,12 @@ var powerbi;
                             .call(yaxis);
                         yAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
                     };
-                    Visual.prototype.drawBarChart = function (xScale, yScale, yRightScale, chartSvg, data, dimension) {
+                    Visual.prototype.drawBarChart = function (xScale, yScale, yRightScale, chartSvg, barData, dimension) {
                         var _this = this;
                         if (this.hasBar) {
                             var scale = this.barAxis === "left" ? yScale : yRightScale;
+                            var axis = this.barAxis === "left" ? barData.leftAxis : barData.rightAxis;
+                            var data = barData.barData;
                             if (this.barGroupType === "group") {
                                 var barG = chartSvg.selectAll(".BarG")
                                     .data(data)
@@ -9606,7 +9702,7 @@ var powerbi;
                                     .domain(data.map(function (d) { return d.key; }))
                                     .rangeBands([0, xScale.rangeBand()], .05);
                                 barG.attr("transform", function (d) { return "translate(" + (dimension.yOffset + x1(d.key)) + ",0)"; });
-                                barG.selectAll("rect")
+                                var bars = barG.selectAll("rect")
                                     .data(function (d) { return d.values; })
                                     .enter()
                                     .append("rect")
@@ -9626,7 +9722,7 @@ var powerbi;
                                     .enter()
                                     .append("g");
                                 barG.attr("transform", function (d) { return "translate(" + (dimension.yOffset) + ",0)"; });
-                                barG.selectAll("rect")
+                                var bars = barG.selectAll("rect")
                                     .data(function (d) { return d.values; })
                                     .enter()
                                     .append("rect")
@@ -9656,6 +9752,13 @@ var powerbi;
                             //         .attr("fill", d => d.color)
                             //         .attr("height", d => scale(d.y));
                             // }
+                            bars.on("click", function (d, i) {
+                                d.isFiltered = !d.isFiltered;
+                                _this.selectionManager.select(d.selectionId, true);
+                                _this.setFilterOpacity(bars);
+                                d3.event.stopPropagation();
+                            });
+                            this.tooltipServiceWrapper.addTooltip(bars, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
                             if (this.showBarLabel) {
                                 var text = barG.selectAll(".barText")
                                     .data(function (d) { return d.values.filter(function (d) { return d.yValue.value !== null; }); })
@@ -9669,12 +9772,26 @@ var powerbi;
                                     .attr("dy", 15)
                                     .attr("y", function (d) { return _this.barGroupType === "stacked" ? scale(d.y0 + d.y) : scale(d.y); });
                             }
+                            var stat = {
+                                showMean: this.showBarMean,
+                                showMedian: this.showBarMedian,
+                                showMode: this.showBarMode,
+                                exponentialSmoothingLine: this.barExponentialSmoothingLine,
+                                regressionLine: this.barRegressionLine,
+                                regressionLineType: this.barRegressionLineType,
+                                regressionCurveType: this.barRegressionCurveType,
+                                standardDeviation: this.barStandardDeviation,
+                                noOfStandardDeviation: this.barNoOfStandardDeviation
+                            };
+                            this.drawStastics(xScale, scale, chartSvg, data, dimension, stat, axis);
                         }
                     };
-                    Visual.prototype.drawAreaChart = function (xScale, yScale, yRightScale, chartSvg, data, dimension) {
+                    Visual.prototype.drawAreaChart = function (xScale, yScale, yRightScale, chartSvg, areaData, dimension) {
                         var _this = this;
                         if (this.hasArea) {
                             var scale = this.areaAxis === "left" ? yScale : yRightScale;
+                            var axis = this.areaAxis === "left" ? areaData.leftAxis : areaData.rightAxis;
+                            var data = areaData.areaData;
                             var areaG = chartSvg.selectAll(".AreaG")
                                 .data(data)
                                 .enter()
@@ -9725,12 +9842,26 @@ var powerbi;
                                     .attr("dy", this.areaDotRadius / 2)
                                     .attr("y", function (d) { return _this.areaGroupType === "stacked" ? scale(d.y0 + d.y) : scale(d.y); });
                             }
+                            var stat = {
+                                showMean: this.showAreaMean,
+                                showMedian: this.showAreaMedian,
+                                showMode: this.showAreaMode,
+                                exponentialSmoothingLine: this.areaExponentialSmoothingLine,
+                                regressionLine: this.areaRegressionLine,
+                                regressionLineType: this.areaRegressionLineType,
+                                regressionCurveType: this.areaRegressionCurveType,
+                                standardDeviation: this.areaStandardDeviation,
+                                noOfStandardDeviation: this.areaNoOfStandardDeviation
+                            };
+                            this.drawStastics(xScale, scale, chartSvg, data, dimension, stat, axis);
                         }
                     };
-                    Visual.prototype.drawLineChart = function (xScale, yScale, yRightScale, chartSvg, data, dimension) {
+                    Visual.prototype.drawLineChart = function (xScale, yScale, yRightScale, chartSvg, lineData, dimension) {
                         var _this = this;
                         if (this.hasLine) {
                             var scale = this.lineAxis === "left" ? yScale : yRightScale;
+                            var axis = this.lineAxis === "left" ? lineData.leftAxis : lineData.rightAxis;
+                            var data = lineData.lineData;
                             var lineG = chartSvg.selectAll(".lineG")
                                 .data(data)
                                 .enter()
@@ -9773,12 +9904,26 @@ var powerbi;
                                     .attr("dy", this.lineDotRadius / 2)
                                     .attr("y", function (d) { return scale(d.yValue.value); });
                             }
+                            var stat = {
+                                showMean: this.showLineMean,
+                                showMedian: this.showLineMedian,
+                                showMode: this.showLineMode,
+                                exponentialSmoothingLine: this.lineExponentialSmoothingLine,
+                                regressionLine: this.lineRegressionLine,
+                                regressionLineType: this.lineRegressionLineType,
+                                regressionCurveType: this.lineRegressionCurveType,
+                                standardDeviation: this.lineStandardDeviation,
+                                noOfStandardDeviation: this.lineNoOfStandardDeviation
+                            };
+                            this.drawStastics(xScale, scale, chartSvg, data, dimension, stat, axis);
                         }
                     };
-                    Visual.prototype.drawDotChart = function (xScale, yScale, yRightScale, chartSvg, data, dimension) {
+                    Visual.prototype.drawDotChart = function (xScale, yScale, yRightScale, chartSvg, dotData, dimension) {
                         var _this = this;
                         if (this.hasDot) {
                             var scale = this.dotAxis === "left" ? yScale : yRightScale;
+                            var axis = this.dotAxis === "left" ? dotData.leftAxis : dotData.rightAxis;
+                            var data = dotData.dotData;
                             var circleG = chartSvg.selectAll(".dots")
                                 .data(data)
                                 .enter()
@@ -9826,6 +9971,18 @@ var powerbi;
                                     .attr("y", function (d) { return scale(d.yValue.value); });
                                 this.tooltipServiceWrapper.addTooltip(circle, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
                             }
+                            var stat = {
+                                showMean: this.showDotMean,
+                                showMedian: this.showDotMedian,
+                                showMode: this.showDotMode,
+                                exponentialSmoothingLine: this.dotExponentialSmoothingLine,
+                                regressionLine: this.dotRegressionLine,
+                                regressionLineType: this.dotRegressionLineType,
+                                regressionCurveType: this.dotRegressionCurveType,
+                                standardDeviation: this.dotStandardDeviation,
+                                noOfStandardDeviation: this.dotNoOfStandardDeviation
+                            };
+                            this.drawStastics(xScale, scale, chartSvg, data, dimension, stat, axis);
                         }
                     };
                     Visual.prototype.drawLeftConstantLine = function (scale, chartSvg, data, dimension) {
@@ -10080,10 +10237,10 @@ var powerbi;
                         var max = d3.max(data.rightAxis.data);
                         return 2 + (data.rightAxis.format.format(max).length + 1) * this.fontSize / 1.5;
                     };
-                    Visual.prototype.setUpAnalyticData = function (data) {
+                    Visual.prototype.setUpAnalyticData = function (data, showAs) {
                         var retData;
                         var cdata = JSON.parse(JSON.stringify(data));
-                        switch (this.showAs) {
+                        switch (showAs) {
                             case "runningTotal":
                                 retData = cdata.map(function (d) {
                                     var cumulative = 0;
@@ -10208,16 +10365,22 @@ var powerbi;
                                 retData = data;
                                 break;
                         }
-                        return retData;
+                        var rt = retData.map(function (d) {
+                            d.values.map(function (d) {
+                                d.y = d.yValue.value;
+                            });
+                            return d;
+                        });
+                        return rt;
                     };
-                    Visual.prototype.drawStastics = function (xScale, yScale, chartSvg, data, dimension) {
+                    Visual.prototype.drawStastics = function (xScale, yScale, chartSvg, data, dimension, stat, axis) {
                         var _this = this;
                         var statData = [];
-                        ;
-                        if (this.showMean === true) {
-                            var mean = d3.mean(data.yAxis);
+                        var format = axis.format.format;
+                        if (stat.showMean === true) {
+                            var mean = d3.mean(axis.data);
                             statData.push({
-                                title: 'Mean:' + data.yFormat(mean),
+                                title: 'Mean:' + format(mean),
                                 x: dimension.yOffset,
                                 y: yScale(mean),
                                 dx: dimension.chartWidth - 5,
@@ -10227,10 +10390,10 @@ var powerbi;
                                 height: 2,
                             });
                         }
-                        if (this.showMedian === true) {
-                            var median = d3.median(data.yAxis);
+                        if (stat.showMedian === true) {
+                            var median = d3.median(axis.data);
                             statData.push({
-                                title: 'Median:' + data.yFormat(median),
+                                title: 'Median:' + format(median),
                                 x: dimension.yOffset,
                                 y: yScale(median),
                                 dx: dimension.chartWidth - 5,
@@ -10240,10 +10403,10 @@ var powerbi;
                                 height: 2,
                             });
                         }
-                        if (this.showMode === true) {
-                            var mode = data.yAxis[Math.ceil(data.yAxis.length / 2)];
+                        if (stat.showMode === true) {
+                            var mode = axis.data[Math.ceil(axis.data.length / 2)];
                             statData.push({
-                                title: 'Mode:' + data.yFormat(mode),
+                                title: 'Mode:' + format(mode),
                                 x: dimension.yOffset,
                                 y: yScale(mode),
                                 dx: dimension.chartWidth - 5,
@@ -10271,21 +10434,21 @@ var powerbi;
                             .attr("dx", function (d) { return d.dx; })
                             .attr("dy", function (d) { return d.dy; })
                             .text(function (d) { return d.title; });
-                        if (this.exponentialSmoothingLine === true) {
-                            data.data.map(function (d) {
+                        if (stat.exponentialSmoothingLine === true) {
+                            data.map(function (d) {
                                 _this.drawExponentialSmoothing(d, xScale, yScale, chartSvg, dimension);
                             });
                         }
-                        if (this.regressionLine === true) {
-                            this.buildRegression(data.data, xScale, yScale, chartSvg, dimension);
+                        if (stat.regressionLine === true) {
+                            this.buildRegression(data, xScale, yScale, chartSvg, dimension, stat.regressionLineType, stat.regressionCurveType);
                         }
-                        if (this.standardDeviation === true) {
-                            this.drawStandardDeviation(data, xScale, yScale, chartSvg, dimension, data.yFormat);
+                        if (stat.standardDeviation === true) {
+                            this.drawStandardDeviation(data, xScale, yScale, chartSvg, dimension, format, stat.noOfStandardDeviation);
                         }
                     };
-                    Visual.prototype.buildRegression = function (data, xScale, yScale, chartSvg, dimension) {
+                    Visual.prototype.buildRegression = function (data, xScale, yScale, chartSvg, dimension, regressionLineType, regressionCurveType) {
                         var _this = this;
-                        if (this.regressionCurveType === "linear") {
+                        if (regressionCurveType === "linear") {
                             var xLabels = xScale.domain();
                             var xSeries = xLabels.map(function (d, i) { return i; });
                             var ySeries = [];
@@ -10296,10 +10459,10 @@ var powerbi;
                                     ySeries.push(d.yValue.value);
                                     regData.push(d.yValue.value);
                                 });
-                                if (_this.regressionLineType === "multiple" && _this.hasColor)
+                                if (regressionLineType === "multiple" && _this.hasColor)
                                     multipleRegressionData.push({ data: regData, color: d.color });
                             });
-                            if (this.regressionLineType === "multiple" && this.hasColor) {
+                            if (regressionLineType === "multiple" && this.hasColor) {
                                 multipleRegressionData.map(function (d) {
                                     var xSeries = d3.range(1, d.data.length + 1);
                                     ySeries = d.data;
@@ -10314,7 +10477,7 @@ var powerbi;
                                         var x2 = xLabels[xLabels.length - 1];
                                         var y2 = regressionCoeff[0] * xSeries.length + regressionCoeff[1];
                                         var trendData = [[x1, y1, x2, y2]];
-                                        _this.drawLinearRegression(trendData, d.color, xScale, yScale, chartSvg, dimension);
+                                        _this.drawLinearRegression(trendData, d.color, xScale, yScale, chartSvg, dimension, regressionLineType);
                                     }
                                 });
                             }
@@ -10330,7 +10493,7 @@ var powerbi;
                                 var y2 = regressionCoeff[0] * xSeries.length + regressionCoeff[1];
                                 var trendData = [[x1, y1, x2, y2]];
                                 var regressionLineColor = "#b4b6bd";
-                                this.drawLinearRegression(trendData, regressionLineColor, xScale, yScale, chartSvg, dimension);
+                                this.drawLinearRegression(trendData, regressionLineColor, xScale, yScale, chartSvg, dimension, regressionLineType);
                             }
                         }
                         else {
@@ -10339,7 +10502,7 @@ var powerbi;
                             });
                         }
                     };
-                    Visual.prototype.drawLinearRegression = function (trendData, regressionLineColor, xScale, yScale, chartSvg, dimension) {
+                    Visual.prototype.drawLinearRegression = function (trendData, regressionLineColor, xScale, yScale, chartSvg, dimension, regressionLineType) {
                         var trendLine = chartSvg
                             .selectAll(".trendline")
                             .data(trendData)
@@ -10354,7 +10517,7 @@ var powerbi;
                         trendLine.style("stroke", "#000")
                             .style("stroke-width", 3)
                             .style("stroke-dasharray", "3,3");
-                        if (this.regressionLineType === "multiple" && this.hasColor) {
+                        if (regressionLineType === "multiple" && this.hasColor) {
                             trendLine.style("stroke", regressionLineColor);
                         }
                     };
@@ -10415,15 +10578,15 @@ var powerbi;
                         var rSquare = Math.pow(ssXY, 2) / (ssXX * ssYY);
                         return [slope, intercept, rSquare];
                     };
-                    Visual.prototype.drawStandardDeviation = function (data, xScale, yScale, chartSvg, dimension, format) {
+                    Visual.prototype.drawStandardDeviation = function (data, xScale, yScale, chartSvg, dimension, format, noOfStandardDeviation) {
                         var valuesArray = [];
-                        data.data.map(function (d) {
+                        data.map(function (d) {
                             d.values.map(function (d) {
                                 valuesArray.push(d.yValue.value);
                             });
                         });
                         var mean = d3.mean(valuesArray);
-                        var sd = d3.deviation(valuesArray) !== undefined ? (d3.deviation(valuesArray) * parseInt(this.noOfStandardDeviation)) : 0;
+                        var sd = d3.deviation(valuesArray) !== undefined ? (d3.deviation(valuesArray) * parseInt(noOfStandardDeviation)) : 0;
                         var stdDevG = chartSvg.append("g");
                         var stdDevGMeanLine = stdDevG
                             .append("rect")
@@ -10548,6 +10711,78 @@ var powerbi;
                                     objectEnumeration.push({ objectName: objectName, properties: { constantLineColor: this.rightConstantLineColor }, selector: null });
                                 }
                                 break;
+                            case 'barAnalytics':
+                                if (this.hasBar) {
+                                    objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showBarAs }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showBarMean }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showBarMedian }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showBarMode }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.barRegressionLine }, selector: null });
+                                    if (this.barRegressionLine === true) {
+                                        objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.barRegressionCurveType }, selector: null });
+                                        if (this.barRegressionCurveType == 'linear')
+                                            objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.barRegressionLineType }, selector: null });
+                                    }
+                                    objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.barExponentialSmoothingLine }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.barStandardDeviation }, selector: null });
+                                    if (this.barStandardDeviation == true)
+                                        objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.barNoOfStandardDeviation }, selector: null });
+                                }
+                                break;
+                            case 'lineAnalytics':
+                                if (this.hasLine) {
+                                    objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showLineAs }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showLineMean }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showLineMedian }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showLineMode }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.lineRegressionLine }, selector: null });
+                                    if (this.lineRegressionLine === true) {
+                                        objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.lineRegressionCurveType }, selector: null });
+                                        if (this.lineRegressionCurveType == 'linear')
+                                            objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.lineRegressionLineType }, selector: null });
+                                    }
+                                    objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.lineExponentialSmoothingLine }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.lineStandardDeviation }, selector: null });
+                                    if (this.lineStandardDeviation == true)
+                                        objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.lineNoOfStandardDeviation }, selector: null });
+                                }
+                                break;
+                            case 'areaAnalytics':
+                                if (this.hasArea) {
+                                    objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAreaAs }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showAreaMean }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showAreaMedian }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showAreaMode }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.areaRegressionLine }, selector: null });
+                                    if (this.areaRegressionLine === true) {
+                                        objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.areaRegressionCurveType }, selector: null });
+                                        if (this.areaRegressionCurveType == 'linear')
+                                            objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.areaRegressionLineType }, selector: null });
+                                    }
+                                    objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.areaExponentialSmoothingLine }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.areaStandardDeviation }, selector: null });
+                                    if (this.lineStandardDeviation == true)
+                                        objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.areaNoOfStandardDeviation }, selector: null });
+                                }
+                                break;
+                            case 'dotAnalytics':
+                                if (this.hasDot) {
+                                    objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showDotAs }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showDotMean }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showDotMedian }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showDotMode }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.dotRegressionLine }, selector: null });
+                                    if (this.dotRegressionLine === true) {
+                                        objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.dotRegressionCurveType }, selector: null });
+                                        if (this.dotRegressionCurveType == 'linear')
+                                            objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.dotRegressionLineType }, selector: null });
+                                    }
+                                    objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.dotExponentialSmoothingLine }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.dotStandardDeviation }, selector: null });
+                                    if (this.dotStandardDeviation == true)
+                                        objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.dotNoOfStandardDeviation }, selector: null });
+                                }
+                                break;
                         }
                         ;
                         return objectEnumeration;
@@ -10566,8 +10801,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.comboChartD9885417F9AAF5BB8D45B007E_DEBUG = {
-                name: 'comboChartD9885417F9AAF5BB8D45B007E_DEBUG',
+            plugins.comboChartD9885417F9AAF5BB8D45B007E = {
+                name: 'comboChartD9885417F9AAF5BB8D45B007E',
                 displayName: 'Combo Chart',
                 class: 'Visual',
                 version: '1.0.0',

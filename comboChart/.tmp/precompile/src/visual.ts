@@ -81,20 +81,51 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
         private legendPosition: any = "right";
         private legendName: any;
 
-        private showAs: any = "default";
+        private showBarAs: any = "default";
+        private showBarMean: any = false;
+        private showBarMedian: any = false;
+        private showBarMode: any = false;
+        private barRegressionLine: any = false;
+        private barRegressionLineType: any = "single";
+        private barRegressionCurveType: any = "linear";
+        private barStandardDeviation: any = false;
+        private barNoOfStandardDeviation: any = "1";
+        private barExponentialSmoothingLine: any = false;
 
-        private showMean: any = false;
-        private showMedian: any = false;
-        private showMode: any = false;
 
-        private regressionLine: any = false;
-        private regressionLineType: any = "single";
-        private regressionCurveType: any = "linear";
+        private showLineAs: any = "default";
+        private showLineMean: any = false;
+        private showLineMedian: any = false;
+        private showLineMode: any = false;
+        private lineRegressionLine: any = false;
+        private lineRegressionLineType: any = "single";
+        private lineRegressionCurveType: any = "linear";
+        private lineStandardDeviation: any = false;
+        private lineNoOfStandardDeviation: any = "1";
+        private lineExponentialSmoothingLine: any = false;
 
-        private standardDeviation: any = false;
-        private noOfStandardDeviation: any = "1";
+        private showAreaAs: any = "default";
+        private showAreaMean: any = false;
+        private showAreaMedian: any = false;
+        private showAreaMode: any = false;
+        private areaRegressionLine: any = false;
+        private areaRegressionLineType: any = "single";
+        private areaRegressionCurveType: any = "linear";
+        private areaStandardDeviation: any = false;
+        private areaNoOfStandardDeviation: any = "1";
+        private areaExponentialSmoothingLine: any = false;
 
-        private exponentialSmoothingLine: any = false;
+        private showDotAs: any = "default";
+        private showDotMean: any = false;
+        private showDotMedian: any = false;
+        private showDotMode: any = false;
+        private dotRegressionLine: any = false;
+        private dotRegressionLineType: any = "single";
+        private dotRegressionCurveType: any = "linear";
+        private dotStandardDeviation: any = false;
+        private dotNoOfStandardDeviation: any = "1";
+        private dotExponentialSmoothingLine: any = false;
+
 
         private formattedData: any = [];
 
@@ -122,12 +153,9 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
         private TooltipEventArgs: any;
         public TooltipEnabledDataPoint: any;
 
-        private yAxisMinValue: boolean = false;;
+
         private colorIndex: any = 0;
         private colorPalette: any;
-
-        private showAxis: any = true;
-
 
         private fontSize: any = 11;
         private legendFontSize: any = 10;
@@ -193,12 +221,12 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
             this.drawYScale(yScale, chartSvg, dimension, data);
             this.drawRightYScale(yRightScale, chartSvg, dimension, data);
 
-            this.drawAreaChart(xScale, yScale, yRightScale, chartSvg, data.areaData, dimension);
+            this.drawAreaChart(xScale, yScale, yRightScale, chartSvg, data, dimension);
 
-            this.drawBarChart(xScale, yScale, yRightScale, chartSvg, data.barData, dimension);
+            this.drawBarChart(xScale, yScale, yRightScale, chartSvg, data, dimension);
 
-            this.drawLineChart(xScale, yScale, yRightScale, chartSvg, data.lineData, dimension);
-            this.drawDotChart(xScale, yScale, yRightScale, chartSvg, data.dotData, dimension);
+            this.drawLineChart(xScale, yScale, yRightScale, chartSvg, data, dimension);
+            this.drawDotChart(xScale, yScale, yRightScale, chartSvg, data, dimension);
 
             this.drawLeftConstantLine(yScale, chartSvg, data, dimension);
             this.drawRightConstantLine(yRightScale, chartSvg, data, dimension);
@@ -231,7 +259,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                 if (this.hasBar) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.bar);
-                    barData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "bar");
+                    barData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "bar", this.showBarAs);
 
                     if (this.barGroupType === "stacked") {
 
@@ -265,7 +293,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                 if (this.hasArea) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.area);
-                    areaData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "area");
+                    areaData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "area", this.showAreaAs);
 
 
                     if (this.areaGroupType === "stacked") {
@@ -296,7 +324,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                 if (this.hasLine) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.line);
-                    lineData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "line");
+                    lineData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "line", this.showLineAs);
                     lineData.map(d => {
                         d.values.map(d => {
                             if (this.lineAxis === "left") leftAxisData.push(d.yValue.value);
@@ -307,7 +335,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                 if (this.hasDot) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.dot);
-                    dotData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "dot");
+                    dotData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "dot", this.showDotAs);
                     dotData.map(d => {
                         d.values.map(d => {
                             if (this.dotAxis === "left") leftAxisData.push(d.yValue.value);
@@ -341,7 +369,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
             }
         }
 
-        private getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, type) {
+        private getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, type, showAs) {
 
             var formattedData = [];
 
@@ -354,7 +382,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
             }
             else formattedData = this.getMeasureData(valuesG, grouped, rawData, xMetadata, xAxis);
 
-            var retData = this.setUpAnalyticData(formattedData)
+            var retData = this.setUpAnalyticData(formattedData, showAs)
 
             return retData;
         }
@@ -492,21 +520,60 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                     if (rightAxis.constantLineColor !== undefined) this.rightConstantLineColor = rightAxis["constantLineColor"];
                 }
 
-                if (options.dataViews[0].metadata.objects["Statistics"]) {
-                    var statistics = options.dataViews[0].metadata.objects["Statistics"];
-                    if (statistics.showAs !== undefined) this.showAs = statistics["showAs"];
-                    if (statistics.showMean !== undefined) this.showMean = statistics["showMean"];
-                    if (statistics.showMedian !== undefined) this.showMedian = statistics["showMedian"];
-                    if (statistics.showMode !== undefined) this.showMode = statistics["showMode"];
-                    if (statistics.regressionLine !== undefined) this.regressionLine = statistics["regressionLine"];
-                    if (statistics.regressionLineType !== undefined) this.regressionLineType = statistics["regressionLineType"];
-                    if (statistics.regressionCurveType !== undefined) this.regressionCurveType = statistics["regressionCurveType"];
-                    if (statistics.exponentialSmoothingLine !== undefined) this.exponentialSmoothingLine = statistics["exponentialSmoothingLine"];
-                    if (statistics.standardDeviation !== undefined) this.standardDeviation = statistics["standardDeviation"];
-                    if (statistics.noOfStandardDeviation !== undefined) this.noOfStandardDeviation = statistics["noOfStandardDeviation"];
+                if (options.dataViews[0].metadata.objects["barAnalytics"]) {
+                    var barStatistics = options.dataViews[0].metadata.objects["barAnalytics"];
+                    if (barStatistics.showAs !== undefined) this.showBarAs = barStatistics["showAs"];
+                    if (barStatistics.showMean !== undefined) this.showBarMean = barStatistics["showMean"];
+                    if (barStatistics.showMedian !== undefined) this.showBarMedian = barStatistics["showMedian"];
+                    if (barStatistics.showMode !== undefined) this.showBarMode = barStatistics["showMode"];
+                    if (barStatistics.regressionLine !== undefined) this.barRegressionLine = barStatistics["regressionLine"];
+                    if (barStatistics.regressionLineType !== undefined) this.barRegressionLineType = barStatistics["regressionLineType"];
+                    if (barStatistics.regressionCurveType !== undefined) this.barRegressionCurveType = barStatistics["regressionCurveType"];
+                    if (barStatistics.exponentialSmoothingLine !== undefined) this.barExponentialSmoothingLine = barStatistics["exponentialSmoothingLine"];
+                    if (barStatistics.standardDeviation !== undefined) this.barStandardDeviation = barStatistics["standardDeviation"];
+                    if (barStatistics.noOfStandardDeviation !== undefined) this.barNoOfStandardDeviation = barStatistics["noOfStandardDeviation"];
 
                 }
-                if (options.dataViews[0].metadata.objects["ConstantLine"]) {
+
+                if (options.dataViews[0].metadata.objects["areaAnalytics"]) {
+                    var areaStatistics = options.dataViews[0].metadata.objects["areaAnalytics"];
+                    if (areaStatistics.showAs !== undefined) this.showAreaAs = areaStatistics["showAs"];
+                    if (areaStatistics.showMean !== undefined) this.showAreaMean = areaStatistics["showMean"];
+                    if (areaStatistics.showMedian !== undefined) this.showAreaMedian = areaStatistics["showMedian"];
+                    if (areaStatistics.showMode !== undefined) this.showAreaMode = areaStatistics["showMode"];
+                    if (areaStatistics.regressionLine !== undefined) this.areaRegressionLine = areaStatistics["regressionLine"];
+                    if (areaStatistics.regressionLineType !== undefined) this.areaRegressionLineType = areaStatistics["regressionLineType"];
+                    if (areaStatistics.regressionCurveType !== undefined) this.areaRegressionCurveType = areaStatistics["regressionCurveType"];
+                    if (areaStatistics.exponentialSmoothingLine !== undefined) this.areaExponentialSmoothingLine = areaStatistics["exponentialSmoothingLine"];
+                    if (areaStatistics.standardDeviation !== undefined) this.areaStandardDeviation = areaStatistics["standardDeviation"];
+                    if (areaStatistics.noOfStandardDeviation !== undefined) this.areaNoOfStandardDeviation = areaStatistics["noOfStandardDeviation"];
+
+                }
+                if (options.dataViews[0].metadata.objects["lineAnalytics"]) {
+                    var lineStatistics = options.dataViews[0].metadata.objects["lineAnalytics"];
+                    if (lineStatistics.showAs !== undefined) this.showLineAs = lineStatistics["showAs"];
+                    if (lineStatistics.showMean !== undefined) this.showLineMean = lineStatistics["showMean"];
+                    if (lineStatistics.showMedian !== undefined) this.showLineMedian = lineStatistics["showMedian"];
+                    if (lineStatistics.showMode !== undefined) this.showLineMode = lineStatistics["showMode"];
+                    if (lineStatistics.regressionLine !== undefined) this.lineRegressionLine = lineStatistics["regressionLine"];
+                    if (lineStatistics.regressionLineType !== undefined) this.lineRegressionLineType = lineStatistics["regressionLineType"];
+                    if (lineStatistics.regressionCurveType !== undefined) this.lineRegressionCurveType = lineStatistics["regressionCurveType"];
+                    if (lineStatistics.exponentialSmoothingLine !== undefined) this.lineExponentialSmoothingLine = lineStatistics["exponentialSmoothingLine"];
+                    if (lineStatistics.standardDeviation !== undefined) this.lineStandardDeviation = lineStatistics["standardDeviation"];
+                    if (lineStatistics.noOfStandardDeviation !== undefined) this.lineNoOfStandardDeviation = lineStatistics["noOfStandardDeviation"];
+                }
+                if (options.dataViews[0].metadata.objects["dotAnalytics"]) {
+                    var dotStatistics = options.dataViews[0].metadata.objects["dotAnalytics"];
+                    if (dotStatistics.showAs !== undefined) this.showDotAs = dotStatistics["showAs"];
+                    if (dotStatistics.showMean !== undefined) this.showDotMean = dotStatistics["showMean"];
+                    if (dotStatistics.showMedian !== undefined) this.showDotMedian = dotStatistics["showMedian"];
+                    if (dotStatistics.showMode !== undefined) this.showDotMode = dotStatistics["showMode"];
+                    if (dotStatistics.regressionLine !== undefined) this.dotRegressionLine = dotStatistics["regressionLine"];
+                    if (dotStatistics.regressionLineType !== undefined) this.dotRegressionLineType = dotStatistics["regressionLineType"];
+                    if (dotStatistics.regressionCurveType !== undefined) this.dotRegressionCurveType = dotStatistics["regressionCurveType"];
+                    if (dotStatistics.exponentialSmoothingLine !== undefined) this.dotExponentialSmoothingLine = dotStatistics["exponentialSmoothingLine"];
+                    if (dotStatistics.standardDeviation !== undefined) this.dotStandardDeviation = dotStatistics["standardDeviation"];
+                    if (dotStatistics.noOfStandardDeviation !== undefined) this.dotNoOfStandardDeviation = dotStatistics["noOfStandardDeviation"];
 
                 }
 
@@ -697,10 +764,12 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
             yAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
         }
 
-        private drawBarChart(xScale, yScale, yRightScale, chartSvg, data, dimension) {
+        private drawBarChart(xScale, yScale, yRightScale, chartSvg, barData, dimension) {
             if (this.hasBar) {
 
                 var scale = this.barAxis === "left" ? yScale : yRightScale;
+                var axis = this.barAxis === "left" ? barData.leftAxis : barData.rightAxis;
+                var data = barData.barData;
 
                 if (this.barGroupType === "group") {
 
@@ -715,7 +784,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                     barG.attr("transform", d => "translate(" + (dimension.yOffset + x1(d.key)) + ",0)");
 
-                    barG.selectAll("rect")
+                    var bars = barG.selectAll("rect")
                         .data(d => d.values)
                         .enter()
                         .append("rect")
@@ -729,7 +798,6 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                             return d.y < 0 ? (scale(d.y) - scale(0)) : (scale(0) - scale(d.y));
                         });
 
-
                 }
 
                 else if (this.barGroupType === "stacked") {
@@ -741,7 +809,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                     barG.attr("transform", d => "translate(" + (dimension.yOffset) + ",0)");
 
-                    barG.selectAll("rect")
+                    var bars = barG.selectAll("rect")
                         .data(d => d.values)
                         .enter()
                         .append("rect")
@@ -775,6 +843,20 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                 //         .attr("height", d => scale(d.y));
                 // }
 
+                bars.on("click", (d, i) => {
+                    d.isFiltered = !d.isFiltered;
+
+                    this.selectionManager.select(d.selectionId, true);
+
+                    this.setFilterOpacity(bars);
+                    (<Event>d3.event).stopPropagation();
+                });
+
+                this.tooltipServiceWrapper.addTooltip(bars,
+                    (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
+                    (tooltipEvent: TooltipEventArgs<any>) => null
+                );
+
                 if (this.showBarLabel) {
 
                     var text = barG.selectAll(".barText")
@@ -792,14 +874,30 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                 }
 
+                var stat = {
+                    showMean: this.showBarMean,
+                    showMedian: this.showBarMedian,
+                    showMode: this.showBarMode,
+                    exponentialSmoothingLine: this.barExponentialSmoothingLine,
+                    regressionLine: this.barRegressionLine,
+                    regressionLineType: this.barRegressionLineType,
+                    regressionCurveType: this.barRegressionCurveType,
+                    standardDeviation: this.barStandardDeviation,
+                    noOfStandardDeviation: this.barNoOfStandardDeviation
+                }
+
+                this.drawStastics(xScale, scale, chartSvg, data, dimension, stat, axis);
+
             }
 
         }
 
-        private drawAreaChart(xScale, yScale, yRightScale, chartSvg, data, dimension) {
+        private drawAreaChart(xScale, yScale, yRightScale, chartSvg, areaData, dimension) {
             if (this.hasArea) {
 
                 var scale = this.areaAxis === "left" ? yScale : yRightScale;
+                var axis = this.areaAxis === "left" ? areaData.leftAxis : areaData.rightAxis;
+                var data = areaData.areaData;
 
                 var areaG = chartSvg.selectAll(".AreaG")
                     .data(data)
@@ -868,14 +966,30 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                 }
 
+                var stat = {
+                    showMean: this.showAreaMean,
+                    showMedian: this.showAreaMedian,
+                    showMode: this.showAreaMode,
+                    exponentialSmoothingLine: this.areaExponentialSmoothingLine,
+                    regressionLine: this.areaRegressionLine,
+                    regressionLineType: this.areaRegressionLineType,
+                    regressionCurveType: this.areaRegressionCurveType,
+                    standardDeviation: this.areaStandardDeviation,
+                    noOfStandardDeviation: this.areaNoOfStandardDeviation
+                }
+
+                this.drawStastics(xScale, scale, chartSvg, data, dimension, stat, axis);
+
             }
 
         }
 
-        private drawLineChart(xScale, yScale, yRightScale, chartSvg, data, dimension) {
+        private drawLineChart(xScale, yScale, yRightScale, chartSvg, lineData, dimension) {
             if (this.hasLine) {
 
                 var scale = this.lineAxis === "left" ? yScale : yRightScale;
+                var axis = this.lineAxis === "left" ? lineData.leftAxis : lineData.rightAxis;
+                var data = lineData.lineData;
 
                 var lineG = chartSvg.selectAll(".lineG")
                     .data(data)
@@ -935,14 +1049,30 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                 }
 
+                var stat = {
+                    showMean: this.showLineMean,
+                    showMedian: this.showLineMedian,
+                    showMode: this.showLineMode,
+                    exponentialSmoothingLine: this.lineExponentialSmoothingLine,
+                    regressionLine: this.lineRegressionLine,
+                    regressionLineType: this.lineRegressionLineType,
+                    regressionCurveType: this.lineRegressionCurveType,
+                    standardDeviation: this.lineStandardDeviation,
+                    noOfStandardDeviation: this.lineNoOfStandardDeviation
+                }
+
+                this.drawStastics(xScale, scale, chartSvg, data, dimension, stat, axis);
+
             }
 
         }
 
-        private drawDotChart(xScale, yScale, yRightScale, chartSvg, data, dimension) {
+        private drawDotChart(xScale, yScale, yRightScale, chartSvg, dotData, dimension) {
             if (this.hasDot) {
 
                 var scale = this.dotAxis === "left" ? yScale : yRightScale;
+                var axis = this.dotAxis === "left" ? dotData.leftAxis : dotData.rightAxis;
+                var data = dotData.dotData;
 
                 var circleG = chartSvg.selectAll(".dots")
                     .data(data)
@@ -963,7 +1093,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                 else {
                     var arc = d3.svg.symbol().type(this.dotShape)
-                        .size(this.dotRadius *5);
+                        .size(this.dotRadius * 5);
 
                     var circle = circleG.selectAll(".dots")
                         .data(d => d.values.filter(d => d.yValue.value !== null))
@@ -1007,6 +1137,20 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                         (tooltipEvent: TooltipEventArgs<any>) => null
                     );
                 }
+
+                var stat = {
+                    showMean: this.showDotMean,
+                    showMedian: this.showDotMedian,
+                    showMode: this.showDotMode,
+                    exponentialSmoothingLine: this.dotExponentialSmoothingLine,
+                    regressionLine: this.dotRegressionLine,
+                    regressionLineType: this.dotRegressionLineType,
+                    regressionCurveType: this.dotRegressionCurveType,
+                    standardDeviation: this.dotStandardDeviation,
+                    noOfStandardDeviation: this.dotNoOfStandardDeviation
+                }
+
+                this.drawStastics(xScale, scale, chartSvg, data, dimension, stat, axis);
             }
 
         }
@@ -1357,10 +1501,10 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
             return domain;
         };
 
-        private setUpAnalyticData(data) {
+        private setUpAnalyticData(data, showAs) {
             var retData;
             var cdata = JSON.parse(JSON.stringify(data));
-            switch (this.showAs) {
+            switch (showAs) {
 
                 case "runningTotal":
                     retData = cdata.map(function (d) {
@@ -1501,17 +1645,25 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                     break;
             }
 
-            return retData;
+            var rt = retData.map(d => {
+                d.values.map(d => {
+                    d.y = d.yValue.value;
+                });
+                return d;
+            });
+
+            return rt;
         }
 
-        private drawStastics(xScale, yScale, chartSvg, data, dimension) {
+        private drawStastics(xScale, yScale, chartSvg, data, dimension, stat, axis) {
 
-            let statData = [];;
+            let statData = [];
+            var format = axis.format.format;
 
-            if (this.showMean === true) {
-                let mean = d3.mean(data.yAxis);
+            if (stat.showMean === true) {
+                let mean = d3.mean(axis.data);
                 statData.push({
-                    title: 'Mean:' + data.yFormat(mean),
+                    title: 'Mean:' + format(mean),
                     x: dimension.yOffset,
                     y: yScale(mean),
                     dx: dimension.chartWidth - 5,
@@ -1522,10 +1674,10 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                 })
             }
 
-            if (this.showMedian === true) {
-                let median = d3.median(data.yAxis);
+            if (stat.showMedian === true) {
+                let median = d3.median(axis.data);
                 statData.push({
-                    title: 'Median:' + data.yFormat(median),
+                    title: 'Median:' + format(median),
                     x: dimension.yOffset,
                     y: yScale(median),
                     dx: dimension.chartWidth - 5,
@@ -1536,10 +1688,10 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                 })
             }
 
-            if (this.showMode === true) {
-                let mode = data.yAxis[Math.ceil(data.yAxis.length / 2)];
+            if (stat.showMode === true) {
+                let mode = axis.data[Math.ceil(axis.data.length / 2)];
                 statData.push({
-                    title: 'Mode:' + data.yFormat(mode),
+                    title: 'Mode:' + format(mode),
                     x: dimension.yOffset,
                     y: yScale(mode),
                     dx: dimension.chartWidth - 5,
@@ -1571,23 +1723,23 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                 .attr("dy", d => d.dy)
                 .text(d => d.title);
 
-            if (this.exponentialSmoothingLine === true) {
-                data.data.map(d => {
+            if (stat.exponentialSmoothingLine === true) {
+                data.map(d => {
                     this.drawExponentialSmoothing(d, xScale, yScale, chartSvg, dimension);
                 });
             }
 
-            if (this.regressionLine === true) {
-                this.buildRegression(data.data, xScale, yScale, chartSvg, dimension)
+            if (stat.regressionLine === true) {
+                this.buildRegression(data, xScale, yScale, chartSvg, dimension, stat.regressionLineType, stat.regressionCurveType)
             }
-            if (this.standardDeviation === true) {
-                this.drawStandardDeviation(data, xScale, yScale, chartSvg, dimension, data.yFormat);
+            if (stat.standardDeviation === true) {
+                this.drawStandardDeviation(data, xScale, yScale, chartSvg, dimension, format, stat.noOfStandardDeviation);
             }
         }
 
-        private buildRegression(data, xScale, yScale, chartSvg, dimension) {
+        private buildRegression(data, xScale, yScale, chartSvg, dimension, regressionLineType, regressionCurveType) {
 
-            if (this.regressionCurveType === "linear") {
+            if (regressionCurveType === "linear") {
                 var xLabels = xScale.domain();
 
                 var xSeries = xLabels.map((d, i) => i);
@@ -1601,11 +1753,11 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                         regData.push(d.yValue.value);
                     });
 
-                    if (this.regressionLineType === "multiple" && this.hasColor) multipleRegressionData.push({ data: regData, color: d.color });
+                    if (regressionLineType === "multiple" && this.hasColor) multipleRegressionData.push({ data: regData, color: d.color });
 
                 });
 
-                if (this.regressionLineType === "multiple" && this.hasColor) {
+                if (regressionLineType === "multiple" && this.hasColor) {
                     multipleRegressionData.map(d => {
 
                         var xSeries = d3.range(1, d.data.length + 1);
@@ -1626,7 +1778,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                             var trendData = [[x1, y1, x2, y2]];
 
-                            this.drawLinearRegression(trendData, d.color, xScale, yScale, chartSvg, dimension);
+                            this.drawLinearRegression(trendData, d.color, xScale, yScale, chartSvg, dimension, regressionLineType);
                         }
 
                     })
@@ -1648,7 +1800,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                     var trendData = [[x1, y1, x2, y2]];
                     var regressionLineColor = "#b4b6bd";
 
-                    this.drawLinearRegression(trendData, regressionLineColor, xScale, yScale, chartSvg, dimension);
+                    this.drawLinearRegression(trendData, regressionLineColor, xScale, yScale, chartSvg, dimension, regressionLineType);
 
                 }
             }
@@ -1661,7 +1813,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
         }
 
-        private drawLinearRegression(trendData, regressionLineColor, xScale, yScale, chartSvg, dimension) {
+        private drawLinearRegression(trendData, regressionLineColor, xScale, yScale, chartSvg, dimension, regressionLineType) {
 
             let trendLine = chartSvg
                 .selectAll(".trendline")
@@ -1681,7 +1833,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                 .style("stroke-width", 3)
                 .style("stroke-dasharray", "3,3")
 
-            if (this.regressionLineType === "multiple" && this.hasColor) {
+            if (regressionLineType === "multiple" && this.hasColor) {
                 trendLine.style("stroke", regressionLineColor);
             }
         }
@@ -1863,17 +2015,17 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
             return [slope, intercept, rSquare];
         }
 
-        private drawStandardDeviation(data, xScale, yScale, chartSvg, dimension, format) {
+        private drawStandardDeviation(data, xScale, yScale, chartSvg, dimension, format, noOfStandardDeviation) {
 
             var valuesArray = [];
-            data.data.map(d => {
+            data.map(d => {
                 d.values.map(d => {
                     valuesArray.push(d.yValue.value);
                 });
             });
 
             var mean = d3.mean(valuesArray);
-            var sd = d3.deviation(valuesArray) !== undefined ? (d3.deviation(valuesArray) * parseInt(this.noOfStandardDeviation)) : 0;
+            var sd = d3.deviation(valuesArray) !== undefined ? (d3.deviation(valuesArray) * parseInt(noOfStandardDeviation)) : 0;
 
             let stdDevG = chartSvg.append("g");
 
@@ -2028,24 +2180,85 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                     break;
 
-                //case 'Statistics':
-                //    objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAs }, selector: null });
-                //    objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showMean }, selector: null });
-                //    objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showMedian }, selector: null });
-                //    objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showMode }, selector: null });
+                case 'barAnalytics':
+                    if (this.hasBar) {
+                        objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showBarAs }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showBarMean }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showBarMedian }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showBarMode }, selector: null });
 
-                //    objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.regressionLine }, selector: null });
-                //    if (this.regressionLine === true) {
-                //        objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.regressionCurveType }, selector: null });
-                //        if (this.regressionCurveType == 'linear') objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.regressionLineType }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.barRegressionLine }, selector: null });
+                        if (this.barRegressionLine === true) {
+                            objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.barRegressionCurveType }, selector: null });
+                            if (this.barRegressionCurveType == 'linear') objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.barRegressionLineType }, selector: null });
 
-                //    }
-                //    objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.exponentialSmoothingLine }, selector: null });
+                        }
+                        objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.barExponentialSmoothingLine }, selector: null });
 
-                //    objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.standardDeviation }, selector: null });
-                //    if (this.standardDeviation == true) objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.noOfStandardDeviation }, selector: null });
-                //    break;
+                        objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.barStandardDeviation }, selector: null });
+                        if (this.barStandardDeviation == true) objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.barNoOfStandardDeviation }, selector: null });
+                    }
+                    break;
 
+                case 'lineAnalytics':
+                    if (this.hasLine) {
+                        objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showLineAs }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showLineMean }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showLineMedian }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showLineMode }, selector: null });
+
+                        objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.lineRegressionLine }, selector: null });
+                        if (this.lineRegressionLine === true) {
+                            objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.lineRegressionCurveType }, selector: null });
+                            if (this.lineRegressionCurveType == 'linear') objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.lineRegressionLineType }, selector: null });
+
+                        }
+                        objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.lineExponentialSmoothingLine }, selector: null });
+
+                        objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.lineStandardDeviation }, selector: null });
+                        if (this.lineStandardDeviation == true) objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.lineNoOfStandardDeviation }, selector: null });
+                    }
+                    break;
+
+                case 'areaAnalytics':
+                    if (this.hasArea) {
+                        objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAreaAs }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showAreaMean }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showAreaMedian }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showAreaMode }, selector: null });
+
+                        objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.areaRegressionLine }, selector: null });
+                        if (this.areaRegressionLine === true) {
+                            objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.areaRegressionCurveType }, selector: null });
+                            if (this.areaRegressionCurveType == 'linear') objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.areaRegressionLineType }, selector: null });
+
+                        }
+                        objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.areaExponentialSmoothingLine }, selector: null });
+
+                        objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.areaStandardDeviation }, selector: null });
+                        if (this.lineStandardDeviation == true) objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.areaNoOfStandardDeviation }, selector: null });
+                    }
+                    break;
+
+                case 'dotAnalytics':
+                    if (this.hasDot) {
+                        objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showDotAs }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMean: this.showDotMean }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMedian: this.showDotMedian }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { showMode: this.showDotMode }, selector: null });
+
+                        objectEnumeration.push({ objectName: objectName, properties: { regressionLine: this.dotRegressionLine }, selector: null });
+                        if (this.dotRegressionLine === true) {
+                            objectEnumeration.push({ objectName: objectName, properties: { regressionCurveType: this.dotRegressionCurveType }, selector: null });
+                            if (this.dotRegressionCurveType == 'linear') objectEnumeration.push({ objectName: objectName, properties: { regressionLineType: this.dotRegressionLineType }, selector: null });
+
+                        }
+                        objectEnumeration.push({ objectName: objectName, properties: { exponentialSmoothingLine: this.dotExponentialSmoothingLine }, selector: null });
+
+                        objectEnumeration.push({ objectName: objectName, properties: { standardDeviation: this.dotStandardDeviation }, selector: null });
+                        if (this.dotStandardDeviation == true) objectEnumeration.push({ objectName: objectName, properties: { noOfStandardDeviation: this.dotNoOfStandardDeviation }, selector: null });
+                    }
+                    break;
 
             };
 
