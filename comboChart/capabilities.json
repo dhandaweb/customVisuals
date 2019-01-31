@@ -254,6 +254,14 @@
         "Line": {
             "displayName": "Line",
             "properties": {
+                "lineStroke": {
+                    "displayName": "Line stroke",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                },
                 "showLabel": {
                     "displayName": "Data Labels",
                     "type": {

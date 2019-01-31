@@ -65,6 +65,7 @@ module powerbi.extensibility.visual {
         private lineAxis: any = "left";
         private lineFormat: any;
         private lineDotRadius: any = 5;
+        private lineStroke: any = 2;
 
         private hasDot: any = false;
         private showLineDots: any = false;
@@ -476,6 +477,7 @@ module powerbi.extensibility.visual {
                 }
                 if (options.dataViews[0].metadata.objects["Line"]) {
                     var line = options.dataViews[0].metadata.objects["Line"];
+                    if (line.lineStroke !== undefined) this.lineStroke = line["lineStroke"];
                     if (line.showLabel !== undefined) this.showLineLabel = line["showLabel"];
                     if (line.showLineDots !== undefined) this.showLineDots = line["showLineDots"];
                     if (line.lineDotRadius !== undefined) this.lineDotRadius = line["lineDotRadius"];
@@ -1005,6 +1007,7 @@ module powerbi.extensibility.visual {
                     .attr("class", "line")
                     .attr("fill", "none")
                     .attr("stroke", d => d.color)
+                    .attr("stroke-width", this.lineStroke + "px")
                     .attr("d", d => linePath(d.values));
 
                 if (this.showLineDots) {
@@ -2107,6 +2110,8 @@ module powerbi.extensibility.visual {
 
                 case 'Line':
                     if (this.hasLine) {
+
+                        objectEnumeration.push({ objectName: objectName, properties: { lineStroke: this.lineStroke }, selector: null });
                         objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLineLabel }, selector: null });
                         objectEnumeration.push({ objectName: objectName, properties: { axis: this.lineAxis }, selector: null });
                         objectEnumeration.push({ objectName: objectName, properties: { showLineDots: this.showLineDots }, selector: null });
