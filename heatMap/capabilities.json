@@ -135,6 +135,25 @@
                         ]
                     }
                 },
+                "heatSort": {
+                    "displayName": "Heat Sort",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "ascending",
+                                "displayName": "Ascending"
+                            },
+                            {
+                                "value": "descending",
+                                "displayName": "Descending"
+                            }
+                        ]
+                    }
+                },
                 "heatRange": {
                     "displayName": "Heat Range",
                     "type": { "text": true }
