@@ -9118,7 +9118,7 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { binCount: this.binCount }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { showYAxis: this.showYAxis }, selector: null });
+                                //objectEnumeration.push({ objectName: objectName, properties: { showYAxis: this.showYAxis }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { barFill: this.barFill }, selector: null });
                                 break;
                         }
@@ -9139,8 +9139,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.histogramCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
-                name: 'histogramCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
+            plugins.histogramCCFC224D9885417F9AAF5BB8D45B007E = {
+                name: 'histogramCCFC224D9885417F9AAF5BB8D45B007E',
                 displayName: 'Histogram',
                 class: 'Visual',
                 version: '1.0.0',

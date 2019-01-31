@@ -305,7 +305,7 @@ module powerbi.extensibility.visual {
                     objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { binCount: this.binCount }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showYAxis: this.showYAxis }, selector: null });
+                    //objectEnumeration.push({ objectName: objectName, properties: { showYAxis: this.showYAxis }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { barFill: this.barFill }, selector: null });
                    
                     break;
