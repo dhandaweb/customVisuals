@@ -213,9 +213,9 @@ module powerbi.extensibility.visual {
             this.hasActual = false;
             this.hasPeriod = false;
             this.hasGroup = false;
-            
+
             this.columns.map((d, i) => {
-               
+
                 if (d.roles["target"]) {
                     this.hasTarget = true;
                     this.targetIndex = i;
@@ -229,7 +229,7 @@ module powerbi.extensibility.visual {
                     this.groupIndex = i;
                 }
                 if (d.roles["period"]) {
-                   
+
                     this.hasPeriod = true;
                     this.dateFormat = d.format;
                     this.periodIndex = i;
@@ -244,7 +244,7 @@ module powerbi.extensibility.visual {
                 .attr("style", "width:100%;")
                 .append("table")
                 .attr("style", "width:100%;text-align:left;border-spacing:0");
-          
+
             if (this.hasActual === false || (this.hasPeriod === false && this.hasGroup === false)) {
                 table
                     .append("html")

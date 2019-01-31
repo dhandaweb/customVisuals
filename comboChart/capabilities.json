@@ -612,8 +612,419 @@
                 }
             }
         },
-        "Statistics": {
-            "displayName": "Analytics",
+        "barAnalytics": {
+            "displayName": "Bar analytics",
+            "properties": {
+                "showAs": {
+                    "displayName": "Show as",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "runningTotal",
+                                "displayName": "Running Total"
+                            },
+                            {
+                                "value": "difference",
+                                "displayName": "Difference"
+                            },
+                            {
+                                "value": "perDifference",
+                                "displayName": "% Difference"
+                            },
+                            {
+                                "value": "differenceFromAverage",
+                                "displayName": "Difference From Average"
+                            },
+                            {
+                                "value": "perDifferenceFromAverage",
+                                "displayName": "% Difference From Average"
+                            },
+                            {
+                                "value": "perAxisValue",
+                                "displayName": "% of Axis Value"
+                            },
+                            {
+                                "value": "perTotal",
+                                "displayName": "% of Total"
+                            },
+                            {
+                                "value": "perGrandTotal",
+                                "displayName": "% of Grand Total"
+                            },
+                            {
+                                "value": "movingAverage",
+                                "displayName": "Moving Average"
+                            }
+                        ]
+                    }
+                },
+                "showMean": {
+                    "displayName": "Show Mean",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "showMedian": {
+                    "displayName": "Show Median",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "showMode": {
+                    "displayName": "Show Mode",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "exponentialSmoothingLine": {
+                    "displayName": "Exponential Smoothing Line",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "regressionLine": {
+                    "displayName": "Regression Line",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "regressionCurveType": {
+                    "displayName": "Regression Curve Type",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "linear",
+                                "displayName": "Linear"
+                            },
+                            {
+                                "value": "exponential",
+                                "displayName": "Exponential"
+                            }
+                        ]
+                    }
+                },
+                "regressionLineType": {
+                    "displayName": "Regression Line Type",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "single",
+                                "displayName": "Single"
+                            },
+                            {
+                                "value": "multiple",
+                                "displayName": "Multiple"
+                            }
+                        ]
+                    }
+                },
+                "standardDeviation": {
+                    "displayName": "StandardDeviation",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "noOfStandardDeviation": {
+                    "displayName": "No of Standard Deviation",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "1",
+                                "displayName": "1"
+                            },
+                            {
+                                "value": "2",
+                                "displayName": "2"
+                            },
+                            {
+                                "value": "3",
+                                "displayName": "3"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "lineAnalytics": {
+            "displayName": "Line analytics",
+            "properties": {
+                "showAs": {
+                    "displayName": "Show as",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "runningTotal",
+                                "displayName": "Running Total"
+                            },
+                            {
+                                "value": "difference",
+                                "displayName": "Difference"
+                            },
+                            {
+                                "value": "perDifference",
+                                "displayName": "% Difference"
+                            },
+                            {
+                                "value": "differenceFromAverage",
+                                "displayName": "Difference From Average"
+                            },
+                            {
+                                "value": "perDifferenceFromAverage",
+                                "displayName": "% Difference From Average"
+                            },
+                            {
+                                "value": "perAxisValue",
+                                "displayName": "% of Axis Value"
+                            },
+                            {
+                                "value": "perTotal",
+                                "displayName": "% of Total"
+                            },
+                            {
+                                "value": "perGrandTotal",
+                                "displayName": "% of Grand Total"
+                            },
+                            {
+                                "value": "movingAverage",
+                                "displayName": "Moving Average"
+                            }
+                        ]
+                    }
+                },
+                "showMean": {
+                    "displayName": "Show Mean",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "showMedian": {
+                    "displayName": "Show Median",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "showMode": {
+                    "displayName": "Show Mode",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "exponentialSmoothingLine": {
+                    "displayName": "Exponential Smoothing Line",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "regressionLine": {
+                    "displayName": "Regression Line",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "regressionCurveType": {
+                    "displayName": "Regression Curve Type",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "linear",
+                                "displayName": "Linear"
+                            },
+                            {
+                                "value": "exponential",
+                                "displayName": "Exponential"
+                            }
+                        ]
+                    }
+                },
+                "regressionLineType": {
+                    "displayName": "Regression Line Type",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "single",
+                                "displayName": "Single"
+                            },
+                            {
+                                "value": "multiple",
+                                "displayName": "Multiple"
+                            }
+                        ]
+                    }
+                },
+                "standardDeviation": {
+                    "displayName": "StandardDeviation",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "noOfStandardDeviation": {
+                    "displayName": "No of Standard Deviation",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "1",
+                                "displayName": "1"
+                            },
+                            {
+                                "value": "2",
+                                "displayName": "2"
+                            },
+                            {
+                                "value": "3",
+                                "displayName": "3"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "areaAnalytics": {
+            "displayName": "Area analytics",
+            "properties": {
+                "showAs": {
+                    "displayName": "Show as",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "runningTotal",
+                                "displayName": "Running Total"
+                            },
+                            {
+                                "value": "difference",
+                                "displayName": "Difference"
+                            },
+                            {
+                                "value": "perDifference",
+                                "displayName": "% Difference"
+                            },
+                            {
+                                "value": "differenceFromAverage",
+                                "displayName": "Difference From Average"
+                            },
+                            {
+                                "value": "perDifferenceFromAverage",
+                                "displayName": "% Difference From Average"
+                            },
+                            {
+                                "value": "perAxisValue",
+                                "displayName": "% of Axis Value"
+                            },
+                            {
+                                "value": "perTotal",
+                                "displayName": "% of Total"
+                            },
+                            {
+                                "value": "perGrandTotal",
+                                "displayName": "% of Grand Total"
+                            },
+                            {
+                                "value": "movingAverage",
+                                "displayName": "Moving Average"
+                            }
+                        ]
+                    }
+                },
+                "showMean": {
+                    "displayName": "Show Mean",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "showMedian": {
+                    "displayName": "Show Median",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "showMode": {
+                    "displayName": "Show Mode",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "exponentialSmoothingLine": {
+                    "displayName": "Exponential Smoothing Line",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "regressionLine": {
+                    "displayName": "Regression Line",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "regressionCurveType": {
+                    "displayName": "Regression Curve Type",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "linear",
+                                "displayName": "Linear"
+                            },
+                            {
+                                "value": "exponential",
+                                "displayName": "Exponential"
+                            }
+                        ]
+                    }
+                },
+                "regressionLineType": {
+                    "displayName": "Regression Line Type",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "single",
+                                "displayName": "Single"
+                            },
+                            {
+                                "value": "multiple",
+                                "displayName": "Multiple"
+                            }
+                        ]
+                    }
+                },
+                "standardDeviation": {
+                    "displayName": "StandardDeviation",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "noOfStandardDeviation": {
+                    "displayName": "No of Standard Deviation",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "1",
+                                "displayName": "1"
+                            },
+                            {
+                                "value": "2",
+                                "displayName": "2"
+                            },
+                            {
+                                "value": "3",
+                                "displayName": "3"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "dotAnalytics": {
+            "displayName": "Dot analytics",
             "properties": {
                 "showAs": {
                     "displayName": "Show as",

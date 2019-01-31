@@ -56,7 +56,14 @@ module powerbi.extensibility.visual {
         private TooltipEventArgs: any;
         public TooltipEnabledDataPoint: any;
 
-   
+        private fontSize: any = 11;
+        private valFormat: any = 'default';
+        private valPrecision: any = 0;
+        private binCount: any = 11;
+        private showLabel: any = false;
+        private showYAxis: any = false;
+        private barFill: any = { solid: { color: "#4682b4" } };
+
         constructor(options: VisualConstructorOptions) {
 
             this.element = d3.select(options.element);
@@ -68,9 +75,7 @@ module powerbi.extensibility.visual {
         public update(options: VisualUpdateOptions) {
             this.columns = options.dataViews[0].metadata.columns;
 
-            if (options.dataViews[0].metadata.objects) {
-            
-            }
+            this.setProperties(options);
 
             this.hasValues = false;
             this.hasGroup = false;
@@ -83,6 +88,7 @@ module powerbi.extensibility.visual {
                 if (d.roles["values"]) {
                     this.hasValues = true;
                     this.valuesIndex = i;
+                    this.valuesFormatter = d.format;
                 }
             });
 
@@ -106,7 +112,7 @@ module powerbi.extensibility.visual {
             var data = [];
 
             options.dataViews[0].table.rows.forEach((d: any, i) => {
-                data.push({ val: d[this.valuesIndex], group: d[this.groupIndex]})
+                data.push({ val: d[this.valuesIndex], group: d[this.groupIndex] })
             });
 
             var chart = container
@@ -114,74 +120,124 @@ module powerbi.extensibility.visual {
                 .attr("height", options.viewport.height)
                 .attr("width", options.viewport.width)
                 .append("g")
-            .attr("transform","translate(20,20)")
+                .attr("transform", "translate(20,20)")
 
-            this.drawHistrogram(data, options.viewport.height-50, options.viewport.width-20, chart);
+            this.drawHistrogram(data, options.viewport.height - 50, options.viewport.width - 20, chart);
         }
 
-       
+
         private drawHistrogram(data, height, width, svg) {
             var values = data.map(d => d.val);
             var max = d3.max(values);
             var min = d3.min(values);
-            var x = d3.scale.linear()
+            var xScale = d3.scale.linear()
                 .domain([min, max])
                 .range([0, width]);
 
-            // Generate a histogram using twenty uniformly-spaced bins.
-            var data:any = d3.layout.histogram()
-                .bins(x.ticks(20))
+
+            var data: any = d3.layout.histogram()
+                .bins(xScale.ticks(this.binCount))
                 (values);
 
-            var yMax = d3.max(data, function (d:any) { return d.length });
-            var yMin = d3.min(data, function (d:any) { return d.length });
+            var yMax = d3.max(data, function (d: any) { return d.length });
+            var yMin = d3.min(data, function (d: any) { return d.length });
 
-            var y = d3.scale.linear()
+            var yScale = d3.scale.linear()
                 .domain([0, yMax])
                 .range([height, 0]);
-
-            var xAxis = d3.svg.axis()
-                .scale(x)
-                .orient("bottom");
 
             var bar = svg.selectAll(".bar")
                 .data(data)
                 .enter().append("g")
                 .attr("class", "bar")
-                .attr("transform", function (d:any) { return "translate(" + x(d.x) + "," + y(d.y) + ")"; });
+                .attr("transform", function (d: any) { return "translate(" + xScale(d.x) + "," + yScale(d.y) + ")"; });
 
-            bar.append("rect")
+            this.drawBars(bar, data, xScale, yScale, height);
+
+            this.drawDataLabel(bar, xScale, data);
+
+            this.drawXAxis(svg, height, xScale, max);
+
+            this.drawYAxis(svg, yScale);
+
+            this.setFontSize(svg);
+        }
+
+        private drawBars(bar, data, xScale, yScale, height) {
+
+            var rects = bar.append("rect")
                 .attr("x", 1)
-                .attr("width", (x(data[0].dx) - x(0)) - 1)
-                .attr("height", function (d: any) { return height - y(d.y); })
-                .attr("fill","rgb(1, 184, 170)")
+                .attr("width", (xScale(data[0].dx) - xScale(0)) - 1)
+                .attr("height", function (d: any) { return height - yScale(d.y); })
+                .attr("fill", this.barFill.solid.color);
 
-            bar.append("text")
-                .attr("dy", ".75em")
-                .attr("y", -15)
-                .attr("x", (x(data[0].dx) - x(0)) / 2)
-                .attr("text-anchor", "middle")
-                .text((d:any) => d.y);
+            this.tooltipServiceWrapper.addTooltip(rects,
+                (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
+                (tooltipEvent: TooltipEventArgs<any>) => null
+            );
+
+        }
+
+        private drawXAxis(svg, height, xScale, max) {
+
+            var format: any = this.getValueFormat(this.valuesFormatter, max, this.valFormat, this.valPrecision);
+
+            var xAxis = d3.svg.axis()
+                .scale(xScale)
+                .orient("bottom")
+                .tickFormat(format.format);
 
             svg.append("g")
                 .attr("class", "x axis")
                 .attr("transform", "translate(0," + height + ")")
                 .call(xAxis);
-        }
-      
 
+        }
+
+        private drawYAxis(svg, yScale) {
+
+            if (this.showYAxis === true) {
+                var yAxis = d3.svg.axis()
+                    .scale(yScale)
+                    .orient("left");
+
+                svg.append("g")
+                    .attr("class", "y axis")
+                    .attr("transform", "translate(0,0)")
+                    .call(yAxis);
+            }
+
+        }
+
+        private drawDataLabel(bar, xScale, data) {
+
+            if (this.showLabel == true) {
+                bar.append("text")
+                    .attr("dy", ".75em")
+                    .attr("y", -15)
+                    .attr("x", (xScale(data[0].dx) - xScale(0)) / 2)
+                    .attr("text-anchor", "middle")
+                    .text((d: any) => d.y);
+            }
+
+        }
+
+        private setFontSize(chartSvg) {
+
+            chartSvg.selectAll("text").style("font-size", this.fontSize + "px");
+        }
         private static parseSettings(dataView: DataView): VisualSettings {
             return VisualSettings.parse(dataView) as VisualSettings;
         }
 
-        private getTooltipData(data: any, vtype: any): VisualTooltipDataItem[] {
+        private getTooltipData(data: any): VisualTooltipDataItem[] {
             var retData = [];
             var val = '';
 
             retData.push({
-                displayName: vtype,
+                displayName: data.dx,
                 value: val.toString(),
-                header: vtype
+                header: data.y
             });
 
             return retData;
@@ -217,14 +273,40 @@ module powerbi.extensibility.visual {
             return iValueFormatter;
         }
 
+        private setProperties(options) {
+
+            if (options.dataViews[0].metadata.objects) {
+
+                if (options.dataViews[0].metadata.objects["Basic"]) {
+                    var basic = options.dataViews[0].metadata.objects["Basic"];
+                    if (basic.fontSize !== undefined) this.fontSize = basic["fontSize"];
+                    if (basic.valFormat !== undefined) this.valFormat = basic["valFormat"];
+                    if (basic.valPrecision !== undefined) this.valPrecision = basic["valPrecision"];
+                    if (basic.binCount !== undefined) this.binCount = basic["binCount"];
+                    if (basic.showLabel !== undefined) this.showLabel = basic["showLabel"];
+                    if (basic.showYAxis !== undefined) this.showYAxis = basic["showYAxis"];
+                    if (basic.barFill !== undefined) this.barFill = basic["barFill"];
+
+                }
+
+            }
+        }
+
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {
 
             let objectName = options.objectName;
             let objectEnumeration: VisualObjectInstance[] = [];
 
             switch (objectName) {
-                case 'displayTemplate':
-                  
+                case 'Basic':
+                    objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.fontSize }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { valFormat: this.valFormat }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { binCount: this.binCount }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { showYAxis: this.showYAxis }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { barFill: this.barFill }, selector: null });
+                   
                     break;
             };
 
