@@ -456,7 +456,7 @@ module powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E  {
             let xdata = data.xAxis;
             let xDomain = d3.scale.ordinal().domain(xdata).domain();
 
-            let xT: any = this.axisLabelArray(xDomain.slice(0), (vp.width - this.getYOffset(data) - ylegendOffset), this.element, this.orientation);
+            let xT: any = this.axisLabelArray(xDomain.slice(0).filter(d => d !== null), (vp.width - this.getYOffset(data) - ylegendOffset), this.element, this.orientation);
 
             let xOffset, yOffset, chartWidth, chartHeight, xFilter, xTickval;
             if (this.orientation == 'vertical') {

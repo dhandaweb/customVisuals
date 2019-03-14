@@ -65,6 +65,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
         private lineAxis: any = "left";
         private lineFormat: any;
         private lineDotRadius: any = 5;
+        private lineStroke: any = 2;
 
         private hasDot: any = false;
         private showLineDots: any = false;
@@ -273,6 +274,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
 
                     barData.map(d => {
+                        d.shape = "bar";
                         d.values.map(d => {
                             if (this.barAxis === "left") {
 
@@ -307,6 +309,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                     }
 
                     areaData.map(d => {
+                        d.shape = "area";
                         d.values.map(d => {
 
                             if (this.areaAxis === "left") {
@@ -326,6 +329,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.line);
                     lineData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "line", this.showLineAs);
                     lineData.map(d => {
+                        d.shape = "line";
                         d.values.map(d => {
                             if (this.lineAxis === "left") leftAxisData.push(d.yValue.value);
                             else rightAxisData.push(d.yValue.value);
@@ -337,6 +341,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.dot);
                     dotData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "dot", this.showDotAs);
                     dotData.map(d => {
+                        d.shape = "dot";
                         d.values.map(d => {
                             if (this.dotAxis === "left") leftAxisData.push(d.yValue.value);
                             else rightAxisData.push(d.yValue.value);
@@ -348,7 +353,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
             allData = barData.concat(lineData.concat(areaData.concat(dotData)));
 
-            legendD = allData.map(d => { return { key: d.key, color: d.color } });
+            legendD = allData.map(d => { return { key: d.key, shape: d.shape, color: d.color } });
 
             if (this.hasColor) legendD.unshift({ key: legendName, color: "transparent" });
 
@@ -476,6 +481,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                 }
                 if (options.dataViews[0].metadata.objects["Line"]) {
                     var line = options.dataViews[0].metadata.objects["Line"];
+                    if (line.lineStroke !== undefined) this.lineStroke = line["lineStroke"];
                     if (line.showLabel !== undefined) this.showLineLabel = line["showLabel"];
                     if (line.showLineDots !== undefined) this.showLineDots = line["showLineDots"];
                     if (line.lineDotRadius !== undefined) this.lineDotRadius = line["lineDotRadius"];
@@ -1005,6 +1011,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                     .attr("class", "line")
                     .attr("fill", "none")
                     .attr("stroke", d => d.color)
+                    .attr("stroke-width", this.lineStroke + "px")
                     .attr("d", d => linePath(d.values));
 
                 if (this.showLineDots) {
@@ -1227,14 +1234,25 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                 });
             }
 
+            var shapeMap = {
+                "line": "\uf201",
+                "bar": "\uf080",
+                "area": "\uf1fe",
+                "dot": "\uf111"
+            }
             legengG.append("circle")
                 .attr("r", fontSize / 2)
                 .attr("cy", fontSize / 5)
                 .attr("fill", d => d.color);
 
+            //legengG.append("text")
+            //    .text(d => shapeMap[d.shape])
+            //    .attr("style", 'font-size:10px;font-family: "FontAwesome"')
+            //    .attr("y", fontSize / 5)
+            //    .attr("fill", d => d.color);
+
             legengG
                 .append("text")
-
                 .attr("x", d => d.color === "transparent" ? -5 : fontSize)
                 .attr("font-weight", d => d.color === "transparent" ? "bold" : "normal")
                 .attr("style", d => {
@@ -2107,6 +2125,8 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                 case 'Line':
                     if (this.hasLine) {
+
+                        objectEnumeration.push({ objectName: objectName, properties: { lineStroke: this.lineStroke }, selector: null });
                         objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLineLabel }, selector: null });
                         objectEnumeration.push({ objectName: objectName, properties: { axis: this.lineAxis }, selector: null });
                         objectEnumeration.push({ objectName: objectName, properties: { showLineDots: this.showLineDots }, selector: null });

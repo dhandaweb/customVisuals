@@ -8929,6 +8929,7 @@ var powerbi;
                         this.heatScale = "default";
                         this.heatRange = 10;
                         this.heatColorType = "linear";
+                        this.heatSort = "default";
                         this.legendPosition = "right";
                         this.heatColorOptions = {
                             Heat: ["#9E0142", "#D53E4F", "#F46D43", "#FDAE61", "#FEE08B", "#E6F598", "#ABDDA4", "#66C2A5", "#3288BD", "#5E4FA2"],
@@ -8989,6 +8990,7 @@ var powerbi;
                             d.value = _this.valueIndex == -1 ? null : d[_this.valueIndex];
                             data.push(d);
                         });
+                        data = this.sortHeatData(data);
                         this.element.style("overflow", "hidden");
                         this.element.select('.heatMap').remove();
                         var chartContainer = this.element
@@ -9033,6 +9035,8 @@ var powerbi;
                                 var heat = options.dataViews[0].metadata.objects["Heat"];
                                 if (heat.heatScale !== undefined)
                                     this.heatScale = heat["heatScale"];
+                                if (heat.heatSort !== undefined)
+                                    this.heatSort = heat["heatSort"];
                                 if (heat.heatRange !== undefined)
                                     this.heatRange = heat["heatRange"];
                                 if (heat.heatColorType !== undefined)
@@ -9067,6 +9071,20 @@ var powerbi;
                                     this.fontSize = axis["fontSize"];
                             }
                         }
+                    };
+                    Visual.prototype.sortHeatData = function (data) {
+                        var retVal = data;
+                        if (this.heatSort === "ascending") {
+                            retVal = data.sort(function (a, b) {
+                                return a.value - b.value > 0 ? -1 : 1;
+                            });
+                        }
+                        else {
+                            retVal = data.sort(function (a, b) {
+                                return b.value - a.value > 0 ? -1 : 1;
+                            });
+                        }
+                        return retVal;
                     };
                     Visual.prototype.setIndex = function (options) {
                         var _this = this;
@@ -9643,6 +9661,7 @@ var powerbi;
                             case 'Heat':
                                 objectEnumeration.push({ objectName: objectName, properties: { heatColor: this.heatColor }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { heatScale: this.heatScale }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { heatSort: this.heatSort }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { heatRange: this.heatRange }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { heatColorType: this.heatColorType }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { rectRadius: this.rectRadius }, selector: null });

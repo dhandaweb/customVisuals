@@ -1,13 +1,3 @@
 {
-  "ExpandedNodes": [
-    "",
-    "\\comboChart\\style",
-    "\\dotPlot",
-    "\\dotPlot\\src",
-    "\\histogram\\style",
-    "\\kpiCard",
-    "\\kpiCard\\src"
-  ],
-  "SelectedNode": "\\dotPlot\\src\\visual.ts",
   "PreviewInSolutionExplorer": false
 }

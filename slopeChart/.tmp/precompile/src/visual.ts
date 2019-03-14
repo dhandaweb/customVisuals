@@ -244,26 +244,47 @@ module powerbi.extensibility.visual.slopeChartD9885417F9AAF5BB8D45B007E  {
                 })
             });
 
-            if (this.showAs == "perTotal") valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: "0.00 %;-0.00 %;0.00 %" });
-
+            if (this.showAs == "perTotal") {
+                //valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: "0.00 %;-0.00 %;0.00 %", precision: this.valPrecision });
+                valFormat = d3.format(",." + this.valPrecision +"%")
+            }
             this.formattedData = retData;
 
-            return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat.format, data: retData, legend: legend }
+            return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat, data: retData, legend: legend }
         }
 
         private setUpAnalyticData(data) {
             var retData;
-
+            var cdata = JSON.parse(JSON.stringify(data)); 
             switch (this.showAs) {
 
                 case "perTotal":
-                    retData = data.map(function (d) {
-                        var total = d3.sum(d.values.map(function (d) { return d.yValue.value; }));
+                    // retData = data.map(function (d) {
+                    //     var total = d3.sum(d.values.map(function (d) { return d.yValue.value; }));
+                    //     d.values.map(function (d, i) {
+                    //         if (d.yValue.value !== null) d.yValue.value = (d.yValue.value / total);
+                    //     });
+                    //     return d;
+                    // });
+
+
+                    var axisTotalValue;
+                   
+                    retData = cdata.map(function (d, j) {
                         d.values.map(function (d, i) {
-                            if (d.yValue.value !== null) d.yValue.value = (d.yValue.value / total);
+                           
+                            axisTotalValue = d3.sum(data.map(function (d) {
+                                return d.values[i].yValue.value
+                            }));
+                           
+                            if (d.yValue.value !== null) d.yValue.value = d.yValue.value / axisTotalValue;
+                          
                         });
                         return d;
                     });
+
+
+
                     break;
 
 

@@ -8939,6 +8939,7 @@ var powerbi;
                         this.showLineLabel = false;
                         this.lineAxis = "left";
                         this.lineDotRadius = 5;
+                        this.lineStroke = 2;
                         this.hasDot = false;
                         this.showLineDots = false;
                         this.showDotLabel = false;
@@ -9192,6 +9193,7 @@ var powerbi;
                                     stackFunction(barData);
                                 }
                                 barData.map(function (d) {
+                                    d.shape = "bar";
                                     d.values.map(function (d) {
                                         if (_this.barAxis === "left") {
                                             if (_this.barGroupType === "stacked")
@@ -9217,6 +9219,7 @@ var powerbi;
                                     stackFunction(areaData);
                                 }
                                 areaData.map(function (d) {
+                                    d.shape = "area";
                                     d.values.map(function (d) {
                                         if (_this.areaAxis === "left") {
                                             if (_this.areaGroupType === "stacked")
@@ -9237,6 +9240,7 @@ var powerbi;
                                 var valuesG = rawData.categorical.values.filter(function (d) { return d.source.roles.line; });
                                 lineData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "line", this.showLineAs);
                                 lineData.map(function (d) {
+                                    d.shape = "line";
                                     d.values.map(function (d) {
                                         if (_this.lineAxis === "left")
                                             leftAxisData.push(d.yValue.value);
@@ -9249,6 +9253,7 @@ var powerbi;
                                 var valuesG = rawData.categorical.values.filter(function (d) { return d.source.roles.dot; });
                                 dotData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "dot", this.showDotAs);
                                 dotData.map(function (d) {
+                                    d.shape = "dot";
                                     d.values.map(function (d) {
                                         if (_this.dotAxis === "left")
                                             leftAxisData.push(d.yValue.value);
@@ -9260,7 +9265,7 @@ var powerbi;
                         }
                         ;
                         allData = barData.concat(lineData.concat(areaData.concat(dotData)));
-                        legendD = allData.map(function (d) { return { key: d.key, color: d.color }; });
+                        legendD = allData.map(function (d) { return { key: d.key, shape: d.shape, color: d.color }; });
                         if (this.hasColor)
                             legendD.unshift({ key: legendName, color: "transparent" });
                         leftAxisFormat = this.getValueFormat(this.barFormat, d3.max(leftAxisData));
@@ -9374,6 +9379,8 @@ var powerbi;
                             }
                             if (options.dataViews[0].metadata.objects["Line"]) {
                                 var line = options.dataViews[0].metadata.objects["Line"];
+                                if (line.lineStroke !== undefined)
+                                    this.lineStroke = line["lineStroke"];
                                 if (line.showLabel !== undefined)
                                     this.showLineLabel = line["showLabel"];
                                 if (line.showLineDots !== undefined)
@@ -9874,6 +9881,7 @@ var powerbi;
                                 .attr("class", "line")
                                 .attr("fill", "none")
                                 .attr("stroke", function (d) { return d.color; })
+                                .attr("stroke-width", this.lineStroke + "px")
                                 .attr("d", function (d) { return linePath(d.values); });
                             if (this.showLineDots) {
                                 var circle = lineG.selectAll(".dots")
@@ -10048,10 +10056,21 @@ var powerbi;
                                 return rt;
                             });
                         }
+                        var shapeMap = {
+                            "line": "\uf201",
+                            "bar": "\uf080",
+                            "area": "\uf1fe",
+                            "dot": "\uf111"
+                        };
                         legengG.append("circle")
                             .attr("r", fontSize / 2)
                             .attr("cy", fontSize / 5)
                             .attr("fill", function (d) { return d.color; });
+                        //legengG.append("text")
+                        //    .text(d => shapeMap[d.shape])
+                        //    .attr("style", 'font-size:10px;font-family: "FontAwesome"')
+                        //    .attr("y", fontSize / 5)
+                        //    .attr("fill", d => d.color);
                         legengG
                             .append("text")
                             .attr("x", function (d) { return d.color === "transparent" ? -5 : fontSize; })
@@ -10651,6 +10670,7 @@ var powerbi;
                                 break;
                             case 'Line':
                                 if (this.hasLine) {
+                                    objectEnumeration.push({ objectName: objectName, properties: { lineStroke: this.lineStroke }, selector: null });
                                     objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLineLabel }, selector: null });
                                     objectEnumeration.push({ objectName: objectName, properties: { axis: this.lineAxis }, selector: null });
                                     objectEnumeration.push({ objectName: objectName, properties: { showLineDots: this.showLineDots }, selector: null });
@@ -10801,8 +10821,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.comboChartD9885417F9AAF5BB8D45B007E = {
-                name: 'comboChartD9885417F9AAF5BB8D45B007E',
+            plugins.comboChartD9885417F9AAF5BB8D45B007E_DEBUG = {
+                name: 'comboChartD9885417F9AAF5BB8D45B007E_DEBUG',
                 displayName: 'Combo Chart',
                 class: 'Visual',
                 version: '1.0.0',

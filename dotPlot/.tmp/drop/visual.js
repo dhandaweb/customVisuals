@@ -9386,7 +9386,7 @@ var powerbi;
                             xlegendOffset = this.legendFontSize * 3;
                         var xdata = data.xAxis;
                         var xDomain = d3.scale.ordinal().domain(xdata).domain();
-                        var xT = this.axisLabelArray(xDomain.slice(0), (vp.width - this.getYOffset(data) - ylegendOffset), this.element, this.orientation);
+                        var xT = this.axisLabelArray(xDomain.slice(0).filter(function (d) { return d !== null; }), (vp.width - this.getYOffset(data) - ylegendOffset), this.element, this.orientation);
                         var xOffset, yOffset, chartWidth, chartHeight, xFilter, xTickval;
                         if (this.orientation == 'vertical') {
                             xOffset = xT.Space + 20;
@@ -10381,8 +10381,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.dotPlotD9885417F9AAF5BB8D45B007E_DEBUG = {
-                name: 'dotPlotD9885417F9AAF5BB8D45B007E_DEBUG',
+            plugins.dotPlotD9885417F9AAF5BB8D45B007E = {
+                name: 'dotPlotD9885417F9AAF5BB8D45B007E',
                 displayName: 'DotPlot',
                 class: 'Visual',
                 version: '1.0.0',

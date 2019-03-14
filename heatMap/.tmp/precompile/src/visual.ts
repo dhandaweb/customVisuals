@@ -28,11 +28,11 @@
 
 module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
     "use strict";
-   
+
     export class Visual implements IVisual {
-       
+
         private host: IVisualHost;
-      //  private tooltipServiceWrapper: ITooltipServiceWrapper;
+        //  private tooltipServiceWrapper: ITooltipServiceWrapper;
 
         private selectionManager: ISelectionManager;
         private updateCount: number;
@@ -42,8 +42,8 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
         private colorRange: any;
 
         private columns: any;
-        private dimension:any
-        private hasXaxis:any = false;
+        private dimension: any
+        private hasXaxis: any = false;
         private hasYaxis: any = false;
         private hasValue: any = false;
 
@@ -54,6 +54,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
         private heatScale: any = "default";
         private heatRange: any = 10;
         private heatColorType: any = "linear";
+        private heatSort: any = "default";
 
         private legendPosition: any = "right";
         private middleBinValue: any;
@@ -67,7 +68,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
 
         private tooltipServiceWrapper: ITooltipServiceWrapper;
         private TooltipEventArgs: any;
-        public  TooltipEnabledDataPoint: any;
+        public TooltipEnabledDataPoint: any;
 
         private NegativeTextColor: any;
         private heatColorOptions: any = {
@@ -90,65 +91,67 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
         private minLegendText: any;
         private maxLegendText: any;
 
-       constructor(options: VisualConstructorOptions) {
-           
-           this.element = d3.select(options.element);
-           this.host = options.host;
-           this.tooltipServiceWrapper = createTooltipServiceWrapper(this.host.tooltipService, options.element);
-           this.selectionManager = options.host.createSelectionManager();
+        constructor(options: VisualConstructorOptions) {
+
+            this.element = d3.select(options.element);
+            this.host = options.host;
+            this.tooltipServiceWrapper = createTooltipServiceWrapper(this.host.tooltipService, options.element);
+            this.selectionManager = options.host.createSelectionManager();
         }
 
         public update(options: VisualUpdateOptions) {
 
-           this.columns = options.dataViews[0].metadata.columns;
-          
-           this.setProperties(options);
-           this.setIndex(options);
-            
-           var data = [], identityData;
-           var yFormat, xFormat;
-           
-           options.dataViews[0].table.rows.map((d: any, i) => {
+            this.columns = options.dataViews[0].metadata.columns;
+
+            this.setProperties(options);
+            this.setIndex(options);
+
+            var data = [], identityData;
+            var yFormat, xFormat;
+
+            options.dataViews[0].table.rows.map((d: any, i) => {
                 d.identity = options.dataViews[0].table.identity[i];
                 d.xValue = null;
                 d.yValue = null;
 
-               if (this.xAxisIndex == -1) {
-                   if (this.valueIndex !== -1) {
-                       d.xValue = this.columns[this.valueIndex].displayName;
-                   }
-               }
-               else {
-                   d.xValue = d[this.xAxisIndex];
-                 
-                   if (this.xAxisFormatter != undefined) {
-                       xFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.xAxisFormatter });
-                       d.xValue = xFormat.format(d[this.xAxisIndex]);
-                       
-                   }
-                  
-               }
-             
-               if (this.yAxisIndex == -1) {
-                   if (this.valueIndex !== -1) {
-                       d.yValue = this.columns[this.valueIndex].displayName;
-                   }
-               }
-               else {
-                   d.yValue = d[this.yAxisIndex];
+                if (this.xAxisIndex == -1) {
+                    if (this.valueIndex !== -1) {
+                        d.xValue = this.columns[this.valueIndex].displayName;
+                    }
+                }
+                else {
+                    d.xValue = d[this.xAxisIndex];
 
-                   if (this.yAxisFormatter != undefined) {
-                       yFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.yAxisFormatter });
-                       d.yValue = yFormat.format(d[this.yAxisIndex]);
-                   }
-               }
-                 
+                    if (this.xAxisFormatter != undefined) {
+                        xFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.xAxisFormatter });
+                        d.xValue = xFormat.format(d[this.xAxisIndex]);
+
+                    }
+
+                }
+
+                if (this.yAxisIndex == -1) {
+                    if (this.valueIndex !== -1) {
+                        d.yValue = this.columns[this.valueIndex].displayName;
+                    }
+                }
+                else {
+                    d.yValue = d[this.yAxisIndex];
+
+                    if (this.yAxisFormatter != undefined) {
+                        yFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.yAxisFormatter });
+                        d.yValue = yFormat.format(d[this.yAxisIndex]);
+                    }
+                }
+
                 d.value = this.valueIndex == -1 ? null : d[this.valueIndex];
                 data.push(d);
-           });
-           
-           this.element.style("overflow", "hidden");
-           this.element.select('.heatMap').remove();
+            });
+
+            data = this.sortHeatData(data);
+
+            this.element.style("overflow", "hidden");
+            this.element.select('.heatMap').remove();
 
             var chartContainer = this.element
                 .append("div")
@@ -164,33 +167,33 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                 chartContainer.append("span").html("One dimension is required to draw visual");
                 return;
             }
-           
-            var dimension = this.getDimensions(options.viewport,data);
-           
+
+            var dimension = this.getDimensions(options.viewport, data);
+
             var chart = chartContainer
-                            .append("svg")
-                            .attr("height", dimension.height)
-                            .attr("width", dimension.width)
-                            .on("click", (d, i) => {
-                                this.selectionManager.clear();
-                                this.heatRects.style("opacity" , (d:any) => {
-                                    d.isFiltered = false;
-                                    return 1;
-                                });
-                            });
-          
+                .append("svg")
+                .attr("height", dimension.height)
+                .attr("width", dimension.width)
+                .on("click", (d, i) => {
+                    this.selectionManager.clear();
+                    this.heatRects.style("opacity", (d: any) => {
+                        d.isFiltered = false;
+                        return 1;
+                    });
+                });
+
             var chartSvg = chart.append("g")
             var chartLegend = chart.append("g")
             var xScale = this.setXScale(data, dimension);
             var yScale = this.setYScale(data, dimension);
-          
+
             this.drawXScale(xScale, chartSvg, dimension);
             this.drawYScale(yScale, chartSvg, dimension);
-           
+
             this.setHeatScale(data);
-           
+
             this.drawHeatRect(chartSvg, xScale, yScale, data, dimension);
-           
+
             this.drawLegend(chartLegend, chartSvg, dimension, data);
             this.setFontSize(chartSvg);
         }
@@ -202,6 +205,8 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                 if (options.dataViews[0].metadata.objects["Heat"]) {
                     var heat = options.dataViews[0].metadata.objects["Heat"];
                     if (heat.heatScale !== undefined) this.heatScale = heat["heatScale"];
+                    if (heat.heatSort !== undefined) this.heatSort = heat["heatSort"];
+
                     if (heat.heatRange !== undefined) this.heatRange = heat["heatRange"];
                     if (heat.heatColorType !== undefined) this.heatColorType = heat["heatColorType"];
                     if (heat.heatColor !== undefined) this.heatColor = heat["heatColor"];
@@ -225,12 +230,29 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
             }
         }
 
+        private sortHeatData(data) {
+            var retVal = data;
+
+            if (this.heatSort === "ascending") {
+                retVal = data.sort((a, b) => {
+                    return a.value - b.value > 0 ? -1 : 1;
+                });
+            }
+            else {
+                retVal = data.sort((a, b) => {
+                    return b.value - a.value > 0 ? -1 : 1;
+                });
+            }
+
+            return retVal;
+        }
+
         private setIndex(options) {
 
             this.xAxisIndex = -1;
             this.yAxisIndex = -1;
             this.valueIndex = -1;
-           
+
             this.columns.map((d, i) => {
                 if (d.roles["xAxis"]) {
                     this.hasXaxis = true;
@@ -247,7 +269,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                     this.valueIndex = i;
                 }
             });
-            
+
             this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ value: 1001 });
 
             if (this.hasValue) this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: options.dataViews[0].metadata.columns[this.valueIndex].format });
@@ -255,27 +277,27 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
 
         }
 
-        private getDimensions(vp,data) {
+        private getDimensions(vp, data) {
             let xlegendOffset = 0;
             let ylegendOffset = 0;
             if (this.legendPosition == "right") xlegendOffset = 80;
             if (this.legendPosition == "top" || this.legendPosition === "bottom") ylegendOffset = 50;
-           
+
             let xdata = data.map(d => d.xValue);
             let ydata = data.map(d => d.yValue);
             let yScale = d3.scale.ordinal().domain(ydata);
             let xDomain = d3.scale.ordinal().domain(xdata).domain();
             let yDomain = yScale.domain();
-            
-            let xT:any = this.axisLabelArray(xDomain.slice(0).filter(d=>d !== null), vp.width, this.element, "Vertical");
+
+            let xT: any = this.axisLabelArray(xDomain.slice(0).filter(d => d !== null), vp.width, this.element, "Vertical");
             let yT: any = this.axisLabelArray(yDomain.slice(0).filter(d => d !== null), vp.height, this.element, "Horizontal");
-           
+
             let xOffset = this.showYAxis ? yT.Space + 22 : 0;
             let yOffset = this.showXAxis ? xT.Space + 15 : 0;
-           
+
             if (yOffset > vp.height / 4) yOffset = vp.height / 4 > 100 ? 100 : vp.height / 4;
             if (xOffset > vp.width / 4) xOffset = vp.width / 4 > 100 ? 100 : vp.width / 4;
-           
+
             if (this.xAxisLabel === "firstLast" || this.xAxisLabel === "firstMiddleLast") yOffset = 25;
             if (this.xAxisLabel === "firstLast" || this.xAxisLabel === "firstMiddleLast") xT.Rotate = false;
 
@@ -283,17 +305,17 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
             let chartHeight = vp.height - yOffset - ylegendOffset;
 
             yScale.rangeRoundBands([0, chartHeight]);
-           
+
             //let xFilter = (xT.Rotate === true) ? Math.round((xDomain.length / chartWidth * 100) / 8) : 1;
             let xFilter = (xT.Rotate === true) ? (chartWidth / xDomain.length < 12 ? (Math.ceil(xDomain.length / chartWidth * 20)) : 1) : 1;
             let yFilter = ((chartHeight / yDomain.length) < 15) ? Math.ceil((yDomain.length / chartHeight * 20)) : 1;
-           
+
             let xTickval = xDomain.filter((d, i) => (i % xFilter === 0));
             let yTickval = yDomain.filter((d, i) => (i % yFilter === 0));
 
             if (this.xAxisLabel === "firstLast") xTickval = [xTickval[0], xDomain[xDomain.length - 1]];
             else if (this.xAxisLabel === "firstMiddleLast") xTickval = [xTickval[0], xTickval[Math.ceil(xTickval.length / 2)], xDomain[xDomain.length - 1]];
-           
+
 
             return {
                 width: vp.width,
@@ -311,7 +333,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
 
         private setXScale(data, dimension) {
             var xDomain = data.map(d => d.xValue);
-            
+
             var scale = d3.scale.ordinal().rangeBands([0, dimension.chartWidth]).domain(xDomain);
             return scale;
         }
@@ -335,12 +357,12 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                     .attr("class", "axis")
                     .call(xaxis)
                 xAxisG.selectAll("text").text(d => {
-                    if (this.getTextWidth(chartSvg, d) > dimension.yOffset - this.fontSize && dimension.xRotate == true) return (d.substring(0, Math.floor(dimension.yOffset / (this.fontSize/2))) + "..");
+                    if (this.getTextWidth(chartSvg, d) > dimension.yOffset - this.fontSize && dimension.xRotate == true) return (d.substring(0, Math.floor(dimension.yOffset / (this.fontSize / 2))) + "..");
                     else return d;
                 })
                     .attr("fill", "rgb(119, 119, 119)")
                     .append("title")
-                    .text(d=>d);
+                    .text(d => d);
 
                 if (this.xAxisLabel === "firstLast" || this.xAxisLabel === "firstMiddleLast") {
                     xAxisG.selectAll("text").style("text-anchor", function (d, i) {
@@ -360,7 +382,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                         });
                 }
             }
-           
+
         }
 
         private drawYScale(yScale, chartSvg, dimension) {
@@ -396,14 +418,14 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
             var col = colors.slice(0, 10);
             var colorScale, heatDomain, min, max, upper, lower;
             var colorRange = col.slice(0, Math.ceil(this.heatRange / 2)).concat(col.splice(-Math.floor(this.heatRange / 2)));
-           
+
             if ((this.heatRange % 2) !== 0 && this.middleBinValue !== undefined) {
                 upper = colors.slice(0, 10);
                 lower = colors.slice(0, 10);
                 var sl = Math.floor(this.heatRange / 2);
                 colorRange = upper.slice(0, sl).concat(["#b3b3b3"]).concat(lower.slice(-sl));
             }
-           
+
             if (this.heatScale === "default") {
 
                 min = d3.min(data.map(d => d.value));
@@ -415,8 +437,8 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                 if (this.middleBinValue !== undefined) heatDomain = [d3.min([min, this.middleBinValue]), this.middleBinValue, d3.max([max, this.middleBinValue])];
 
                 this.colorScale = d3.scale.quantile()
-                                        .domain(heatDomain)
-                                        .range(colorRange);
+                    .domain(heatDomain)
+                    .range(colorRange);
 
             };
 
@@ -425,9 +447,9 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                 this.colorScale = {};
 
                 var nestedData = d3.nest()
-                                    .key((d:any) => d.xValue)
-                                    .entries(data);
-              
+                    .key((d: any) => d.xValue)
+                    .entries(data);
+
                 nestedData.map(d => {
                     heatDomain = d.values.map(function (d) { return d.value; });
 
@@ -440,8 +462,8 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                     if (this.middleBinValue !== undefined) heatDomain = [min, this.middleBinValue, max];
 
                     this.colorScale[d.key] = d3.scale.quantile()
-                                                    .domain(heatDomain)
-                                                    .range(colorRange);
+                        .domain(heatDomain)
+                        .range(colorRange);
 
                 });
 
@@ -467,14 +489,14 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                     if (this.middleBinValue !== undefined) heatDomain = [min, this.middleBinValue, max];
 
                     this.colorScale[d.key] = d3.scale.quantile()
-                                                    .domain(heatDomain)
-                                                    .range(colorRange);
+                        .domain(heatDomain)
+                        .range(colorRange);
 
                 });
 
             };
             this.colorRange = colorRange;
-            
+
             return colorScale;
 
         }
@@ -495,7 +517,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                 .attr("y", d => yScale(d.yValue))
                 .attr("height", d => yScale.rangeBand() - 1)
                 .attr("width", d => xScale.rangeBand() - 1);
-          
+
             if (this.heatScale === "default") {
                 rects.attr("fill", d => d.value !== null ? this.colorScale(d.value) : "#ffffff");
             }
@@ -532,8 +554,8 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                     .append("text")
                     .attr("x", d => xScale(d.xValue))
                     .attr("y", d => yScale(d.yValue))
-                    .attr("dx", d => xScale.rangeBand()/2)
-                    .attr("dy", d => yScale.rangeBand()/2 + 6)
+                    .attr("dx", d => xScale.rangeBand() / 2)
+                    .attr("dy", d => yScale.rangeBand() / 2 + 6)
                     .attr("text-anchor", "middle")
                     .text(d => this.iValueFormatter.format(d.value))
                     .on("click", (d, i) => {
@@ -566,8 +588,8 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                 (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
                 (tooltipEvent: TooltipEventArgs<any>) => null
             );
-          
-           
+
+
         }
 
         public setFilterOpacity(rects) {
@@ -587,7 +609,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
         }
 
         private drawLegend(chartLegend, chartSvg, dimension, data) {
-            
+
             if (this.legendPosition == "right") {
                 chartLegend.attr("transform", "translate(" + (dimension.chartWidth + dimension.xOffset + 20) + "," + (dimension.yOffset + 15) + ")");
             }
@@ -605,9 +627,9 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
 
             if (dimension.chartHeight < 200) rectHeight = dimension.chartHeight / 20;
             if (dimension.chartWidth < 200) rectWidth = dimension.chartWidth / 20;
-           
+
             if (this.heatScale !== "default") {
-             
+
                 legendG = chartLegend.selectAll(".legend")
                     .data(this.colorRange)
                     .enter()
@@ -708,19 +730,19 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
 
         private getTooltipData(data: any): VisualTooltipDataItem[] {
             var retData = [];
-           
+
             retData.push({
                 displayName: data.yValue,
                 value: data.xValue,
                 header: this.iValueFormatter.format(data.value)
             });
-           
+
             return retData;
         }
 
         private getLegendTooltipData(data: any): VisualTooltipDataItem[] {
             var retData = [];
-           
+
             retData.push({
                 displayName: '≥ ' + this.iValueFormatter.format(data),
                 value: "",
@@ -733,8 +755,8 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
         private getLegendMaxLength(data) {
 
             var dummySvg = d3.select('body').append("svg");
-           
-            var maxLegendLen = d3.max(data.map(d => { return this.getTextWidth(dummySvg, d); } )) + 40;
+
+            var maxLegendLen = d3.max(data.map(d => { return this.getTextWidth(dummySvg, d); })) + 40;
 
             dummySvg.remove();
 
@@ -742,7 +764,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
         };
 
         private getTextWidth(container, text) {
-            
+
             var dummytext = container.append("text").text(text).attr("font-size", this.fontSize);
             var bbox = { width: 10, height: 10 };
             if (dummytext.node() !== null) bbox = dummytext.node().getBBox();
@@ -757,12 +779,12 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
             var wordsArray = [];
             var space = 0;
             var svg = el.append("svg").attr("width", 0).attr("height", 0);
-          
+
             var scale = d3.scale.ordinal().domain(labels).rangeRoundBands([0, chartwidth]);
             var maxWidth = scale.rangeBand();
-           
+
             if (orientation === "Vertical") {
-               
+
                 labels.map(function (text) {
                     var words = String(text).split(/\s+/).reverse();
                     words.map(function (d) { wordsArray.push(d); });
@@ -772,7 +794,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                 });
                 var longest = wordsArray.sort(function (a, b) { return b.length - a.length; })[0];
                 if (this.getTextWidth(svg, longest) > maxWidth) rotate = true;
-               
+
                 if (rotate === true) {
                     var longest = labels.sort(function (a, b) { return b.length - a.length; })[0];
                     space = self.getTextWidth(svg, longest);
@@ -783,18 +805,18 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
 
                         var mWidth = (i === 0 || i === labels.length - 1) ? maxWidth / 2 : maxWidth;
                         var textContent = String(d), spanContent;
-                      
+
                         var words = textContent.split(/\s+/).reverse(),
                             word,
                             lineCount = 0;
                         let line = [],
                             t = "";
-                        
+
                         while (word = words.pop()) {
                             line.push(word);
                             t = line.join(' ');
                             if (self.getTextWidth(svg, t) > mWidth) {
-                               
+
                                 line.pop();
                                 spanContent = line.join(' ');
                                 lineCountArr.push(++lineCount);
@@ -802,21 +824,21 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                         };
 
                     });
-                   
+
                     space = 10 * (d3.max(lineCountArr));
                 }
-                
+
             }
             else {
                 var long = labels.sort(function (a, b) { return b.length - a.length; })[0];
-                let longest:any = String(long);
+                let longest: any = String(long);
                 var needWarpping = false;
-              
+
                 labels.map(function (d) {
                     var words = String(d).split(/\s+/).reverse();
                     if (words.length > 1) needWarpping = true;
                 });
-               
+
                 if (longest.length < 25 || needWarpping == false) {
                     rotate = false;
                     space = this.getTextWidth(svg, longest);
@@ -832,10 +854,10 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                     var maxText = longest.split(/\s+/).slice(0, maxWord.split(/\s+/).length).join(" ");
 
                     space = this.getTextWidth(svg, maxText);
-                    
+
                 }
             }
-           
+
             svg.remove();
 
             return { Rotate: rotate, Space: space };
@@ -843,7 +865,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
         }
 
         private axisWrap(text, width, orientation, alignment) {
-           
+
             text.each(function () {
 
                 var breakChars = ['/', '&'],
@@ -864,7 +886,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                     y = text.attr('y'),
                     dy = parseFloat(text.attr('dy'));
 
-                var tspan:any = text.text(null).append('tspan').attr('x', x).attr('y', y).attr('dy', dy + 'em');
+                var tspan: any = text.text(null).append('tspan').attr('x', x).attr('y', y).attr('dy', dy + 'em');
 
                 while (word = words.pop()) {
                     line.push(word);
@@ -906,7 +928,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
 
         }
 
-        private setFontSize(chartSvg){
+        private setFontSize(chartSvg) {
 
             chartSvg.selectAll("text").attr("font-size", this.fontSize + "px");
         }
@@ -915,22 +937,23 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
 
             let objectName = options.objectName;
             let objectEnumeration: VisualObjectInstance[] = [];
-          
+
             switch (objectName) {
                 case 'Heat':
                     objectEnumeration.push({ objectName: objectName, properties: { heatColor: this.heatColor }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { heatScale: this.heatScale }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { heatSort: this.heatSort }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { heatRange: this.heatRange }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { heatColorType: this.heatColorType }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { rectRadius: this.rectRadius }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { middleBinValue: this.middleBinValue }, selector: null });
-                   
+
                     break;
                 case 'Legend':
                     objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { minLegendText: this.minLegendText }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { maxLegendText: this.maxLegendText }, selector: null });
-                    
+
                     break;
                 case 'Axis':
                     objectEnumeration.push({ objectName: objectName, properties: { showXAxis: this.showXAxis }, selector: null });
@@ -939,9 +962,9 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                     objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.fontSize }, selector: null });
                     break;
-                    
+
             };
-           
+
 
             return objectEnumeration;
             //return VisualSettings.enumerateObjectInstances(this.settings || VisualSettings.getDefault(), options);

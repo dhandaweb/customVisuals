@@ -1240,12 +1240,16 @@ module powerbi.extensibility.visual {
                 "area": "\uf1fe",
                 "dot": "\uf111"
             }
-
-            legengG.append("text")
-                .text(d => shapeMap[d.shape])
-                .attr("style", 'font-size:10px;font-family: "FontAwesome"')
-                .attr("y", fontSize / 5)
+            legengG.append("circle")
+                .attr("r", fontSize / 2)
+                .attr("cy", fontSize / 5)
                 .attr("fill", d => d.color);
+
+            //legengG.append("text")
+            //    .text(d => shapeMap[d.shape])
+            //    .attr("style", 'font-size:10px;font-family: "FontAwesome"')
+            //    .attr("y", fontSize / 5)
+            //    .attr("fill", d => d.color);
 
             legengG
                 .append("text")

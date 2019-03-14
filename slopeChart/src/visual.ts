@@ -244,11 +244,13 @@ module powerbi.extensibility.visual {
                 })
             });
 
-            if (this.showAs == "perTotal") valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: "0.00 %;-0.00 %;0.00 %", precision: this.valPrecision });
-
+            if (this.showAs == "perTotal") {
+                //valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: "0.00 %;-0.00 %;0.00 %", precision: this.valPrecision });
+                valFormat = d3.format(",." + this.valPrecision +"%")
+            }
             this.formattedData = retData;
 
-            return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat.format, data: retData, legend: legend }
+            return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat, data: retData, legend: legend }
         }
 
         private setUpAnalyticData(data) {
