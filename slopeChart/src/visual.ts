@@ -244,7 +244,7 @@ module powerbi.extensibility.visual {
                 })
             });
 
-            if (this.showAs == "perTotal") valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: "0.00 %;-0.00 %;0.00 %" });
+            if (this.showAs == "perTotal") valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: "0.00 %;-0.00 %;0.00 %", precision: this.valPrecision });
 
             this.formattedData = retData;
 
