@@ -56,13 +56,13 @@ module powerbi.extensibility.visual.histogramCCFC224D9885417F9AAF5BB8D45B007E  {
         private TooltipEventArgs: any;
         public TooltipEnabledDataPoint: any;
 
-        private fontSize: any = 11;
+        private fontSize: any = 10;
         private valFormat: any = 'default';
-        private valPrecision: any = 0;
-        private binCount: any = 11;
+        private valPrecision: any = 1;
+        private binCount: any = 10;
         private showLabel: any = false;
-        private showYAxis: any = false;
-        private barFill: any = { solid: { color: "#4682b4" } };
+        private showYAxis: any = true;
+        private barFill: any = { solid: { color: "rgb(69, 168, 168)" } };
 
         constructor(options: VisualConstructorOptions) {
 
@@ -116,17 +116,19 @@ module powerbi.extensibility.visual.histogramCCFC224D9885417F9AAF5BB8D45B007E  {
             });
 
             var chart = container
+            .attr("style","fill: rgb(102, 102, 102); font-family: 'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif;")
                 .append("svg")
                 .attr("height", options.viewport.height)
                 .attr("width", options.viewport.width)
                 .append("g")
                 .attr("transform", "translate(20,20)")
 
-            this.drawHistrogram(data, options.viewport.height - 50, options.viewport.width - 20, chart);
+            var leftOffset = 15;
+            this.drawHistrogram(data, options.viewport.height - 50, options.viewport.width - 40 - leftOffset, chart, leftOffset);
         }
 
 
-        private drawHistrogram(data, height, width, svg) {
+        private drawHistrogram(data, height, width, svg, leftOffset) {
             var values = data.map(d => d.val);
             var max = d3.max(values);
             var min = d3.min(values);
@@ -136,7 +138,7 @@ module powerbi.extensibility.visual.histogramCCFC224D9885417F9AAF5BB8D45B007E  {
                 .range([0, width]);
 
             var data: any = d3.layout.histogram()
-                .bins(xScale.ticks(this.binCount))
+                .bins(this.binCount)
                 (values);
 
             var yMax = d3.max(data, function (d: any) { return d.length });
@@ -152,22 +154,22 @@ module powerbi.extensibility.visual.histogramCCFC224D9885417F9AAF5BB8D45B007E  {
                 .attr("class", "bar")
                 .attr("transform", function (d: any) { return "translate(" + xScale(d.x) + "," + yScale(d.y) + ")"; });
 
-            this.drawBars(bar, data, xScale, yScale, height);
+            this.drawBars(bar, data, xScale, yScale, height, leftOffset);
 
-            this.drawDataLabel(bar, xScale, data);
+            this.drawDataLabel(bar, xScale, data,leftOffset);
 
-            this.drawXAxis(svg, height, xScale, max);
+            this.drawXAxis(svg, height, xScale, min, max, leftOffset);
 
-            //this.drawYAxis(svg, yScale);
+            this.drawYAxis(svg, yScale, leftOffset);
 
             this.setFontSize(svg);
         }
 
-        private drawBars(bar, data, xScale, yScale, height) {
+        private drawBars(bar, data, xScale, yScale, height, leftOffset) {
 
             var rects = bar.append("rect")
-                .attr("x", 1)
-                .attr("width", (xScale(data[0].dx) - xScale(0)) - 1)
+                .attr("x", leftOffset + 1)
+                .attr("width", (xScale(data[0].dx) - xScale(0)) - 2)
                 .attr("height", function (d: any) { return height - yScale(d.y); })
                 .attr("fill", this.barFill.solid.color);
 
@@ -178,47 +180,59 @@ module powerbi.extensibility.visual.histogramCCFC224D9885417F9AAF5BB8D45B007E  {
 
         }
 
-        private drawXAxis(svg, height, xScale, max) {
+        private drawXAxis(svg, height, xScale, min, max, leftOffset) {
 
             var format: any = this.getValueFormat(this.valuesFormatter, max, this.valFormat, this.valPrecision);
+            var tickValues = [];
+
+            var step = (max - min) / this.binCount;
+            var i;
+            for (i = 0; i < (this.binCount + 1); i++) {
+                tickValues.push(min + (i * step))
+            };
 
             var xAxis = d3.svg.axis()
                 .scale(xScale)
                 .orient("bottom")
-                .ticks(this.binCount)
-                .tickFormat(format.format);
+                .tickFormat(format.format)
+                .tickValues(tickValues);
 
             svg.append("g")
                 .attr("class", "x axis")
-                .attr("transform", "translate(0," + height + ")")
+                .attr("transform", "translate(" + leftOffset + "," + height + ")")
                 .call(xAxis);
 
         }
 
-        private drawYAxis(svg, yScale) {
+        private drawYAxis(svg, yScale, leftOffset) {
 
             if (this.showYAxis === true) {
                 var yAxis = d3.svg.axis()
                     .scale(yScale)
+                   
                     .orient("left");
+
+                yAxis
+                .ticks(5)
+                .tickFormat(d3.format("s"));
 
                 svg.append("g")
                     .attr("class", "y axis")
-                    .attr("transform", "translate(0,0)")
+                    .attr("transform", "translate(" + leftOffset + ",0)")
                     .call(yAxis);
             }
 
         }
 
-        private drawDataLabel(bar, xScale, data) {
+        private drawDataLabel(bar, xScale, data,leftOffset) {
 
             if (this.showLabel == true) {
                 bar.append("text")
                     .attr("dy", ".75em")
-                    .attr("y", -15)
-                    .attr("x", (xScale(data[0].dx) - xScale(0)) / 2)
+                    .attr("y", -10)
+                    .attr("x", (leftOffset + (xScale(data[0].dx) - xScale(0)) / 2))
                     .attr("text-anchor", "middle")
-                    .text((d: any) => d.y);
+                    .text((d: any) => d.y == 0 ? "" : d.y);
             }
 
         }
@@ -305,9 +319,9 @@ module powerbi.extensibility.visual.histogramCCFC224D9885417F9AAF5BB8D45B007E  {
                     objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { binCount: this.binCount }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
-                    //objectEnumeration.push({ objectName: objectName, properties: { showYAxis: this.showYAxis }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { showYAxis: this.showYAxis }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { barFill: this.barFill }, selector: null });
-                   
+
                     break;
             };
 

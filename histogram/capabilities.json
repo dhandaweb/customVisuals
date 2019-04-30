@@ -123,9 +123,7 @@
                 "binCount": {
                     "displayName": "Bins",
                     "type": {
-                        "formatting": {
-                            "fontSize": true
-                        }
+                        "numeric": true
                     }
                 },
                 "showLabel": {
