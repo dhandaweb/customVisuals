@@ -8938,9 +8938,11 @@ var powerbi;
                     Visual.prototype.update = function (options) {
                         var _this = this;
                         this.columns = options.dataViews[0].metadata.columns;
+                        console.log(options);
                         this.setProperties(options);
                         this.hasValues = false;
                         this.hasGroup = false;
+                        //  if (this.hasValues === false || this.hasGroup === false) return;
                         this.columns.forEach(function (d, i) {
                             if (d.roles["group"]) {
                                 _this.hasGroup = true;
@@ -8959,7 +8961,7 @@ var powerbi;
                             .attr("class", "histogram")
                             .attr("style", "width:100%;text-align:left;padding:1px;border-spacing:0;")
                             .attr("style", 'font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif');
-                        if (this.hasValues === false || this.hasGroup === false) {
+                        if (this.hasValues === false && this.hasGroup === false) {
                             container
                                 .append("html")
                                 .attr("style", "")
@@ -8970,6 +8972,7 @@ var powerbi;
                         options.dataViews[0].table.rows.forEach(function (d, i) {
                             data.push({ val: d[_this.valuesIndex], group: d[_this.groupIndex] });
                         });
+                        //console.log(data);
                         var chart = container
                             .attr("style", "fill: rgb(102, 102, 102); font-family: 'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif;")
                             .append("svg")
@@ -8978,44 +8981,12 @@ var powerbi;
                             .append("g")
                             .attr("transform", "translate(20,20)");
                         var leftOffset = 15;
-                        this.drawHistrogram(data, options.viewport.height - 50, options.viewport.width - 40 - leftOffset, chart, leftOffset);
-                    };
-                    Visual.prototype.drawHistrogram = function (data, height, width, svg, leftOffset) {
+                        var nestedData = d3.nest()
+                            .key(function (d) { return d.group; })
+                            .entries(data);
                         var values = data.map(function (d) { return d.val; });
                         var max = d3.max(values);
                         var min = d3.min(values);
-                        var xScale = d3.scale.linear()
-                            .domain([min, max])
-                            .range([0, width]);
-                        var data = d3.layout.histogram()
-                            .bins(this.binCount)(values);
-                        var yMax = d3.max(data, function (d) { return d.length; });
-                        var yMin = d3.min(data, function (d) { return d.length; });
-                        var yScale = d3.scale.linear()
-                            .domain([0, yMax])
-                            .range([height, 0]);
-                        var bar = svg.selectAll(".bar")
-                            .data(data)
-                            .enter().append("g")
-                            .attr("class", "bar")
-                            .attr("transform", function (d) { return "translate(" + xScale(d.x) + "," + yScale(d.y) + ")"; });
-                        this.drawBars(bar, data, xScale, yScale, height, leftOffset);
-                        this.drawDataLabel(bar, xScale, data, leftOffset);
-                        this.drawXAxis(svg, height, xScale, min, max, leftOffset);
-                        this.drawYAxis(svg, yScale, leftOffset);
-                        this.setFontSize(svg);
-                    };
-                    Visual.prototype.drawBars = function (bar, data, xScale, yScale, height, leftOffset) {
-                        var _this = this;
-                        var rects = bar.append("rect")
-                            .attr("x", leftOffset + 1)
-                            .attr("width", (xScale(data[0].dx) - xScale(0)) - 2)
-                            .attr("height", function (d) { return height - yScale(d.y); })
-                            .attr("fill", this.barFill.solid.color);
-                        this.tooltipServiceWrapper.addTooltip(rects, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
-                    };
-                    Visual.prototype.drawXAxis = function (svg, height, xScale, min, max, leftOffset) {
-                        var format = this.getValueFormat(this.valuesFormatter, max, this.valFormat, this.valPrecision);
                         var tickValues = [];
                         var step = (max - min) / this.binCount;
                         var i;
@@ -9023,6 +8994,45 @@ var powerbi;
                             tickValues.push(min + (i * step));
                         }
                         ;
+                        var xScale = d3.scale.linear()
+                            .domain([min, max])
+                            .range([0, options.viewport.width - 40]);
+                        var rangeBand = xScale(tickValues[1]) - xScale(tickValues[0]);
+                        var xScale1 = d3.scale.ordinal()
+                            .domain(nestedData.map(function (d) { return d.key; }))
+                            .rangeBands([0, rangeBand]);
+                        nestedData.map(function (item) {
+                            var data = d3.layout.histogram()
+                                .bins(tickValues)(item.values.map(function (d) { return d.val; }));
+                            item.dx = xScale1(item.key);
+                            item.width = xScale1.rangeBand();
+                            item.list = data;
+                            item.yMax = d3.max(data, function (d) { return d.length; });
+                        });
+                        var height = options.viewport.height - 50;
+                        var width = options.viewport.width - 40 - leftOffset;
+                        var yMax = d3.max(nestedData.map(function (d) { return d.yMax; }));
+                        var yScale = d3.scale.linear()
+                            .domain([0, yMax])
+                            .range([height, 0]);
+                        this.drawXAxis(chart, height, xScale, tickValues, max, leftOffset);
+                        this.drawYAxis(chart, yScale, leftOffset);
+                        this.drawHistrogram(nestedData, chart, xScale, yScale, leftOffset, xScale1, height);
+                        this.setFontSize(chart);
+                    };
+                    Visual.prototype.drawHistrogram = function (nestedData, svg, xScale, yScale, leftOffset, xScale1, height) {
+                        var group = svg.selectAll(".barGroup")
+                            .data(nestedData)
+                            .enter().append("g")
+                            .attr("class", "barGroup")
+                            .attr("transform", function (d) { return "translate(" + (leftOffset + d.dx) + "," + 0 + ")"; })
+                            .attr("fill", this.barFill.solid.color);
+                        //this.drawBars(group, xScale, xScale1, yScale, height);
+                        this.drawDots(group, xScale, xScale1, yScale, height);
+                        this.drawLabels(group, xScale, xScale1, yScale, height);
+                    };
+                    Visual.prototype.drawXAxis = function (svg, height, xScale, tickValues, max, leftOffset) {
+                        var format = this.getValueFormat(this.valuesFormatter, max, this.valFormat, this.valPrecision);
                         var xAxis = d3.svg.axis()
                             .scale(xScale)
                             .orient("bottom")
@@ -9047,12 +9057,47 @@ var powerbi;
                                 .call(yAxis);
                         }
                     };
-                    Visual.prototype.drawDataLabel = function (bar, xScale, data, leftOffset) {
+                    Visual.prototype.drawBars = function (barGroup, xScale, xScale1, yScale, height) {
+                        var _this = this;
+                        var bars = barGroup.selectAll(".bar")
+                            .data(function (d) { return d.list; })
+                            .enter()
+                            .append("rect")
+                            .attr("x", function (d) { return xScale(d.x); })
+                            .attr("width", xScale1.rangeBand() - 1)
+                            .attr("y", function (d) {
+                            return yScale(d.y);
+                        })
+                            .attr("height", function (d) {
+                            return height - yScale(d.y);
+                        });
+                        this.tooltipServiceWrapper.addTooltip(bars, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
+                    };
+                    Visual.prototype.drawDots = function (barGroup, xScale, xScale1, yScale, height) {
+                        var _this = this;
+                        var radius = 5;
+                        var bars = barGroup.selectAll(".dot")
+                            .data(function (d) { return d.list; })
+                            .enter()
+                            .append("circle")
+                            .attr("cx", function (d) { return (xScale(d.x) + -radius + xScale1.rangeBand() / 2); })
+                            .attr("cy", function (d) {
+                            return yScale(d.y) - radius;
+                        })
+                            .attr("r", radius);
+                        this.tooltipServiceWrapper.addTooltip(bars, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
+                    };
+                    Visual.prototype.drawLabels = function (barGroup, xScale, xScale1, yScale, height) {
                         if (this.showLabel == true) {
-                            bar.append("text")
-                                .attr("dy", ".75em")
-                                .attr("y", -10)
-                                .attr("x", (leftOffset + (xScale(data[0].dx) - xScale(0)) / 2))
+                            barGroup.selectAll(".barLabel")
+                                .data(function (d) { return d.list; })
+                                .enter()
+                                .append("text")
+                                .attr("dy", -5)
+                                .attr("y", function (d) {
+                                return yScale(d.y);
+                            })
+                                .attr("x", function (d) { return (xScale(d.x) + xScale1.rangeBand() / 2); })
                                 .attr("text-anchor", "middle")
                                 .text(function (d) { return d.y == 0 ? "" : d.y; });
                         }
@@ -9151,8 +9196,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.histogramCCFC224D9885417F9AAF5BB8D45B007E = {
-                name: 'histogramCCFC224D9885417F9AAF5BB8D45B007E',
+            plugins.histogramCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
+                name: 'histogramCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
                 displayName: 'Histogram',
                 class: 'Visual',
                 version: '1.0.0',

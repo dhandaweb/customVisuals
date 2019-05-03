@@ -3,20 +3,17 @@
         {
             "displayName": "Values",
             "name": "values",
-            "kind": "Measure"
-            
+            "kind": "Grouping"
         },
         {
             "displayName": "Group",
             "name": "group",
             "kind": "Grouping"
-
         }
-
     ],
     "dataViewMappings": [
         {
-             "table": {
+            "table": {
                 "rows": {
                     "dataReductionAlgorithm": {
                         "top": {
@@ -37,18 +34,9 @@
 
                     ]
                 }
-            },
-            "conditions": [
-                {
-                    "values": {
-                        "max": 1
-                    },
-                    "group": {
-                        "max": 1
-                    }
-                }
-            ]
+            }
         }
+        
     ],
     "objects": {
         "Basic": {

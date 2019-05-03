@@ -74,12 +74,12 @@ module powerbi.extensibility.visual.histogramCCFC224D9885417F9AAF5BB8D45B007E  {
 
         public update(options: VisualUpdateOptions) {
             this.columns = options.dataViews[0].metadata.columns;
-
+            console.log(options);
             this.setProperties(options);
 
             this.hasValues = false;
             this.hasGroup = false;
-
+            //  if (this.hasValues === false || this.hasGroup === false) return;
             this.columns.forEach((d, i) => {
                 if (d.roles["group"]) {
                     this.hasGroup = true;
@@ -101,7 +101,7 @@ module powerbi.extensibility.visual.histogramCCFC224D9885417F9AAF5BB8D45B007E  {
                 .attr("style", "width:100%;text-align:left;padding:1px;border-spacing:0;")
                 .attr("style", 'font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif');
 
-            if (this.hasValues === false || this.hasGroup === false) {
+            if (this.hasValues === false && this.hasGroup === false) {
                 container
                     .append("html")
                     .attr("style", "")
@@ -115,8 +115,10 @@ module powerbi.extensibility.visual.histogramCCFC224D9885417F9AAF5BB8D45B007E  {
                 data.push({ val: d[this.valuesIndex], group: d[this.groupIndex] })
             });
 
+            //console.log(data);
+
             var chart = container
-            .attr("style","fill: rgb(102, 102, 102); font-family: 'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif;")
+                .attr("style", "fill: rgb(102, 102, 102); font-family: 'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif;")
                 .append("svg")
                 .attr("height", options.viewport.height)
                 .attr("width", options.viewport.width)
@@ -124,65 +126,14 @@ module powerbi.extensibility.visual.histogramCCFC224D9885417F9AAF5BB8D45B007E  {
                 .attr("transform", "translate(20,20)")
 
             var leftOffset = 15;
-            this.drawHistrogram(data, options.viewport.height - 50, options.viewport.width - 40 - leftOffset, chart, leftOffset);
-        }
 
+            var nestedData = d3.nest()
+                .key((d: any) => d.group)
+                .entries(data);
 
-        private drawHistrogram(data, height, width, svg, leftOffset) {
             var values = data.map(d => d.val);
             var max = d3.max(values);
             var min = d3.min(values);
-
-            var xScale = d3.scale.linear()
-                .domain([min, max])
-                .range([0, width]);
-
-            var data: any = d3.layout.histogram()
-                .bins(this.binCount)
-                (values);
-
-            var yMax = d3.max(data, function (d: any) { return d.length });
-            var yMin = d3.min(data, function (d: any) { return d.length });
-
-            var yScale = d3.scale.linear()
-                .domain([0, yMax])
-                .range([height, 0]);
-
-            var bar = svg.selectAll(".bar")
-                .data(data)
-                .enter().append("g")
-                .attr("class", "bar")
-                .attr("transform", function (d: any) { return "translate(" + xScale(d.x) + "," + yScale(d.y) + ")"; });
-
-            this.drawBars(bar, data, xScale, yScale, height, leftOffset);
-
-            this.drawDataLabel(bar, xScale, data,leftOffset);
-
-            this.drawXAxis(svg, height, xScale, min, max, leftOffset);
-
-            this.drawYAxis(svg, yScale, leftOffset);
-
-            this.setFontSize(svg);
-        }
-
-        private drawBars(bar, data, xScale, yScale, height, leftOffset) {
-
-            var rects = bar.append("rect")
-                .attr("x", leftOffset + 1)
-                .attr("width", (xScale(data[0].dx) - xScale(0)) - 2)
-                .attr("height", function (d: any) { return height - yScale(d.y); })
-                .attr("fill", this.barFill.solid.color);
-
-            this.tooltipServiceWrapper.addTooltip(rects,
-                (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
-                (tooltipEvent: TooltipEventArgs<any>) => null
-            );
-
-        }
-
-        private drawXAxis(svg, height, xScale, min, max, leftOffset) {
-
-            var format: any = this.getValueFormat(this.valuesFormatter, max, this.valFormat, this.valPrecision);
             var tickValues = [];
 
             var step = (max - min) / this.binCount;
@@ -190,6 +141,71 @@ module powerbi.extensibility.visual.histogramCCFC224D9885417F9AAF5BB8D45B007E  {
             for (i = 0; i < (this.binCount + 1); i++) {
                 tickValues.push(min + (i * step))
             };
+
+            var xScale = d3.scale.linear()
+                .domain([min, max])
+                .range([0, options.viewport.width - 40]);
+
+            var rangeBand = xScale(tickValues[1]) - xScale(tickValues[0]);
+
+            var xScale1 = d3.scale.ordinal()
+                .domain(nestedData.map(d => d.key))
+                .rangeBands([0, rangeBand]);
+
+            nestedData.map((item: any) => {
+
+                var data: any = d3.layout.histogram()
+                    .bins(tickValues)
+                    (item.values.map(d => d.val));
+
+                item.dx = xScale1(item.key);
+                item.width = xScale1.rangeBand();
+                item.list = data;
+                item.yMax = d3.max(data, function (d: any) { return d.length });
+
+            });
+
+            var height = options.viewport.height - 50;
+            var width = options.viewport.width - 40 - leftOffset;
+
+
+            var yMax = d3.max(nestedData.map((d: any) => d.yMax));
+
+            var yScale = d3.scale.linear()
+                .domain([0, yMax])
+                .range([height, 0]);
+
+            this.drawXAxis(chart, height, xScale, tickValues, max, leftOffset);
+            this.drawYAxis(chart, yScale, leftOffset);
+            this.drawHistrogram(nestedData, chart, xScale, yScale, leftOffset, xScale1, height);
+            this.setFontSize(chart);
+        }
+
+
+        private drawHistrogram(nestedData, svg, xScale, yScale, leftOffset, xScale1, height) {
+
+            var group = svg.selectAll(".barGroup")
+                .data(nestedData)
+                .enter().append("g")
+                .attr("class", "barGroup")
+                .attr("transform", function (d: any) { return "translate(" + (leftOffset + d.dx) + "," + 0 + ")"; })
+                .attr("fill", this.barFill.solid.color);
+
+
+            //this.drawBars(group, xScale, xScale1, yScale, height);
+            this.drawDots(group, xScale, xScale1, yScale, height);
+            this.drawLabels(group, xScale, xScale1, yScale, height);
+
+
+
+
+
+        }
+
+
+        private drawXAxis(svg, height, xScale, tickValues, max, leftOffset) {
+
+            var format: any = this.getValueFormat(this.valuesFormatter, max, this.valFormat, this.valPrecision);
 
             var xAxis = d3.svg.axis()
                 .scale(xScale)
@@ -206,15 +222,16 @@ module powerbi.extensibility.visual.histogramCCFC224D9885417F9AAF5BB8D45B007E  {
 
         private drawYAxis(svg, yScale, leftOffset) {
 
+
+
             if (this.showYAxis === true) {
                 var yAxis = d3.svg.axis()
                     .scale(yScale)
-                   
                     .orient("left");
 
                 yAxis
-                .ticks(5)
-                .tickFormat(d3.format("s"));
+                    .ticks(5)
+                    .tickFormat(d3.format("s"));
 
                 svg.append("g")
                     .attr("class", "y axis")
@@ -224,23 +241,67 @@ module powerbi.extensibility.visual.histogramCCFC224D9885417F9AAF5BB8D45B007E  {
 
         }
 
-        private drawDataLabel(bar, xScale, data,leftOffset) {
 
+        private drawBars(barGroup, xScale, xScale1, yScale, height) {
+            var bars = barGroup.selectAll(".bar")
+                .data(d => d.list)
+                .enter()
+                .append("rect")
+                .attr("x", d => xScale(d.x))
+                .attr("width", xScale1.rangeBand() - 1)
+                .attr("y", function (d: any) {
+                    return yScale(d.y);
+                })
+                .attr("height", function (d: any) {
+                    return height - yScale(d.y);
+                })
+
+
+            this.tooltipServiceWrapper.addTooltip(bars,
+                (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
+                (tooltipEvent: TooltipEventArgs<any>) => null
+            );
+        }
+
+        private drawDots(barGroup, xScale, xScale1, yScale, height) {
+            var radius = 5
+            var bars = barGroup.selectAll(".dot")
+                .data(d => d.list)
+                .enter()
+                .append("circle")
+                .attr("cx", d => (xScale(d.x) + - radius+ xScale1.rangeBand() / 2))
+                .attr("cy", function (d: any) {
+                    return yScale(d.y)-radius;
+                })
+                .attr("r", radius)
+
+
+            this.tooltipServiceWrapper.addTooltip(bars,
+                (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
+                (tooltipEvent: TooltipEventArgs<any>) => null
+            );
+        }
+        private drawLabels(barGroup, xScale, xScale1, yScale, height) {
             if (this.showLabel == true) {
-                bar.append("text")
-                    .attr("dy", ".75em")
-                    .attr("y", -10)
-                    .attr("x", (leftOffset + (xScale(data[0].dx) - xScale(0)) / 2))
+                barGroup.selectAll(".barLabel")
+                    .data(d => d.list)
+                    .enter()
+                    .append("text")
+                    .attr("dy", -5)
+                    .attr("y", function (d: any) {
+                        return yScale(d.y);
+                    })
+                    .attr("x", d => (xScale(d.x) + xScale1.rangeBand() / 2))
                     .attr("text-anchor", "middle")
                     .text((d: any) => d.y == 0 ? "" : d.y);
             }
-
         }
 
         private setFontSize(chartSvg) {
 
             chartSvg.selectAll("text").style("font-size", this.fontSize + "px");
         }
+
         private static parseSettings(dataView: DataView): VisualSettings {
             return VisualSettings.parse(dataView) as VisualSettings;
         }
