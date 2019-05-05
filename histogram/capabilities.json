@@ -13,26 +13,23 @@
     ],
     "dataViewMappings": [
         {
-            "table": {
-                "rows": {
+            "categorical": {
+                "categories": {
+                    "for": {
+                        "in": "values"
+                    },
                     "dataReductionAlgorithm": {
                         "top": {
-                            "count": 30000
+                            "count": 3000
                         }
-                    },
-                    "select": [
-                        {
-                            "for": {
-                                "in": "group"
-                            }
-                        },
-                        {
-                            "for": {
-                                "in": "values"
-                            }
-                        }
-
-                    ]
+                    }
+                },
+                "values": {
+                    
+                        "select": [
+                            { "bind": { "to": "group" } }
+                        ]
+                   
                 }
             }
         }
@@ -108,18 +105,6 @@
                         ]
                     }
                 },
-                "binCount": {
-                    "displayName": "Bins",
-                    "type": {
-                        "numeric": true
-                    }
-                },
-                "showLabel": {
-                    "displayName": "Data Labels",
-                    "type": {
-                        "bool": true
-                    }
-                },
                 "showYAxis": {
                     "displayName": "Show Y Axis",
                     "type": {
@@ -133,6 +118,107 @@
                             "solid": {
                                 "color": true
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "Histogram": {
+            "displayName": "Histogram",
+            "properties": {
+                "binCount": {
+                    "displayName": "Bins",
+                    "type": {
+                        "numeric": true
+                    }
+                },
+                "showAs": {
+                    "displayName": "Histogram as",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "bar",
+                                "displayName": "Bar"
+                            },
+                            {
+                                "value": "line",
+                                "displayName": "Line"
+                            },
+                            {
+                                "value": "dot",
+                                "displayName": "Dot"
+                            },
+                            {
+                                "value": "lineDot",
+                                "displayName": "Line Dot"
+                            }
+                        ]
+                    }
+                },
+                "showLabel": {
+                    "displayName": "Data Labels",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "barFill": {
+                    "displayName": "Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "colorSelector": {
+            "displayName": "Data Colors",
+            "properties": {
+                "fill": {
+                    "displayName": "Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "Legend": {
+            "displayName": "Legend",
+            "properties": {
+                "legendPosition": {
+                    "displayName": "Legend Position",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "right",
+                                "displayName": "Right"
+                            },
+                            {
+                                "value": "top",
+                                "displayName": "Top"
+                            },
+                            {
+                                "value": "bottom",
+                                "displayName": "Bottom"
+                            }
+                        ]
+                    }
+                },
+                "legendName": {
+                    "displayName": "Legend Name",
+                    "type": { "text": true }
+                },
+                "fontSize": {
+                    "displayName": "Legend Font Size",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
                         }
                     }
                 }

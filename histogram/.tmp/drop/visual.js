@@ -8929,24 +8929,34 @@ var powerbi;
                         this.binCount = 10;
                         this.showLabel = false;
                         this.showYAxis = true;
-                        this.barFill = { solid: { color: "rgb(69, 168, 168)" } };
+                        this.barFill = { solid: { color: "#01b8aa" } };
+                        this.formattedData = [];
+                        this.showAs = "bar";
+                        this.rangeBandPadding = 0;
+                        this.colorTitle = '';
+                        this.legendFontSize = 10;
+                        this.legendPosition = "right";
                         this.element = d3.select(options.element);
                         this.host = options.host;
                         this.tooltipServiceWrapper = histogramCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
                         this.selectionManager = options.host.createSelectionManager();
+                        this.colorPalette = this.host.colorPalette;
                     }
                     Visual.prototype.update = function (options) {
-                        var _this = this;
                         this.columns = options.dataViews[0].metadata.columns;
-                        console.log(options);
+                        this.colorPalette.reset();
+                        this.draw(options);
+                    };
+                    Visual.prototype.draw = function (options) {
+                        var _this = this;
                         this.setProperties(options);
                         this.hasValues = false;
                         this.hasGroup = false;
-                        //  if (this.hasValues === false || this.hasGroup === false) return;
                         this.columns.forEach(function (d, i) {
                             if (d.roles["group"]) {
                                 _this.hasGroup = true;
                                 _this.groupIndex = i;
+                                _this.colorTitle = d.displayName;
                             }
                             if (d.roles["values"]) {
                                 _this.hasValues = true;
@@ -8970,17 +8980,23 @@ var powerbi;
                         }
                         var data = [];
                         options.dataViews[0].table.rows.forEach(function (d, i) {
-                            data.push({ val: d[_this.valuesIndex], group: d[_this.groupIndex] });
+                            var id = null;
+                            if (_this.hasGroup) {
+                                var categoryColumn = {
+                                    source: _this.columns[_this.groupIndex],
+                                    values: null,
+                                    identity: [options.dataViews[0].categorical.__proto__.categories[_this.groupIndex].identity[i]]
+                                };
+                                id = _this.host.createSelectionIdBuilder()
+                                    .withCategory(categoryColumn, 0)
+                                    .createSelectionId();
+                            }
+                            data.push({
+                                val: d[_this.valuesIndex],
+                                group: d[_this.groupIndex],
+                                iden: id
+                            });
                         });
-                        //console.log(data);
-                        var chart = container
-                            .attr("style", "fill: rgb(102, 102, 102); font-family: 'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif;")
-                            .append("svg")
-                            .attr("height", options.viewport.height)
-                            .attr("width", options.viewport.width)
-                            .append("g")
-                            .attr("transform", "translate(20,20)");
-                        var leftOffset = 15;
                         var nestedData = d3.nest()
                             .key(function (d) { return d.group; })
                             .entries(data);
@@ -8994,31 +9010,60 @@ var powerbi;
                             tickValues.push(min + (i * step));
                         }
                         ;
-                        var xScale = d3.scale.linear()
-                            .domain([min, max])
-                            .range([0, options.viewport.width - 40]);
-                        var rangeBand = xScale(tickValues[1]) - xScale(tickValues[0]);
-                        var xScale1 = d3.scale.ordinal()
-                            .domain(nestedData.map(function (d) { return d.key; }))
-                            .rangeBands([0, rangeBand]);
-                        nestedData.map(function (item) {
+                        this.formattedData = nestedData.map(function (item, i) {
                             var data = d3.layout.histogram()
                                 .bins(tickValues)(item.values.map(function (d) { return d.val; }));
-                            item.dx = xScale1(item.key);
-                            item.width = xScale1.rangeBand();
                             item.list = data;
                             item.yMax = d3.max(data, function (d) { return d.length; });
+                            item.iden = item.values[0].iden;
+                            item.color = _this.hasGroup ? _this.colorPalette.getColor(item.key).value : _this.barFill.solid.color;
+                            if (_this.hasGroup) {
+                                if (options.dataViews[0].categorical.categories[0].objects) {
+                                    if (options.dataViews[0].categorical.categories[0].objects[i]) {
+                                        item.color = options.dataViews[0].categorical.categories[0].objects[i].colorSelector.fill.solid.color;
+                                    }
+                                }
+                            }
+                            return item;
                         });
-                        var height = options.viewport.height - 50;
-                        var width = options.viewport.width - 40 - leftOffset;
+                        var legendD = this.formattedData.map(function (d) { return { key: d.key, color: d.color }; });
+                        var nm = (this.legendName !== undefined) ? this.legendName.length > 0 ? this.legendName : this.colorTitle : this.colorTitle;
+                        if (this.hasGroup)
+                            legendD.unshift({ key: nm, color: "transparent" });
+                        var legend = this.setLegendWidth(this.element, legendD);
+                        var dimension = this.getDimensions(options.viewport, legend);
                         var yMax = d3.max(nestedData.map(function (d) { return d.yMax; }));
+                        yMax = yMax + (yMax / 10);
                         var yScale = d3.scale.linear()
                             .domain([0, yMax])
-                            .range([height, 0]);
-                        this.drawXAxis(chart, height, xScale, tickValues, max, leftOffset);
-                        this.drawYAxis(chart, yScale, leftOffset);
-                        this.drawHistrogram(nestedData, chart, xScale, yScale, leftOffset, xScale1, height);
+                            .range([dimension.chartHeight, 0]);
+                        var xScale = d3.scale.linear()
+                            .domain([min, max])
+                            .range([0, dimension.chartWidth - 10]);
+                        var rangeBand = xScale(tickValues[1]) - xScale(tickValues[0]);
+                        this.rangeBandPadding = rangeBand / 20;
+                        rangeBand = rangeBand - this.rangeBandPadding;
+                        var xScale1 = d3.scale.ordinal()
+                            .domain(this.formattedData.map(function (d) { return d.key; }))
+                            .rangeBands([0, rangeBand]);
+                        this.formattedData.map(function (item) {
+                            item.dx = xScale1(item.key);
+                            item.width = xScale1.rangeBand();
+                        });
+                        var chartCon = container
+                            .attr("style", "fill: rgb(102, 102, 102); font-family: 'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif;")
+                            .append("svg")
+                            .attr("height", dimension.height)
+                            .attr("width", dimension.width);
+                        var chart = chartCon.append("g").attr("transform", "translate(0," + 5 + ")");
+                        ;
+                        var chartLegend = chartCon.append("g");
+                        this.drawXAxis(chart, dimension.chartHeight, xScale, tickValues, max, dimension.yOffset);
+                        this.drawYAxis(chart, yScale, dimension.yOffset);
+                        this.drawHistrogram(this.formattedData, chart, xScale, yScale, dimension.yOffset, xScale1, dimension.chartHeight);
                         this.setFontSize(chart);
+                        if (this.hasGroup)
+                            this.drawLegend(chartLegend, chart, dimension, legend);
                     };
                     Visual.prototype.drawHistrogram = function (nestedData, svg, xScale, yScale, leftOffset, xScale1, height) {
                         var group = svg.selectAll(".barGroup")
@@ -9026,9 +9071,25 @@ var powerbi;
                             .enter().append("g")
                             .attr("class", "barGroup")
                             .attr("transform", function (d) { return "translate(" + (leftOffset + d.dx) + "," + 0 + ")"; })
-                            .attr("fill", this.barFill.solid.color);
-                        //this.drawBars(group, xScale, xScale1, yScale, height);
-                        this.drawDots(group, xScale, xScale1, yScale, height);
+                            .attr("fill", function (d) { return d.color; });
+                        switch (this.showAs) {
+                            case "bar":
+                                this.drawBars(group, xScale, xScale1, yScale, height);
+                                break;
+                            case "line":
+                                this.drawLine(group, xScale, xScale1, yScale, height);
+                                break;
+                            case "dot":
+                                this.drawDots(group, xScale, xScale1, yScale, height);
+                                break;
+                            case "lineDot":
+                                this.drawLine(group, xScale, xScale1, yScale, height);
+                                this.drawDots(group, xScale, xScale1, yScale, height);
+                                break;
+                            default:
+                                this.drawBars(group, xScale, xScale1, yScale, height);
+                                break;
+                        }
                         this.drawLabels(group, xScale, xScale1, yScale, height);
                     };
                     Visual.prototype.drawXAxis = function (svg, height, xScale, tickValues, max, leftOffset) {
@@ -9063,7 +9124,7 @@ var powerbi;
                             .data(function (d) { return d.list; })
                             .enter()
                             .append("rect")
-                            .attr("x", function (d) { return xScale(d.x); })
+                            .attr("x", function (d) { return xScale(d.x) + (_this.rangeBandPadding / 2); })
                             .attr("width", xScale1.rangeBand() - 1)
                             .attr("y", function (d) {
                             return yScale(d.y);
@@ -9073,6 +9134,18 @@ var powerbi;
                         });
                         this.tooltipServiceWrapper.addTooltip(bars, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
                     };
+                    Visual.prototype.drawLine = function (barGroup, xScale, xScale1, yScale, height) {
+                        var _this = this;
+                        var line = d3.svg.line()
+                            .x(function (d) { return (xScale(d.x) + xScale1.rangeBand() / 2); })
+                            .y(function (d) { return yScale(d.y); });
+                        var lines = barGroup
+                            .append("path")
+                            .attr("fill", "none")
+                            .attr("d", function (d) { return line(d.list); })
+                            .style("stroke", function (d) { return d.color; });
+                        this.tooltipServiceWrapper.addTooltip(lines, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
+                    };
                     Visual.prototype.drawDots = function (barGroup, xScale, xScale1, yScale, height) {
                         var _this = this;
                         var radius = 5;
@@ -9080,9 +9153,10 @@ var powerbi;
                             .data(function (d) { return d.list; })
                             .enter()
                             .append("circle")
+                            .attr("class", "dot")
                             .attr("cx", function (d) { return (xScale(d.x) + -radius + xScale1.rangeBand() / 2); })
                             .attr("cy", function (d) {
-                            return yScale(d.y) - radius;
+                            return yScale(d.y);
                         })
                             .attr("r", radius);
                         this.tooltipServiceWrapper.addTooltip(bars, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
@@ -9099,11 +9173,103 @@ var powerbi;
                             })
                                 .attr("x", function (d) { return (xScale(d.x) + xScale1.rangeBand() / 2); })
                                 .attr("text-anchor", "middle")
+                                .attr("fill", "rgb(102, 102, 102)")
                                 .text(function (d) { return d.y == 0 ? "" : d.y; });
                         }
                     };
+                    Visual.prototype.drawLegend = function (chartLegend, chartSvg, dimension, data) {
+                        if (this.legendPosition == "right") {
+                            chartLegend.attr("transform", "translate(" + (dimension.chartWidth + dimension.yOffset + (this.legendFontSize * 2)) + "," + (5) + ")");
+                        }
+                        if (this.legendPosition == "top") {
+                            chartSvg.attr("transform", "translate(0," + this.legendFontSize * 3 + ")");
+                            chartLegend.attr("transform", "translate(" + (dimension.yOffset) + "," + this.legendFontSize + ")");
+                        }
+                        if (this.legendPosition == "bottom") {
+                            chartLegend.attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight + dimension.xOffset + (this.legendFontSize * 2)) + ")");
+                        }
+                        var fontSize = parseInt(this.legendFontSize);
+                        var legengG = chartLegend.selectAll(".legend")
+                            .data(data)
+                            .enter()
+                            .append("g");
+                        if (this.legendPosition == "right")
+                            legengG.attr("transform", function (d, i) { return "translate(0," + i * (fontSize + 5) + ")"; });
+                        else {
+                            var wd = 0, rt;
+                            legengG.attr("transform", function (d, i) {
+                                rt = "translate(" + wd + ",0)";
+                                wd = wd + d.width;
+                                return rt;
+                            });
+                        }
+                        legengG.append("circle")
+                            .attr("r", fontSize / 2)
+                            .attr("cy", fontSize / 5)
+                            .attr("fill", function (d) { return d.color; });
+                        legengG
+                            .append("text")
+                            .attr("x", function (d) { return d.color === "transparent" ? -5 : fontSize; })
+                            .attr("font-weight", function (d) { return d.color === "transparent" ? "bold" : "normal"; })
+                            .attr("style", function (d) {
+                            if (d.color === "transparent")
+                                return 'fill:rgb(102, 102, 102);font-family: "Segoe UI Semibold", wf_segoe-ui_semibold, helvetica, arial, sans-serif;';
+                            else
+                                return 'fill:rgb(102, 102, 102);font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif';
+                        })
+                            .style("font-size", fontSize + "px")
+                            .attr("y", fontSize / 2)
+                            .text(function (d) { return d.text; });
+                        legengG.style("font-size", fontSize);
+                    };
+                    ;
                     Visual.prototype.setFontSize = function (chartSvg) {
                         chartSvg.selectAll("text").style("font-size", this.fontSize + "px");
+                    };
+                    Visual.prototype.getTextWidth = function (container, text, fontsize) {
+                        var dummytext = container.append("text").text(text).attr("font-size", fontsize);
+                        var bbox = { width: 10, height: 10 };
+                        if (dummytext.node() !== null)
+                            bbox = dummytext.node().getBBox();
+                        dummytext.remove();
+                        return bbox.width;
+                    };
+                    ;
+                    Visual.prototype.setLegendWidth = function (el, legendData) {
+                        var _this = this;
+                        var svg = el.append("svg").attr("width", 0).attr("height", 0);
+                        var legend = legendData.map(function (d) {
+                            return {
+                                width: _this.getTextWidth(svg, d.key, _this.legendFontSize) + 20,
+                                color: d.color,
+                                text: d.key
+                            };
+                        });
+                        svg.remove();
+                        return legend;
+                    };
+                    Visual.prototype.getDimensions = function (vp, data) {
+                        var xlegendOffset = 0;
+                        var ylegendOffset = 0;
+                        if (this.hasGroup) {
+                            if (this.legendPosition == "right")
+                                ylegendOffset = d3.max(data.map(function (d) { return d.width; })) + (4 * this.legendFontSize);
+                            if (this.legendPosition == "top" || this.legendPosition === "bottom")
+                                xlegendOffset = this.legendFontSize * 3;
+                        }
+                        var xOffset, yOffset, chartWidth, chartHeight;
+                        xOffset = 5 + this.fontSize * 2;
+                        yOffset = 10 + this.fontSize * 2;
+                        chartWidth = vp.width - yOffset - ylegendOffset;
+                        chartHeight = vp.height - xOffset - xlegendOffset;
+                        return {
+                            width: vp.width,
+                            height: vp.height,
+                            xOffset: xOffset,
+                            yOffset: yOffset,
+                            chartWidth: chartWidth,
+                            chartHeight: chartHeight
+                        };
                     };
                     Visual.parseSettings = function (dataView) {
                         return histogramCCFC224D9885417F9AAF5BB8D45B007E.VisualSettings.parse(dataView);
@@ -9154,14 +9320,28 @@ var powerbi;
                                     this.valFormat = basic["valFormat"];
                                 if (basic.valPrecision !== undefined)
                                     this.valPrecision = basic["valPrecision"];
-                                if (basic.binCount !== undefined)
-                                    this.binCount = basic["binCount"];
-                                if (basic.showLabel !== undefined)
-                                    this.showLabel = basic["showLabel"];
                                 if (basic.showYAxis !== undefined)
                                     this.showYAxis = basic["showYAxis"];
-                                if (basic.barFill !== undefined)
-                                    this.barFill = basic["barFill"];
+                            }
+                            if (options.dataViews[0].metadata.objects["Histogram"]) {
+                                var histogram = options.dataViews[0].metadata.objects["Histogram"];
+                                if (histogram.barFill !== undefined)
+                                    this.barFill = histogram["barFill"];
+                                if (histogram.binCount !== undefined)
+                                    this.binCount = histogram["binCount"];
+                                if (histogram.showAs !== undefined)
+                                    this.showAs = histogram["showAs"];
+                                if (histogram.showLabel !== undefined)
+                                    this.showLabel = histogram["showLabel"];
+                            }
+                            if (options.dataViews[0].metadata.objects["Legend"]) {
+                                var legend = options.dataViews[0].metadata.objects["Legend"];
+                                if (legend.legendPosition !== undefined)
+                                    this.legendPosition = legend["legendPosition"];
+                                if (legend.fontSize !== undefined)
+                                    this.legendFontSize = legend["fontSize"];
+                                if (legend.legendName !== undefined)
+                                    this.legendName = legend["legendName"];
                             }
                         }
                     };
@@ -9173,10 +9353,41 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.fontSize }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { valFormat: this.valFormat }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { showYAxis: this.showYAxis }, selector: null });
+                                break;
+                            case 'Histogram':
+                                objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAs }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { binCount: this.binCount }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { showYAxis: this.showYAxis }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { barFill: this.barFill }, selector: null });
+                                if (!this.hasGroup)
+                                    objectEnumeration.push({ objectName: objectName, properties: { barFill: this.barFill }, selector: null });
+                                break;
+                            case 'colorSelector':
+                                if (this.hasGroup) {
+                                    for (var _i = 0, _a = this.formattedData; _i < _a.length; _i++) {
+                                        var barDataPoint = _a[_i];
+                                        objectEnumeration.push({
+                                            objectName: objectName,
+                                            displayName: barDataPoint.key,
+                                            properties: {
+                                                fill: {
+                                                    solid: {
+                                                        color: barDataPoint.color
+                                                    }
+                                                }
+                                            },
+                                            selector: barDataPoint.iden.getSelector()
+                                        });
+                                    }
+                                }
+                                break;
+                            case 'Legend':
+                                if (this.hasGroup) {
+                                    objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });
+                                    if (this.hasGroup)
+                                        objectEnumeration.push({ objectName: objectName, properties: { legendName: this.legendName }, selector: null });
+                                    objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.legendFontSize }, selector: null });
+                                }
                                 break;
                         }
                         ;
@@ -9196,8 +9407,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.histogramCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
-                name: 'histogramCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
+            plugins.histogramCCFC224D9885417F9AAF5BB8D45B007E = {
+                name: 'histogramCCFC224D9885417F9AAF5BB8D45B007E',
                 displayName: 'Histogram',
                 class: 'Visual',
                 version: '1.0.0',

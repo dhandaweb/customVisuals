@@ -1,6 +1,6 @@
 module powerbi.visuals.plugins {
-    export var histogramCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
-        name: 'histogramCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
+    export var histogramCCFC224D9885417F9AAF5BB8D45B007E = {
+        name: 'histogramCCFC224D9885417F9AAF5BB8D45B007E',
         displayName: 'Histogram',
         class: 'Visual',
         version: '1.0.0',

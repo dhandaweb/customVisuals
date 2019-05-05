@@ -62,7 +62,15 @@ module powerbi.extensibility.visual {
         private binCount: any = 10;
         private showLabel: any = false;
         private showYAxis: any = true;
-        private barFill: any = { solid: { color: "rgb(69, 168, 168)" } };
+        private barFill: any = { solid: { color: "#01b8aa" } };
+        private formattedData: any = [];
+        private showAs: any = "bar";
+        private colorPalette: any;
+        private rangeBandPadding: any = 0;
+        private colorTitle: any = '';
+        private legendFontSize: any = 10;
+        private legendPosition: any = "right";
+        private legendName: any;
 
         constructor(options: VisualConstructorOptions) {
 
@@ -70,20 +78,28 @@ module powerbi.extensibility.visual {
             this.host = options.host;
             this.tooltipServiceWrapper = createTooltipServiceWrapper(this.host.tooltipService, options.element);
             this.selectionManager = options.host.createSelectionManager();
+            this.colorPalette = this.host.colorPalette;
         }
 
         public update(options: VisualUpdateOptions) {
             this.columns = options.dataViews[0].metadata.columns;
-            console.log(options);
+
+            this.colorPalette.reset();
+            this.draw(options);
+
+        }
+
+        public draw(options) {
             this.setProperties(options);
 
             this.hasValues = false;
             this.hasGroup = false;
-            //  if (this.hasValues === false || this.hasGroup === false) return;
+
             this.columns.forEach((d, i) => {
                 if (d.roles["group"]) {
                     this.hasGroup = true;
                     this.groupIndex = i;
+                    this.colorTitle = d.displayName;
                 }
                 if (d.roles["values"]) {
                     this.hasValues = true;
@@ -112,21 +128,28 @@ module powerbi.extensibility.visual {
             var data = [];
 
             options.dataViews[0].table.rows.forEach((d: any, i) => {
-                data.push({ val: d[this.valuesIndex], group: d[this.groupIndex] })
+                var id = null;
+
+                if (this.hasGroup) {
+                    const categoryColumn: DataViewCategoryColumn = {
+                        source: this.columns[this.groupIndex],
+                        values: null,
+                        identity: [options.dataViews[0].categorical.__proto__.categories[this.groupIndex].identity[i]]
+                    };
+
+                    id = this.host.createSelectionIdBuilder()
+                        .withCategory(categoryColumn, 0)
+                        .createSelectionId();
+                }
+
+                data.push({
+                    val: d[this.valuesIndex],
+                    group: d[this.groupIndex],
+                    iden: id
+                });
+
             });
-
-            //console.log(data);
-
-            var chart = container
-                .attr("style", "fill: rgb(102, 102, 102); font-family: 'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif;")
-                .append("svg")
-                .attr("height", options.viewport.height)
-                .attr("width", options.viewport.width)
-                .append("g")
-                .attr("transform", "translate(20,20)")
-
-            var leftOffset = 15;
-
+          
             var nestedData = d3.nest()
                 .key((d: any) => d.group)
                 .entries(data);
@@ -142,44 +165,73 @@ module powerbi.extensibility.visual {
                 tickValues.push(min + (i * step))
             };
 
-            var xScale = d3.scale.linear()
-                .domain([min, max])
-                .range([0, options.viewport.width - 40]);
-
-            var rangeBand = xScale(tickValues[1]) - xScale(tickValues[0]);
-
-            var xScale1 = d3.scale.ordinal()
-                .domain(nestedData.map(d => d.key))
-                .rangeBands([0, rangeBand]);
-
-            nestedData.map((item: any) => {
-
+            this.formattedData = nestedData.map((item: any, i) => {
                 var data: any = d3.layout.histogram()
                     .bins(tickValues)
                     (item.values.map(d => d.val));
 
-                item.dx = xScale1(item.key);
-                item.width = xScale1.rangeBand();
                 item.list = data;
                 item.yMax = d3.max(data, function (d: any) { return d.length });
+                item.iden = item.values[0].iden;
+                item.color = this.hasGroup ? this.colorPalette.getColor(item.key).value : this.barFill.solid.color
+                if (this.hasGroup) {
+                    if (options.dataViews[0].categorical.categories[0].objects) {
+                        if (options.dataViews[0].categorical.categories[0].objects[i]) {
+                            item.color = options.dataViews[0].categorical.categories[0].objects[i].colorSelector.fill.solid.color;
+                        }
+                    }
+                }
 
+                return item;
             });
+           
+            let legendD = this.formattedData.map((d: any) => { return { key: d.key, color: d.color } });
 
-            var height = options.viewport.height - 50;
-            var width = options.viewport.width - 40 - leftOffset;
+            let nm = (this.legendName !== undefined) ? this.legendName.length > 0 ? this.legendName : this.colorTitle : this.colorTitle;
+            if (this.hasGroup) legendD.unshift({ key: nm, color: "transparent" });
+            var legend = this.setLegendWidth(this.element, legendD);
 
+            var dimension = this.getDimensions(options.viewport, legend);
 
             var yMax = d3.max(nestedData.map((d: any) => d.yMax));
-
+            yMax = yMax + (yMax / 10);
             var yScale = d3.scale.linear()
                 .domain([0, yMax])
-                .range([height, 0]);
+                .range([dimension.chartHeight, 0]);
 
-            this.drawXAxis(chart, height, xScale, tickValues, max, leftOffset);
-            this.drawYAxis(chart, yScale, leftOffset);
-            this.drawHistrogram(nestedData, chart, xScale, yScale, leftOffset, xScale1, height);
+            var xScale = d3.scale.linear()
+                .domain([min, max])
+                .range([0, dimension.chartWidth-10]);
+
+            var rangeBand = xScale(tickValues[1]) - xScale(tickValues[0]);
+            this.rangeBandPadding = rangeBand / 20;
+            rangeBand = rangeBand - this.rangeBandPadding;
+            var xScale1 = d3.scale.ordinal()
+                .domain(this.formattedData.map(d => d.key))
+                .rangeBands([0, rangeBand]);
+
+            this.formattedData.map((item: any) => {
+                item.dx = xScale1(item.key);
+                item.width = xScale1.rangeBand();
+            })
+
+            var chartCon = container
+                .attr("style", "fill: rgb(102, 102, 102); font-family: 'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif;")
+                .append("svg")
+                .attr("height", dimension.height)
+                .attr("width", dimension.width);
+
+            var chart = chartCon.append("g").attr("transform", "translate(0," + 5 + ")");;
+            var chartLegend = chartCon.append("g");
+         
+            this.drawXAxis(chart, dimension.chartHeight, xScale, tickValues, max, dimension.yOffset);
+            this.drawYAxis(chart, yScale, dimension.yOffset);
+            this.drawHistrogram(this.formattedData, chart, xScale, yScale, dimension.yOffset, xScale1, dimension.chartHeight);
             this.setFontSize(chart);
+
+            if (this.hasGroup) this.drawLegend(chartLegend, chart, dimension, legend);
         }
+
 
 
         private drawHistrogram(nestedData, svg, xScale, yScale, leftOffset, xScale1, height) {
@@ -189,19 +241,33 @@ module powerbi.extensibility.visual {
                 .enter().append("g")
                 .attr("class", "barGroup")
                 .attr("transform", function (d: any) { return "translate(" + (leftOffset + d.dx) + "," + 0 + ")"; })
-                .attr("fill", this.barFill.solid.color);
+                .attr("fill", d => d.color);
 
 
-            //this.drawBars(group, xScale, xScale1, yScale, height);
-            this.drawDots(group, xScale, xScale1, yScale, height);
+            switch (this.showAs) {
+                case "bar":
+                    this.drawBars(group, xScale, xScale1, yScale, height);
+                    break;
+                case "line":
+                    this.drawLine(group, xScale, xScale1, yScale, height);
+                    break;
+                case "dot":
+
+                    this.drawDots(group, xScale, xScale1, yScale, height);
+                    break;
+                case "lineDot":
+                    this.drawLine(group, xScale, xScale1, yScale, height);
+                    this.drawDots(group, xScale, xScale1, yScale, height);
+                    break;
+                default:
+                    this.drawBars(group, xScale, xScale1, yScale, height);
+                    break
+            }
+
+
             this.drawLabels(group, xScale, xScale1, yScale, height);
 
-
-
-
-
         }
-
 
         private drawXAxis(svg, height, xScale, tickValues, max, leftOffset) {
 
@@ -241,39 +307,61 @@ module powerbi.extensibility.visual {
 
         }
 
-
         private drawBars(barGroup, xScale, xScale1, yScale, height) {
+
             var bars = barGroup.selectAll(".bar")
                 .data(d => d.list)
                 .enter()
                 .append("rect")
-                .attr("x", d => xScale(d.x))
+                .attr("x", d => xScale(d.x) + (this.rangeBandPadding / 2))
                 .attr("width", xScale1.rangeBand() - 1)
                 .attr("y", function (d: any) {
                     return yScale(d.y);
                 })
                 .attr("height", function (d: any) {
                     return height - yScale(d.y);
-                })
+                });
+
 
 
             this.tooltipServiceWrapper.addTooltip(bars,
+                (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
+                (tooltipEvent: TooltipEventArgs<any>) => null
+            );
+        }
+
+        private drawLine(barGroup, xScale, xScale1, yScale, height) {
+
+            var line = d3.svg.line()
+                .x((d: any) => (xScale(d.x) + xScale1.rangeBand() / 2))
+                .y((d: any) => yScale(d.y))
+
+            var lines = barGroup
+                .append("path")
+                .attr("fill", "none")
+                .attr("d", d => line(d.list))
+                .style("stroke", d => d.color);
+
+            this.tooltipServiceWrapper.addTooltip(lines,
                 (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
                 (tooltipEvent: TooltipEventArgs<any>) => null
             );
         }
 
         private drawDots(barGroup, xScale, xScale1, yScale, height) {
-            var radius = 5
+
+            var radius = 5;
             var bars = barGroup.selectAll(".dot")
                 .data(d => d.list)
                 .enter()
+
                 .append("circle")
-                .attr("cx", d => (xScale(d.x) + - radius+ xScale1.rangeBand() / 2))
-                .attr("cy", function (d: any) {
-                    return yScale(d.y)-radius;
+                .attr("class", "dot")
+                .attr("cx", (d: any) => (xScale(d.x) + - radius + xScale1.rangeBand() / 2))
+                .attr("cy", (d: any) => {
+                    return yScale(d.y);
                 })
-                .attr("r", radius)
+                .attr("r", radius);
 
 
             this.tooltipServiceWrapper.addTooltip(bars,
@@ -281,6 +369,7 @@ module powerbi.extensibility.visual {
                 (tooltipEvent: TooltipEventArgs<any>) => null
             );
         }
+
         private drawLabels(barGroup, xScale, xScale1, yScale, height) {
             if (this.showLabel == true) {
                 barGroup.selectAll(".barLabel")
@@ -293,13 +382,113 @@ module powerbi.extensibility.visual {
                     })
                     .attr("x", d => (xScale(d.x) + xScale1.rangeBand() / 2))
                     .attr("text-anchor", "middle")
+                    .attr("fill", "rgb(102, 102, 102)")
                     .text((d: any) => d.y == 0 ? "" : d.y);
             }
         }
 
-        private setFontSize(chartSvg) {
+        private drawLegend(chartLegend, chartSvg, dimension, data) {
+            if (this.legendPosition == "right") {
+                chartLegend.attr("transform", "translate(" + (dimension.chartWidth + dimension.yOffset + (this.legendFontSize * 2)) + "," + (5) + ")");
+            }
+            if (this.legendPosition == "top") {
+                chartSvg.attr("transform", "translate(0," + this.legendFontSize * 3 + ")");
+                chartLegend.attr("transform", "translate(" + (dimension.yOffset) + "," + this.legendFontSize + ")");
+            }
+            if (this.legendPosition == "bottom") {
+                chartLegend.attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight + dimension.xOffset + (this.legendFontSize * 2)) + ")");
+            }
+            var fontSize = parseInt(this.legendFontSize);
 
+            var legengG = chartLegend.selectAll(".legend")
+                .data(data)
+                .enter()
+                .append("g");
+
+            if (this.legendPosition == "right") legengG.attr("transform", (d, i) => "translate(0," + i * (fontSize + 5) + ")");
+            else {
+                var wd = 0, rt;
+                legengG.attr("transform", (d, i) => {
+                    rt = "translate(" + wd + ",0)"
+                    wd = wd + d.width;
+                    return rt;
+                });
+            }
+
+            legengG.append("circle")
+                .attr("r", fontSize / 2)
+                .attr("cy", fontSize / 5)
+                .attr("fill", d => d.color);
+
+            legengG
+                .append("text")
+
+                .attr("x", d => d.color === "transparent" ? -5 : fontSize)
+                .attr("font-weight", d => d.color === "transparent" ? "bold" : "normal")
+                .attr("style", d => {
+                    if (d.color === "transparent") return 'fill:rgb(102, 102, 102);font-family: "Segoe UI Semibold", wf_segoe-ui_semibold, helvetica, arial, sans-serif;';
+                    else return 'fill:rgb(102, 102, 102);font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif';
+                })
+                .style("font-size", fontSize + "px")
+                .attr("y", fontSize / 2)
+                .text(d => d.text);
+
+            legengG.style("font-size", fontSize);
+        };
+
+        private setFontSize(chartSvg) {
             chartSvg.selectAll("text").style("font-size", this.fontSize + "px");
+        }
+
+        private getTextWidth(container, text, fontsize) {
+
+            var dummytext = container.append("text").text(text).attr("font-size", fontsize);
+            var bbox = { width: 10, height: 10 };
+            if (dummytext.node() !== null) bbox = dummytext.node().getBBox();
+            dummytext.remove();
+
+            return bbox.width;
+        };
+
+        private setLegendWidth(el, legendData) {
+            var svg = el.append("svg").attr("width", 0).attr("height", 0);
+
+            var legend = legendData.map(d => {
+                return {
+                    width: this.getTextWidth(svg, d.key, this.legendFontSize) + 20,
+                    color: d.color,
+                    text: d.key
+                }
+            })
+            svg.remove();
+
+            return legend;
+        }
+
+        private getDimensions(vp, data) {
+            let xlegendOffset = 0;
+            let ylegendOffset = 0;
+
+            if (this.hasGroup) {
+                if (this.legendPosition == "right") ylegendOffset = d3.max(data.map(d => d.width)) + (4 * this.legendFontSize);
+                if (this.legendPosition == "top" || this.legendPosition === "bottom") xlegendOffset = this.legendFontSize * 3;
+            }
+
+            let xOffset, yOffset, chartWidth, chartHeight;
+
+            xOffset = 5 + this.fontSize * 2;
+            yOffset = 10 + this.fontSize * 2;
+            chartWidth = vp.width - yOffset - ylegendOffset;
+            chartHeight = vp.height - xOffset - xlegendOffset;
+
+            return {
+                width: vp.width,
+                height: vp.height,
+                xOffset: xOffset,
+                yOffset: yOffset,
+                chartWidth: chartWidth,
+                chartHeight: chartHeight
+            }
         }
 
         private static parseSettings(dataView: DataView): VisualSettings {
@@ -358,13 +547,24 @@ module powerbi.extensibility.visual {
                     if (basic.fontSize !== undefined) this.fontSize = basic["fontSize"];
                     if (basic.valFormat !== undefined) this.valFormat = basic["valFormat"];
                     if (basic.valPrecision !== undefined) this.valPrecision = basic["valPrecision"];
-                    if (basic.binCount !== undefined) this.binCount = basic["binCount"];
-                    if (basic.showLabel !== undefined) this.showLabel = basic["showLabel"];
                     if (basic.showYAxis !== undefined) this.showYAxis = basic["showYAxis"];
-                    if (basic.barFill !== undefined) this.barFill = basic["barFill"];
 
                 }
+                if (options.dataViews[0].metadata.objects["Histogram"]) {
+                    var histogram = options.dataViews[0].metadata.objects["Histogram"];
+                    if (histogram.barFill !== undefined) this.barFill = histogram["barFill"];
+                    if (histogram.binCount !== undefined) this.binCount = histogram["binCount"];
+                    if (histogram.showAs !== undefined) this.showAs = histogram["showAs"];
+                    if (histogram.showLabel !== undefined) this.showLabel = histogram["showLabel"];
 
+                }
+                if (options.dataViews[0].metadata.objects["Legend"]) {
+                    var legend = options.dataViews[0].metadata.objects["Legend"];
+                    if (legend.legendPosition !== undefined) this.legendPosition = legend["legendPosition"];
+                    if (legend.fontSize !== undefined) this.legendFontSize = legend["fontSize"];
+                    if (legend.legendName !== undefined) this.legendName = legend["legendName"];
+
+                }
             }
         }
 
@@ -378,11 +578,43 @@ module powerbi.extensibility.visual {
                     objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.fontSize }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { valFormat: this.valFormat }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { showYAxis: this.showYAxis }, selector: null });
+
+                    break;
+                case 'Histogram':
+                    objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAs }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { binCount: this.binCount }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showYAxis: this.showYAxis }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { barFill: this.barFill }, selector: null });
+                    if (!this.hasGroup) objectEnumeration.push({ objectName: objectName, properties: { barFill: this.barFill }, selector: null });
 
+                    break;
+
+                case 'colorSelector':
+                    if (this.hasGroup) {
+                        for (let barDataPoint of this.formattedData) {
+                          
+                            objectEnumeration.push({
+                                objectName: objectName,
+                                displayName: barDataPoint.key,
+                                properties: {
+                                    fill: {
+                                        solid: {
+                                            color: barDataPoint.color
+                                        }
+                                    }
+                                },
+                                selector: barDataPoint.iden.getSelector()
+                            });
+                        }
+                    }
+                    break;
+                case 'Legend':
+                    if (this.hasGroup) {
+                        objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });
+                        if (this.hasGroup) objectEnumeration.push({ objectName: objectName, properties: { legendName: this.legendName }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.legendFontSize }, selector: null });
+
+                    }
                     break;
             };
 
