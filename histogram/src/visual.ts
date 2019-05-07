@@ -72,6 +72,8 @@ module powerbi.extensibility.visual {
         private legendPosition: any = "right";
         private legendName: any;
 
+        private xAxisFormat:any;
+
         constructor(options: VisualConstructorOptions) {
 
             this.element = d3.select(options.element);
@@ -215,6 +217,7 @@ module powerbi.extensibility.visual {
                 item.width = xScale1.rangeBand();
             })
 
+            this.xAxisFormat = this.getValueFormat(this.valuesFormatter, max, this.valFormat, this.valPrecision);
             var chartCon = container
                 .attr("style", "fill: rgb(102, 102, 102); font-family: 'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif;")
                 .append("svg")
@@ -271,12 +274,10 @@ module powerbi.extensibility.visual {
 
         private drawXAxis(svg, height, xScale, tickValues, max, leftOffset) {
 
-            var format: any = this.getValueFormat(this.valuesFormatter, max, this.valFormat, this.valPrecision);
-
             var xAxis = d3.svg.axis()
                 .scale(xScale)
                 .orient("bottom")
-                .tickFormat(format.format)
+                .tickFormat(this.xAxisFormat.format)
                 .tickValues(tickValues);
 
             svg.append("g")
@@ -497,14 +498,17 @@ module powerbi.extensibility.visual {
 
         private getTooltipData(data: any): VisualTooltipDataItem[] {
             var retData = [];
-            var val = '';
 
             retData.push({
-                displayName: data.dx,
-                value: val.toString(),
-                header: data.y
+                displayName: "Range",
+                value: "[ " + this.xAxisFormat.format(data.x).toString() + " - " + this.xAxisFormat.format((data.x + data.dx)).toString() + " ]"
             });
 
+            retData.push({
+                displayName: "Frequency",
+                value: data.y.toString()
+            });
+        
             return retData;
         }
 

@@ -8659,8 +8659,8 @@ var powerbi;
     (function (extensibility) {
         var visual;
         (function (visual) {
-            var histogramCCFC224D9885417F9AAF5BB8D45B007E;
-            (function (histogramCCFC224D9885417F9AAF5BB8D45B007E) {
+            var dotPlotD9885417F9AAF5BB8D45B007E;
+            (function (dotPlotD9885417F9AAF5BB8D45B007E) {
                 "use strict";
                 var DataViewObjectsParser = powerbi.extensibility.utils.dataview.DataViewObjectsParser;
                 var VisualSettings = (function (_super) {
@@ -8676,7 +8676,7 @@ var powerbi;
                     }
                     return VisualSettings;
                 }(DataViewObjectsParser));
-                histogramCCFC224D9885417F9AAF5BB8D45B007E.VisualSettings = VisualSettings;
+                dotPlotD9885417F9AAF5BB8D45B007E.VisualSettings = VisualSettings;
                 var dataPointSettings = (function () {
                     function dataPointSettings() {
                         // Default color
@@ -8694,8 +8694,8 @@ var powerbi;
                     }
                     return dataPointSettings;
                 }());
-                histogramCCFC224D9885417F9AAF5BB8D45B007E.dataPointSettings = dataPointSettings;
-            })(histogramCCFC224D9885417F9AAF5BB8D45B007E = visual.histogramCCFC224D9885417F9AAF5BB8D45B007E || (visual.histogramCCFC224D9885417F9AAF5BB8D45B007E = {}));
+                dotPlotD9885417F9AAF5BB8D45B007E.dataPointSettings = dataPointSettings;
+            })(dotPlotD9885417F9AAF5BB8D45B007E = visual.dotPlotD9885417F9AAF5BB8D45B007E || (visual.dotPlotD9885417F9AAF5BB8D45B007E = {}));
         })(visual = extensibility.visual || (extensibility.visual = {}));
     })(extensibility = powerbi.extensibility || (powerbi.extensibility = {}));
 })(powerbi || (powerbi = {}));
@@ -8705,14 +8705,14 @@ var powerbi;
     (function (extensibility) {
         var visual;
         (function (visual) {
-            var histogramCCFC224D9885417F9AAF5BB8D45B007E;
-            (function (histogramCCFC224D9885417F9AAF5BB8D45B007E) {
+            var dotPlotD9885417F9AAF5BB8D45B007E;
+            (function (dotPlotD9885417F9AAF5BB8D45B007E) {
                 var DefaultHandleTouchDelay = 1000;
                 function createTooltipServiceWrapper(tooltipService, rootElement, handleTouchDelay) {
                     if (handleTouchDelay === void 0) { handleTouchDelay = DefaultHandleTouchDelay; }
                     return new TooltipServiceWrapper(tooltipService, rootElement, handleTouchDelay);
                 }
-                histogramCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper = createTooltipServiceWrapper;
+                dotPlotD9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper = createTooltipServiceWrapper;
                 var TooltipServiceWrapper = (function () {
                     function TooltipServiceWrapper(tooltipService, rootElement, handleTouchDelay) {
                         this.visualHostTooltipService = tooltipService;
@@ -8883,7 +8883,7 @@ var powerbi;
                     };
                     return TooltipServiceWrapper;
                 }());
-            })(histogramCCFC224D9885417F9AAF5BB8D45B007E = visual.histogramCCFC224D9885417F9AAF5BB8D45B007E || (visual.histogramCCFC224D9885417F9AAF5BB8D45B007E = {}));
+            })(dotPlotD9885417F9AAF5BB8D45B007E = visual.dotPlotD9885417F9AAF5BB8D45B007E || (visual.dotPlotD9885417F9AAF5BB8D45B007E = {}));
         })(visual = extensibility.visual || (extensibility.visual = {}));
     })(extensibility = powerbi.extensibility || (powerbi.extensibility = {}));
 })(powerbi || (powerbi = {}));
@@ -8918,373 +8918,166 @@ var powerbi;
     (function (extensibility) {
         var visual;
         (function (visual) {
-            var histogramCCFC224D9885417F9AAF5BB8D45B007E;
-            (function (histogramCCFC224D9885417F9AAF5BB8D45B007E) {
+            var dotPlotD9885417F9AAF5BB8D45B007E;
+            (function (dotPlotD9885417F9AAF5BB8D45B007E) {
                 "use strict";
                 var Visual = (function () {
                     function Visual(options) {
-                        this.fontSize = 10;
-                        this.valFormat = 'default';
-                        this.valPrecision = 1;
-                        this.binCount = 10;
-                        this.showLabel = false;
-                        this.showYAxis = true;
-                        this.barFill = { solid: { color: "#01b8aa" } };
-                        this.formattedData = [];
-                        this.showAs = "bar";
-                        this.rangeBandPadding = 0;
+                        this.hasAxis = false;
+                        this.hasColor = false;
+                        this.hasValue = false;
+                        this.hasSize = false;
                         this.colorTitle = '';
-                        this.legendFontSize = 10;
-                        this.legendPosition = "right";
+                        this.exponentialSmoothingLine = false;
+                        this.formattedData = [];
+                        this.valFormat = 'default';
+                        this.valPrecision = 0;
+                        this.yAxisMinValue = false;
+                        this.showAxis = true;
+                        this.showLabel = false;
+                        this.dotRadius = 6;
+                        this.circleOpacity = 100;
+                        this.circlestroke = 1;
+                        this.orientation = "vertical";
+                        this.fontSize = 11;
+                        this.constantLineValue = '';
+                        this.setValueDomain = function (Min, Max) {
+                            var domain = {};
+                            if (Min > 0) {
+                                domain.Min = 0;
+                                domain.Max = Max + ((Max * 15) / 100);
+                                domain.OMin = 0;
+                                domain.OMax = Max;
+                            }
+                            else if (Max < 0) {
+                                domain.Max = 0;
+                                domain.Min = Min + ((Min * 15) / 100);
+                                domain.OMax = 0;
+                                domain.OMin = Min;
+                            }
+                            else {
+                                domain.Min = Min > 0 ? Min - ((Min * 10) / 100) : Min + ((Min * 10) / 100);
+                                domain.Max = Max + ((Max * 15) / 100);
+                                domain.OMin = Min;
+                                domain.OMax = Max;
+                            }
+                            if (this.yAxisMinValue == true) {
+                                domain.Min = Min > 0 ? Min - ((Min * 10) / 100) : Min + ((Min * 10) / 100);
+                                domain.Max = Max + ((Max * 10) / 100);
+                            }
+                            return domain;
+                        };
                         this.element = d3.select(options.element);
                         this.host = options.host;
-                        this.tooltipServiceWrapper = histogramCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
-                        this.selectionManager = options.host.createSelectionManager();
                         this.colorPalette = this.host.colorPalette;
+                        this.tooltipServiceWrapper = dotPlotD9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
+                        this.selectionManager = options.host.createSelectionManager();
                     }
                     Visual.prototype.update = function (options) {
-                        this.columns = options.dataViews[0].metadata.columns;
+                        this.element.style("overflow", "hidden");
+                        this.element.select('.stripPlot').remove();
                         this.colorPalette.reset();
                         this.draw(options);
                     };
                     Visual.prototype.draw = function (options) {
-                        var _this = this;
-                        this.setProperties(options);
-                        this.hasValues = false;
-                        this.hasGroup = false;
-                        this.columns.forEach(function (d, i) {
-                            if (d.roles["group"]) {
-                                _this.hasGroup = true;
-                                _this.groupIndex = i;
-                                _this.colorTitle = d.displayName;
-                            }
-                            if (d.roles["values"]) {
-                                _this.hasValues = true;
-                                _this.valuesIndex = i;
-                                _this.valuesFormatter = d.format;
-                            }
-                        });
-                        this.element.style("overflow", "hidden");
-                        this.element.select('.histogram').remove();
-                        var container = this.element
+                        console.log("1");
+                        this.findAvailableMetadata(options.dataViews[0].metadata.columns);
+                        var chartContainer = this.element
                             .append("div")
-                            .attr("class", "histogram")
-                            .attr("style", "width:100%;text-align:left;padding:1px;border-spacing:0;")
-                            .attr("style", 'font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif');
-                        if (this.hasValues === false && this.hasGroup === false) {
-                            container
-                                .append("html")
-                                .attr("style", "")
-                                .html("Data is missing to draw the visual");
+                            .attr("class", "stripPlot")
+                            .attr("style", "width:100%;");
+                        if (this.hasAxis == false || this.hasValue == false) {
+                            chartContainer.append("span").html("Axis and Value is required to draw the chart");
                             return;
                         }
+                        console.log("2");
+                        this.setProperties(options);
+                        console.log("3");
+                        var data = this.formatData(options.dataViews[0]);
+                        console.log("4");
+                        var dimension = this.getDimensions(options.viewport, data);
+                        console.log("5");
+                        var chart = chartContainer
+                            .append("svg")
+                            .attr("height", dimension.height)
+                            .attr("width", dimension.width);
+                        var chartSvg = chart.append("g");
+                        chartSvg.attr("transform", "translate(0," + 5 + ")");
+                        var xScale = this.setXScale(data, dimension);
+                        var yScale = this.setYScale(data, dimension);
+                        this.drawXScale(xScale, chartSvg, dimension);
+                        this.drawYScale(yScale, chartSvg, dimension, data);
+                        this.drawCircles(xScale, yScale, chartSvg, data, dimension);
+                        this.setFontSize(chartSvg);
+                    };
+                    Visual.prototype.formatData = function (rawData) {
+                        var _this = this;
+                        var metadata = rawData.metadata.columns;
                         var data = [];
-                        options.dataViews[0].table.rows.forEach(function (d, i) {
-                            var id = null;
-                            if (_this.hasGroup) {
-                                var categoryColumn = {
-                                    source: _this.columns[_this.groupIndex],
-                                    values: null,
-                                    identity: [options.dataViews[0].categorical.__proto__.categories[_this.groupIndex].identity[i]]
-                                };
-                                id = _this.host.createSelectionIdBuilder()
-                                    .withCategory(categoryColumn, 0)
-                                    .createSelectionId();
-                            }
+                        rawData.table.rows.forEach(function (d, i) {
                             data.push({
                                 val: d[_this.valuesIndex],
-                                group: d[_this.groupIndex],
-                                iden: id
+                                group: d[_this.groupIndex]
                             });
                         });
                         var nestedData = d3.nest()
                             .key(function (d) { return d.group; })
                             .entries(data);
-                        var values = data.map(function (d) { return d.val; });
-                        var max = d3.max(values);
-                        var min = d3.min(values);
-                        var tickValues = [];
-                        var step = (max - min) / this.binCount;
-                        var i;
-                        for (i = 0; i < (this.binCount + 1); i++) {
-                            tickValues.push(min + (i * step));
-                        }
-                        ;
-                        this.formattedData = nestedData.map(function (item, i) {
-                            var data = d3.layout.histogram()
-                                .bins(tickValues)(item.values.map(function (d) { return d.val; }));
-                            item.list = data;
-                            item.yMax = d3.max(data, function (d) { return d.length; });
-                            item.iden = item.values[0].iden;
-                            item.color = _this.hasGroup ? _this.colorPalette.getColor(item.key).value : _this.barFill.solid.color;
-                            if (_this.hasGroup) {
-                                if (options.dataViews[0].categorical.categories[0].objects) {
-                                    if (options.dataViews[0].categorical.categories[0].objects[i]) {
-                                        item.color = options.dataViews[0].categorical.categories[0].objects[i].colorSelector.fill.solid.color;
-                                    }
-                                }
+                        var xAxis = data.map(function (d) { return d.group; });
+                        var yAxis = data.map(function (d) { return d.val; });
+                        var valFormat = this.getValueFormat(this.valuesFormatter, d3.map(yAxis), this.valFormat, this.valPrecision);
+                        return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat.format, data: nestedData };
+                    };
+                    Visual.prototype.setProperties = function (options) {
+                        if (options.dataViews[0].metadata.objects) {
+                            if (options.dataViews[0].metadata.objects["Basic"]) {
+                                var basic = options.dataViews[0].metadata.objects["Basic"];
+                                if (basic.dotRadius !== undefined)
+                                    this.dotRadius = basic["dotRadius"];
+                                if (basic.circlestroke !== undefined)
+                                    this.circlestroke = basic["circlestroke"];
+                                if (basic.circleOpacity !== undefined)
+                                    this.circleOpacity = basic["circleOpacity"];
+                                if (basic.showLabel !== undefined)
+                                    this.showLabel = basic["showLabel"];
+                                if (basic.orientation !== undefined)
+                                    this.orientation = basic["orientation"];
+                                if (basic.valFormat !== undefined)
+                                    this.valFormat = basic["valFormat"];
+                                if (basic.valPrecision !== undefined)
+                                    this.valPrecision = basic["valPrecision"];
                             }
-                            return item;
-                        });
-                        var legendD = this.formattedData.map(function (d) { return { key: d.key, color: d.color }; });
-                        var nm = (this.legendName !== undefined) ? this.legendName.length > 0 ? this.legendName : this.colorTitle : this.colorTitle;
-                        if (this.hasGroup)
-                            legendD.unshift({ key: nm, color: "transparent" });
-                        var legend = this.setLegendWidth(this.element, legendD);
-                        var dimension = this.getDimensions(options.viewport, legend);
-                        var yMax = d3.max(nestedData.map(function (d) { return d.yMax; }));
-                        yMax = yMax + (yMax / 10);
-                        var yScale = d3.scale.linear()
-                            .domain([0, yMax])
-                            .range([dimension.chartHeight, 0]);
-                        var xScale = d3.scale.linear()
-                            .domain([min, max])
-                            .range([0, dimension.chartWidth - 10]);
-                        var rangeBand = xScale(tickValues[1]) - xScale(tickValues[0]);
-                        this.rangeBandPadding = rangeBand / 20;
-                        rangeBand = rangeBand - this.rangeBandPadding;
-                        var xScale1 = d3.scale.ordinal()
-                            .domain(this.formattedData.map(function (d) { return d.key; }))
-                            .rangeBands([0, rangeBand]);
-                        this.formattedData.map(function (item) {
-                            item.dx = xScale1(item.key);
-                            item.width = xScale1.rangeBand();
-                        });
-                        this.xAxisFormat = this.getValueFormat(this.valuesFormatter, max, this.valFormat, this.valPrecision);
-                        var chartCon = container
-                            .attr("style", "fill: rgb(102, 102, 102); font-family: 'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif;")
-                            .append("svg")
-                            .attr("height", dimension.height)
-                            .attr("width", dimension.width);
-                        var chart = chartCon.append("g").attr("transform", "translate(0," + 5 + ")");
-                        ;
-                        var chartLegend = chartCon.append("g");
-                        this.drawXAxis(chart, dimension.chartHeight, xScale, tickValues, max, dimension.yOffset);
-                        this.drawYAxis(chart, yScale, dimension.yOffset);
-                        this.drawHistrogram(this.formattedData, chart, xScale, yScale, dimension.yOffset, xScale1, dimension.chartHeight);
-                        this.setFontSize(chart);
-                        if (this.hasGroup)
-                            this.drawLegend(chartLegend, chart, dimension, legend);
-                    };
-                    Visual.prototype.drawHistrogram = function (nestedData, svg, xScale, yScale, leftOffset, xScale1, height) {
-                        var group = svg.selectAll(".barGroup")
-                            .data(nestedData)
-                            .enter().append("g")
-                            .attr("class", "barGroup")
-                            .attr("transform", function (d) { return "translate(" + (leftOffset + d.dx) + "," + 0 + ")"; })
-                            .attr("fill", function (d) { return d.color; });
-                        switch (this.showAs) {
-                            case "bar":
-                                this.drawBars(group, xScale, xScale1, yScale, height);
-                                break;
-                            case "line":
-                                this.drawLine(group, xScale, xScale1, yScale, height);
-                                break;
-                            case "dot":
-                                this.drawDots(group, xScale, xScale1, yScale, height);
-                                break;
-                            case "lineDot":
-                                this.drawLine(group, xScale, xScale1, yScale, height);
-                                this.drawDots(group, xScale, xScale1, yScale, height);
-                                break;
-                            default:
-                                this.drawBars(group, xScale, xScale1, yScale, height);
-                                break;
-                        }
-                        this.drawLabels(group, xScale, xScale1, yScale, height);
-                    };
-                    Visual.prototype.drawXAxis = function (svg, height, xScale, tickValues, max, leftOffset) {
-                        var xAxis = d3.svg.axis()
-                            .scale(xScale)
-                            .orient("bottom")
-                            .tickFormat(this.xAxisFormat.format)
-                            .tickValues(tickValues);
-                        svg.append("g")
-                            .attr("class", "x axis")
-                            .attr("transform", "translate(" + leftOffset + "," + height + ")")
-                            .call(xAxis);
-                    };
-                    Visual.prototype.drawYAxis = function (svg, yScale, leftOffset) {
-                        if (this.showYAxis === true) {
-                            var yAxis = d3.svg.axis()
-                                .scale(yScale)
-                                .orient("left");
-                            yAxis
-                                .ticks(5)
-                                .tickFormat(d3.format("s"));
-                            svg.append("g")
-                                .attr("class", "y axis")
-                                .attr("transform", "translate(" + leftOffset + ",0)")
-                                .call(yAxis);
+                            if (options.dataViews[0].metadata.objects["Axis"]) {
+                                var axis = options.dataViews[0].metadata.objects["Axis"];
+                                if (axis.showAxis !== undefined)
+                                    this.showAxis = axis["showAxis"];
+                                if (axis.showLabel !== undefined)
+                                    this.showLabel = axis["showLabel"];
+                                if (axis.fontSize !== undefined)
+                                    this.fontSize = axis["fontSize"];
+                                if (axis.yAxisMinValue !== undefined)
+                                    this.yAxisMinValue = axis["yAxisMinValue"];
+                            }
                         }
                     };
-                    Visual.prototype.drawBars = function (barGroup, xScale, xScale1, yScale, height) {
+                    Visual.prototype.findAvailableMetadata = function (metadata) {
                         var _this = this;
-                        var bars = barGroup.selectAll(".bar")
-                            .data(function (d) { return d.list; })
-                            .enter()
-                            .append("rect")
-                            .attr("x", function (d) { return xScale(d.x) + (_this.rangeBandPadding / 2); })
-                            .attr("width", xScale1.rangeBand() - 1)
-                            .attr("y", function (d) {
-                            return yScale(d.y);
-                        })
-                            .attr("height", function (d) {
-                            return height - yScale(d.y);
+                        this.hasValue = false;
+                        this.hasColor = false;
+                        this.hasAxis = false;
+                        this.hasSize = false;
+                        metadata.map(function (d, i) {
+                            if (d.roles["axis"]) {
+                                _this.hasAxis = true;
+                                _this.groupIndex = i;
+                                _this.axisFormat = d.format;
+                            }
+                            if (d.roles["values"]) {
+                                _this.hasValue = true;
+                                _this.valuesIndex = i;
+                                _this.valuesFormatter = d.format;
+                            }
                         });
-                        this.tooltipServiceWrapper.addTooltip(bars, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
-                    };
-                    Visual.prototype.drawLine = function (barGroup, xScale, xScale1, yScale, height) {
-                        var _this = this;
-                        var line = d3.svg.line()
-                            .x(function (d) { return (xScale(d.x) + xScale1.rangeBand() / 2); })
-                            .y(function (d) { return yScale(d.y); });
-                        var lines = barGroup
-                            .append("path")
-                            .attr("fill", "none")
-                            .attr("d", function (d) { return line(d.list); })
-                            .style("stroke", function (d) { return d.color; });
-                        this.tooltipServiceWrapper.addTooltip(lines, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
-                    };
-                    Visual.prototype.drawDots = function (barGroup, xScale, xScale1, yScale, height) {
-                        var _this = this;
-                        var radius = 5;
-                        var bars = barGroup.selectAll(".dot")
-                            .data(function (d) { return d.list; })
-                            .enter()
-                            .append("circle")
-                            .attr("class", "dot")
-                            .attr("cx", function (d) { return (xScale(d.x) + -radius + xScale1.rangeBand() / 2); })
-                            .attr("cy", function (d) {
-                            return yScale(d.y);
-                        })
-                            .attr("r", radius);
-                        this.tooltipServiceWrapper.addTooltip(bars, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
-                    };
-                    Visual.prototype.drawLabels = function (barGroup, xScale, xScale1, yScale, height) {
-                        if (this.showLabel == true) {
-                            barGroup.selectAll(".barLabel")
-                                .data(function (d) { return d.list; })
-                                .enter()
-                                .append("text")
-                                .attr("dy", -5)
-                                .attr("y", function (d) {
-                                return yScale(d.y);
-                            })
-                                .attr("x", function (d) { return (xScale(d.x) + xScale1.rangeBand() / 2); })
-                                .attr("text-anchor", "middle")
-                                .attr("fill", "rgb(102, 102, 102)")
-                                .text(function (d) { return d.y == 0 ? "" : d.y; });
-                        }
-                    };
-                    Visual.prototype.drawLegend = function (chartLegend, chartSvg, dimension, data) {
-                        if (this.legendPosition == "right") {
-                            chartLegend.attr("transform", "translate(" + (dimension.chartWidth + dimension.yOffset + (this.legendFontSize * 2)) + "," + (5) + ")");
-                        }
-                        if (this.legendPosition == "top") {
-                            chartSvg.attr("transform", "translate(0," + this.legendFontSize * 3 + ")");
-                            chartLegend.attr("transform", "translate(" + (dimension.yOffset) + "," + this.legendFontSize + ")");
-                        }
-                        if (this.legendPosition == "bottom") {
-                            chartLegend.attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight + dimension.xOffset + (this.legendFontSize * 2)) + ")");
-                        }
-                        var fontSize = parseInt(this.legendFontSize);
-                        var legengG = chartLegend.selectAll(".legend")
-                            .data(data)
-                            .enter()
-                            .append("g");
-                        if (this.legendPosition == "right")
-                            legengG.attr("transform", function (d, i) { return "translate(0," + i * (fontSize + 5) + ")"; });
-                        else {
-                            var wd = 0, rt;
-                            legengG.attr("transform", function (d, i) {
-                                rt = "translate(" + wd + ",0)";
-                                wd = wd + d.width;
-                                return rt;
-                            });
-                        }
-                        legengG.append("circle")
-                            .attr("r", fontSize / 2)
-                            .attr("cy", fontSize / 5)
-                            .attr("fill", function (d) { return d.color; });
-                        legengG
-                            .append("text")
-                            .attr("x", function (d) { return d.color === "transparent" ? -5 : fontSize; })
-                            .attr("font-weight", function (d) { return d.color === "transparent" ? "bold" : "normal"; })
-                            .attr("style", function (d) {
-                            if (d.color === "transparent")
-                                return 'fill:rgb(102, 102, 102);font-family: "Segoe UI Semibold", wf_segoe-ui_semibold, helvetica, arial, sans-serif;';
-                            else
-                                return 'fill:rgb(102, 102, 102);font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif';
-                        })
-                            .style("font-size", fontSize + "px")
-                            .attr("y", fontSize / 2)
-                            .text(function (d) { return d.text; });
-                        legengG.style("font-size", fontSize);
-                    };
-                    ;
-                    Visual.prototype.setFontSize = function (chartSvg) {
-                        chartSvg.selectAll("text").style("font-size", this.fontSize + "px");
-                    };
-                    Visual.prototype.getTextWidth = function (container, text, fontsize) {
-                        var dummytext = container.append("text").text(text).attr("font-size", fontsize);
-                        var bbox = { width: 10, height: 10 };
-                        if (dummytext.node() !== null)
-                            bbox = dummytext.node().getBBox();
-                        dummytext.remove();
-                        return bbox.width;
-                    };
-                    ;
-                    Visual.prototype.setLegendWidth = function (el, legendData) {
-                        var _this = this;
-                        var svg = el.append("svg").attr("width", 0).attr("height", 0);
-                        var legend = legendData.map(function (d) {
-                            return {
-                                width: _this.getTextWidth(svg, d.key, _this.legendFontSize) + 20,
-                                color: d.color,
-                                text: d.key
-                            };
-                        });
-                        svg.remove();
-                        return legend;
-                    };
-                    Visual.prototype.getDimensions = function (vp, data) {
-                        var xlegendOffset = 0;
-                        var ylegendOffset = 0;
-                        if (this.hasGroup) {
-                            if (this.legendPosition == "right")
-                                ylegendOffset = d3.max(data.map(function (d) { return d.width; })) + (4 * this.legendFontSize);
-                            if (this.legendPosition == "top" || this.legendPosition === "bottom")
-                                xlegendOffset = this.legendFontSize * 3;
-                        }
-                        var xOffset, yOffset, chartWidth, chartHeight;
-                        xOffset = 5 + this.fontSize * 2;
-                        yOffset = 10 + this.fontSize * 2;
-                        chartWidth = vp.width - yOffset - ylegendOffset;
-                        chartHeight = vp.height - xOffset - xlegendOffset;
-                        return {
-                            width: vp.width,
-                            height: vp.height,
-                            xOffset: xOffset,
-                            yOffset: yOffset,
-                            chartWidth: chartWidth,
-                            chartHeight: chartHeight
-                        };
-                    };
-                    Visual.parseSettings = function (dataView) {
-                        return histogramCCFC224D9885417F9AAF5BB8D45B007E.VisualSettings.parse(dataView);
-                    };
-                    Visual.prototype.getTooltipData = function (data) {
-                        var retData = [];
-                        retData.push({
-                            displayName: "Range",
-                            value: "[ " + this.xAxisFormat.format(data.x).toString() + " - " + this.xAxisFormat.format((data.x + data.dx)).toString() + " ]"
-                        });
-                        retData.push({
-                            displayName: "Frequency",
-                            value: data.y.toString()
-                        });
-                        return retData;
                     };
                     Visual.prototype.getValueFormat = function (val, max, format, precision) {
                         var valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
@@ -9312,84 +9105,327 @@ var powerbi;
                         iValueFormatter = valueFormatter.create({ format: val, value: valF, precision: precision });
                         return iValueFormatter;
                     };
-                    Visual.prototype.setProperties = function (options) {
-                        if (options.dataViews[0].metadata.objects) {
-                            if (options.dataViews[0].metadata.objects["Basic"]) {
-                                var basic = options.dataViews[0].metadata.objects["Basic"];
-                                if (basic.fontSize !== undefined)
-                                    this.fontSize = basic["fontSize"];
-                                if (basic.valFormat !== undefined)
-                                    this.valFormat = basic["valFormat"];
-                                if (basic.valPrecision !== undefined)
-                                    this.valPrecision = basic["valPrecision"];
-                                if (basic.showYAxis !== undefined)
-                                    this.showYAxis = basic["showYAxis"];
+                    Visual.prototype.getDimensions = function (vp, data) {
+                        var xlegendOffset = 0;
+                        var ylegendOffset = 0;
+                        var xdata = data.xAxis;
+                        var xDomain = d3.scale.ordinal().domain(xdata).domain();
+                        var xT = this.axisLabelArray(xDomain.slice(0).filter(function (d) { return d !== null; }), (vp.width - this.getYOffset(data) - ylegendOffset), this.element, this.orientation);
+                        var xOffset, yOffset, chartWidth, chartHeight, xFilter, xTickval;
+                        if (this.orientation == 'vertical') {
+                            xOffset = xT.Space + 20;
+                            if (xOffset > vp.height / 4)
+                                xOffset = vp.height / 4 > 100 ? 100 : vp.height / 4;
+                            yOffset = this.getYOffset(data);
+                            chartWidth = vp.width - yOffset - ylegendOffset;
+                            chartHeight = vp.height - xOffset - xlegendOffset;
+                            xFilter = (xT.Rotate === true) ? (chartWidth / xDomain.length < 12 ? (Math.ceil(xDomain.length / chartWidth * 20)) : 1) : 1;
+                            xTickval = xDomain.filter(function (d, i) { return (i % xFilter === 0); });
+                        }
+                        else {
+                            yOffset = xT.Space + 15;
+                            if (yOffset > vp.width / 4)
+                                yOffset = vp.width / 4 > 100 ? 100 : vp.width / 4;
+                            xOffset = 30;
+                            chartWidth = vp.width - yOffset - ylegendOffset;
+                            chartHeight = vp.height - xOffset - xlegendOffset;
+                            xFilter = chartHeight / xDomain.length < this.fontSize ? Math.round((xDomain.length / chartHeight * 20)) : 1;
+                            xTickval = xDomain.filter(function (d, i) { return (i % xFilter === 0); });
+                        }
+                        return {
+                            width: vp.width,
+                            height: vp.height,
+                            xOffset: xOffset,
+                            yOffset: yOffset,
+                            chartWidth: chartWidth,
+                            chartHeight: chartHeight,
+                            xRotate: xT.Rotate,
+                            xTickval: xTickval,
+                        };
+                    };
+                    Visual.prototype.setXScale = function (data, dimension) {
+                        var rg = this.orientation == 'vertical' ? dimension.chartWidth : dimension.chartHeight;
+                        var scale = d3.scale.ordinal().rangeBands([0, rg]).domain(data.xAxis);
+                        return scale;
+                    };
+                    Visual.prototype.setYScale = function (data, dimension) {
+                        var yDomain = data.yAxis;
+                        var valueDomain = this.setValueDomain(d3.min(yDomain), d3.max(yDomain));
+                        var rg = this.orientation == 'vertical' ? dimension.chartHeight : dimension.chartWidth;
+                        var rng = this.orientation == 'vertical' ? [rg, 0] : [0, rg];
+                        var scale = d3.scale.linear()
+                            .range(rng)
+                            .domain([valueDomain.Min, valueDomain.Max]);
+                        return scale;
+                    };
+                    Visual.prototype.drawXScale = function (xScale, chartSvg, dimension) {
+                        var _this = this;
+                        var direction = this.orientation == 'vertical' ? "bottom" : "left";
+                        var translate = this.orientation == 'vertical' ?
+                            "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight) + ")" :
+                            "translate(" + (dimension.yOffset) + "," + 0 + ")";
+                        var xaxis = d3.svg.axis()
+                            .scale(xScale)
+                            .orient(direction)
+                            .tickValues(dimension.xTickval);
+                        var xAxisG = chartSvg
+                            .append("g")
+                            .attr("transform", translate)
+                            .attr("class", "axis")
+                            .call(xaxis);
+                        xAxisG.selectAll("text").text(function (d) {
+                            if (_this.orientation == 'vertical') {
+                                if (_this.getTextWidth(chartSvg, d, _this.fontSize) > dimension.xOffset - _this.fontSize && dimension.xRotate == true)
+                                    return (d.substring(0, Math.floor(dimension.xOffset / (_this.fontSize / 2))) + "..");
+                                else
+                                    return d;
                             }
-                            if (options.dataViews[0].metadata.objects["Histogram"]) {
-                                var histogram = options.dataViews[0].metadata.objects["Histogram"];
-                                if (histogram.barFill !== undefined)
-                                    this.barFill = histogram["barFill"];
-                                if (histogram.binCount !== undefined)
-                                    this.binCount = histogram["binCount"];
-                                if (histogram.showAs !== undefined)
-                                    this.showAs = histogram["showAs"];
-                                if (histogram.showLabel !== undefined)
-                                    this.showLabel = histogram["showLabel"];
+                            else {
+                                if (_this.getTextWidth(chartSvg, d, _this.fontSize) > dimension.yOffset - _this.fontSize)
+                                    return (d.substring(0, Math.floor(dimension.yOffset / (_this.fontSize / 1.6))) + "..");
+                                else
+                                    return d;
                             }
-                            if (options.dataViews[0].metadata.objects["Legend"]) {
-                                var legend = options.dataViews[0].metadata.objects["Legend"];
-                                if (legend.legendPosition !== undefined)
-                                    this.legendPosition = legend["legendPosition"];
-                                if (legend.fontSize !== undefined)
-                                    this.legendFontSize = legend["fontSize"];
-                                if (legend.legendName !== undefined)
-                                    this.legendName = legend["legendName"];
+                        })
+                            .attr("fill", "rgb(119, 119, 119)")
+                            .append("title")
+                            .text(function (d) { return d; });
+                        if (dimension.xRotate == true) {
+                            xAxisG.attr("text-anchor", "start");
+                            xAxisG.selectAll("text")
+                                .style("text-anchor", "end")
+                                .attr("dx", -7)
+                                .attr("dy", 0)
+                                .attr("transform", function (d) {
+                                return "rotate(" + (-55) + ")";
+                            });
+                        }
+                        xAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
+                    };
+                    Visual.prototype.drawYScale = function (yScale, chartSvg, dimension, data) {
+                        var self = this;
+                        var direction = this.orientation == 'vertical' ? "left" : "bottom";
+                        var translate = this.orientation == 'vertical' ?
+                            "translate(" + (dimension.yOffset) + "," + (0) + ")" :
+                            "translate(" + (dimension.yOffset) + "," + dimension.chartHeight + ")";
+                        var yaxis = d3.svg.axis()
+                            .scale(yScale)
+                            .orient(direction)
+                            .ticks(5)
+                            .tickFormat(data.yFormat);
+                        var yAxisG = chartSvg
+                            .append("g")
+                            .attr("fill", "rgb(119, 119, 119)")
+                            .attr("transform", translate)
+                            .attr("class", "axis")
+                            .call(yaxis);
+                        yAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
+                    };
+                    Visual.prototype.drawCircles = function (xScale, yScale, chartSvg, data, dimension) {
+                        var _this = this;
+                        console.log("5.1", data);
+                        var circleData = data.data;
+                        var circleG = chartSvg.selectAll(".dots")
+                            .data(circleData)
+                            .enter()
+                            .append("g");
+                        var circle = this.circles = circleG.selectAll(".dots")
+                            .data(function (d) { return d.values.filter(function (d) { return d.val !== null; }); })
+                            .enter()
+                            .append("circle");
+                        console.log("5.2");
+                        if (this.orientation == 'vertical') {
+                            circleG.attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+                            circle
+                                .attr("cx", function (d) { return xScale(d.group); })
+                                .attr("cy", function (d) { return yScale(d.val); });
+                        }
+                        else {
+                            circleG.attr("transform", "translate(0," + (xScale.rangeBand() / 2) + ")");
+                            circle
+                                .attr("cy", function (d) { return xScale(d.group); })
+                                .attr("cx", function (d) { return dimension.yOffset + yScale(d.val); });
+                        }
+                        console.log("5.3");
+                        circle
+                            .attr("r", this.dotRadius)
+                            .attr("fill", "#b3b3b3")
+                            .style("stroke", "#b3b3b3")
+                            .style("stroke-width", this.circlestroke + "px")
+                            .style("fill-opacity", this.circleOpacity / 100);
+                        if (this.showLabel == true) {
+                            var text = circleG.selectAll(".dotText")
+                                .data(function (d) { return d.values.filter(function (d) { return d.val !== null; }); })
+                                .enter()
+                                .append("text");
+                            text.text(function (d) { return d.yValue.caption; });
+                            if (this.orientation == 'vertical') {
+                                text.attr("x", function (d) { return xScale(d.group) + 2; })
+                                    .attr("dx", this.dotRadius)
+                                    .attr("dy", this.dotRadius / 2)
+                                    .attr("y", function (d) { return yScale(d.val); });
+                            }
+                            else {
+                                text.attr("y", function (d) { return xScale(d.group) + 2; })
+                                    .attr("dy", -this.dotRadius * 2)
+                                    .style("text-anchor", "middle")
+                                    .attr("x", function (d) { return dimension.yOffset + yScale(d.val); });
                             }
                         }
+                        this.tooltipServiceWrapper.addTooltip(circle, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
+                    };
+                    Visual.prototype.setFilterOpacity = function (element) {
+                        var anyFilter = false;
+                        element.each(function (d) {
+                            if (d.isFiltered === true)
+                                anyFilter = true;
+                        });
+                        if (anyFilter) {
+                            element.style("opacity", function (d) { return d.isFiltered ? 1 : 0.2; });
+                        }
+                        else {
+                            element.style("opacity", 1);
+                        }
+                    };
+                    Visual.parseSettings = function (dataView) {
+                        return dotPlotD9885417F9AAF5BB8D45B007E.VisualSettings.parse(dataView);
+                    };
+                    Visual.prototype.getTooltipData = function (data) {
+                        var retData = [];
+                        retData.push({
+                            displayName: data.group.toString(),
+                            value: data.val.toString()
+                        });
+                        return retData;
+                    };
+                    Visual.prototype.getTextWidth = function (container, text, fontsize) {
+                        var dummytext = container.append("text").text(text).attr("font-size", fontsize);
+                        var bbox = { width: 10, height: 10 };
+                        if (dummytext.node() !== null)
+                            bbox = dummytext.node().getBBox();
+                        dummytext.remove();
+                        return bbox.width;
+                    };
+                    ;
+                    Visual.prototype.axisLabelArray = function (labels, chartwidth, el, orientation) {
+                        var self = this;
+                        var fontsize = this.fontSize;
+                        var rotate = false;
+                        var wordsArray = [];
+                        var space = 0;
+                        var svg = el.append("svg").attr("width", 0).attr("height", 0);
+                        var scale = d3.scale.ordinal().domain(labels).rangeRoundBands([0, chartwidth]);
+                        var maxWidth = scale.rangeBand();
+                        if (orientation === "vertical") {
+                            labels.map(function (text) {
+                                var words = String(text).split(/\s+/).reverse();
+                                words.map(function (d) { wordsArray.push(d); });
+                                var word, line = [];
+                            });
+                            var longest = labels.sort(function (a, b) { return b.length - a.length; })[0];
+                            if (this.getTextWidth(svg, longest, fontsize) > maxWidth)
+                                rotate = true;
+                            if (rotate === true) {
+                                var longest = labels.sort(function (a, b) { return b.length - a.length; })[0];
+                                space = self.getTextWidth(svg, longest, fontsize);
+                            }
+                            else {
+                                var lineCountArr = [1];
+                                labels.map(function (d, i) {
+                                    var mWidth = (i === 0 || i === labels.length - 1) ? maxWidth / 2 : maxWidth;
+                                    var textContent = String(d), spanContent;
+                                    var words = textContent.split(/\s+/).reverse(), word, lineCount = 0;
+                                    var line = [], t = "";
+                                    while (word = words.pop()) {
+                                        line.push(word);
+                                        t = line.join(' ');
+                                        if (self.getTextWidth(svg, t, fontsize) > mWidth) {
+                                            line.pop();
+                                            spanContent = line.join(' ');
+                                            lineCountArr.push(++lineCount);
+                                        }
+                                    }
+                                    ;
+                                });
+                                space = 10 * (d3.max(lineCountArr));
+                            }
+                        }
+                        else {
+                            var long = labels.sort(function (a, b) { return b.length - a.length; })[0];
+                            var longest_1 = String(long);
+                            var needWarpping = false;
+                            space = this.getTextWidth(svg, longest_1, fontsize);
+                        }
+                        svg.remove();
+                        return { Rotate: rotate, Space: space };
+                    };
+                    Visual.prototype.axisWrap = function (text, width, orientation, alignment) {
+                        text.each(function () {
+                            var breakChars = ['/', '&'], text = d3.select(this), textContent = text.text(), spanContent;
+                            breakChars.forEach(function (char) {
+                                textContent = textContent.replace(char, char + ' ');
+                            });
+                            var words = textContent.split(/\s+/).reverse(), word, line = [], lineNumber = 0, lineHeight = 1.1, // ems
+                            x = text.attr('x'), y = text.attr('y'), dy = parseFloat(text.attr('dy'));
+                            var tspan = text.text(null).append('tspan').attr('x', x).attr('y', y).attr('dy', dy + 'em');
+                            while (word = words.pop()) {
+                                line.push(word);
+                                tspan.text(line.join(' '));
+                                if (tspan.node().getComputedTextLength() > width) {
+                                    line.pop();
+                                    spanContent = line.join(' ');
+                                    breakChars.forEach(function (char) {
+                                        spanContent = spanContent.replace(char + ' ', char);
+                                    });
+                                    if (spanContent.length > 0) {
+                                        tspan.text(spanContent);
+                                        line = [word];
+                                        tspan = text.append('tspan').attr('x', x).attr('y', y).attr('dy', ++lineNumber * lineHeight + dy + 'em').text(word);
+                                    }
+                                }
+                            }
+                        });
+                        if (orientation === "Horizontal") {
+                            var spans = text.selectAll("tspan")._groups[0];
+                            var margin = spans.length > 1 ? (spans.length / 2) * 8 : 0.5;
+                            text.selectAll("tspan").attr("y", text.selectAll("tspan").attr("y") - margin);
+                        }
+                        if (orientation === "HeatVertical") {
+                            var spans = text.selectAll("tspan")._groups[0];
+                            var margin = spans.length > 1 ? (spans.length) * 8 : 0;
+                            text.selectAll("tspan").attr("y", text.selectAll("tspan").attr("y") - margin);
+                        }
+                        if (alignment !== undefined) {
+                            var textAnchor = alignment === "Right" ? "end" : "start";
+                            if (alignment === "middle")
+                                textAnchor = "middle";
+                            text.selectAll("tspan").attr("text-anchor", textAnchor).attr("dx", text.attr('dx'));
+                        }
+                    };
+                    Visual.prototype.setFontSize = function (chartSvg) {
+                        chartSvg.selectAll("text").style("font-size", this.fontSize + "px");
+                    };
+                    Visual.prototype.getYOffset = function (data) {
+                        var max = d3.max(data.yAxis);
+                        return 2 + (data.yFormat(max).length + 1) * this.fontSize / 1.5;
                     };
                     Visual.prototype.enumerateObjectInstances = function (options) {
                         var objectName = options.objectName;
                         var objectEnumeration = [];
                         switch (objectName) {
                             case 'Basic':
-                                objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.fontSize }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { orientation: this.orientation }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { circlestroke: this.circlestroke }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { valFormat: this.valFormat }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { showYAxis: this.showYAxis }, selector: null });
-                                break;
-                            case 'Histogram':
-                                objectEnumeration.push({ objectName: objectName, properties: { showAs: this.showAs }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { binCount: this.binCount }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
-                                if (!this.hasGroup)
-                                    objectEnumeration.push({ objectName: objectName, properties: { barFill: this.barFill }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { constantLineValue: this.constantLineValue }, selector: null });
                                 break;
-                            case 'colorSelector':
-                                if (this.hasGroup) {
-                                    for (var _i = 0, _a = this.formattedData; _i < _a.length; _i++) {
-                                        var barDataPoint = _a[_i];
-                                        objectEnumeration.push({
-                                            objectName: objectName,
-                                            displayName: barDataPoint.key,
-                                            properties: {
-                                                fill: {
-                                                    solid: {
-                                                        color: barDataPoint.color
-                                                    }
-                                                }
-                                            },
-                                            selector: barDataPoint.iden.getSelector()
-                                        });
-                                    }
-                                }
-                                break;
-                            case 'Legend':
-                                if (this.hasGroup) {
-                                    objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });
-                                    if (this.hasGroup)
-                                        objectEnumeration.push({ objectName: objectName, properties: { legendName: this.legendName }, selector: null });
-                                    objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.legendFontSize }, selector: null });
-                                }
+                            case 'Axis':
+                                objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.fontSize }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { yAxisMinValue: this.yAxisMinValue }, selector: null });
                                 break;
                         }
                         ;
@@ -9398,8 +9434,8 @@ var powerbi;
                     };
                     return Visual;
                 }());
-                histogramCCFC224D9885417F9AAF5BB8D45B007E.Visual = Visual;
-            })(histogramCCFC224D9885417F9AAF5BB8D45B007E = visual.histogramCCFC224D9885417F9AAF5BB8D45B007E || (visual.histogramCCFC224D9885417F9AAF5BB8D45B007E = {}));
+                dotPlotD9885417F9AAF5BB8D45B007E.Visual = Visual;
+            })(dotPlotD9885417F9AAF5BB8D45B007E = visual.dotPlotD9885417F9AAF5BB8D45B007E || (visual.dotPlotD9885417F9AAF5BB8D45B007E = {}));
         })(visual = extensibility.visual || (extensibility.visual = {}));
     })(extensibility = powerbi.extensibility || (powerbi.extensibility = {}));
 })(powerbi || (powerbi = {}));
@@ -9409,13 +9445,13 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.histogramCCFC224D9885417F9AAF5BB8D45B007E = {
-                name: 'histogramCCFC224D9885417F9AAF5BB8D45B007E',
-                displayName: 'Histogram',
+            plugins.dotPlotD9885417F9AAF5BB8D45B007E_DEBUG = {
+                name: 'dotPlotD9885417F9AAF5BB8D45B007E_DEBUG',
+                displayName: 'DotPlot',
                 class: 'Visual',
                 version: '1.0.0',
                 apiVersion: '1.11.0',
-                create: function (options) { return new powerbi.extensibility.visual.histogramCCFC224D9885417F9AAF5BB8D45B007E.Visual(options); },
+                create: function (options) { return new powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E.Visual(options); },
                 custom: true
             };
         })(plugins = visuals.plugins || (visuals.plugins = {}));
