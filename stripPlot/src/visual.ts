@@ -45,7 +45,7 @@ module powerbi.extensibility.visual {
         private hasValue: any = false;
         private hasSize: any = false;
         private colorTitle: any = '';
-       
+
 
         private exponentialSmoothingLine: any = false;
         private formattedData: any = [];
@@ -64,23 +64,24 @@ module powerbi.extensibility.visual {
         public TooltipEnabledDataPoint: any;
 
         private yAxisMinValue: boolean = false;
-       
+
         private colorPalette: any;
 
         private showAxis: any = true;
-        private showLabel: any = false;
-
-
+   
         private dotRadius: any = 6;
         private circleOpacity: any = 100;
         private circlestroke: any = 1;
 
         private orientation: any = "vertical";
         private fontSize: any = 11;
+        private percentiles: any = [0.05, 0.25, 0.50, 0.75, 0.95];
+        
        
-
         private constantLineValue: any = '';
-     
+        
+        private stripBox:any = true;
+        private boxFill: any = { solid: { color: "#01b8aa" } };
 
         private valuesIndex: any;
         private groupIndex: any;
@@ -142,6 +143,9 @@ module powerbi.extensibility.visual {
 
 
             this.drawCircles(xScale, yScale, chartSvg, data, dimension);
+            if(this.stripBox === true){
+                this.drawBoxPlot(xScale, yScale, chartSvg, data, dimension);
+            }
 
             this.setFontSize(chartSvg);
 
@@ -180,22 +184,24 @@ module powerbi.extensibility.visual {
                     if (basic.dotRadius !== undefined) this.dotRadius = basic["dotRadius"];
                     if (basic.circlestroke !== undefined) this.circlestroke = basic["circlestroke"];
                     if (basic.circleOpacity !== undefined) this.circleOpacity = basic["circleOpacity"];
-                    if (basic.showLabel !== undefined) this.showLabel = basic["showLabel"];
                     if (basic.orientation !== undefined) this.orientation = basic["orientation"];
                     if (basic.valFormat !== undefined) this.valFormat = basic["valFormat"];
                     if (basic.valPrecision !== undefined) this.valPrecision = basic["valPrecision"];
 
                 }
-              
+
                 if (options.dataViews[0].metadata.objects["Axis"]) {
                     var axis = options.dataViews[0].metadata.objects["Axis"];
                     if (axis.showAxis !== undefined) this.showAxis = axis["showAxis"];
-                    if (axis.showLabel !== undefined) this.showLabel = axis["showLabel"];
                     if (axis.fontSize !== undefined) this.fontSize = axis["fontSize"];
                     if (axis.yAxisMinValue !== undefined) this.yAxisMinValue = axis["yAxisMinValue"];
                 }
-              
-
+                if (options.dataViews[0].metadata.objects["Box"]) {
+                    var Box = options.dataViews[0].metadata.objects["Box"];
+                    if (Box.stripBox !== undefined) this.stripBox = Box["stripBox"];
+                    if (Box.boxFill !== undefined) this.boxFill = Box["boxFill"];
+                }
+                
 
             }
         }
@@ -302,7 +308,7 @@ module powerbi.extensibility.visual {
 
         private setXScale(data, dimension) {
             let rg = this.orientation == 'vertical' ? dimension.chartWidth : dimension.chartHeight;
-            var scale = d3.scale.ordinal().rangeBands([0, rg]).domain(data.xAxis);
+            var scale = d3.scale.ordinal().rangeBands([0, rg], .2).domain(data.xAxis);
             return scale;
         }
 
@@ -393,7 +399,7 @@ module powerbi.extensibility.visual {
         }
 
         private drawCircles(xScale, yScale, chartSvg, data, dimension) {
-            console.log("5.1",data);
+            console.log("5.1", data);
             var circleData = data.data;
 
             var circleG = chartSvg.selectAll(".dots")
@@ -405,7 +411,7 @@ module powerbi.extensibility.visual {
                 .data(d => d.values.filter(d => d.val !== null))
                 .enter()
                 .append("circle");
-                console.log("5.2");
+            console.log("5.2");
             if (this.orientation == 'vertical') {
 
                 circleG.attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
@@ -430,42 +436,100 @@ module powerbi.extensibility.visual {
                 .style("fill-opacity", this.circleOpacity / 100);
 
 
-          
-
-            if (this.showLabel == true) {
-                var text = circleG.selectAll(".dotText")
-                    .data(d => d.values.filter(d => d.val !== null))
-                    .enter()
-                    .append("text");
-
-
-                text.text(d => d.yValue.caption)
-
-
-                if (this.orientation == 'vertical') {
-
-                    text.attr("x", d => xScale(d.group) + 2)
-                        .attr("dx", this.dotRadius)
-                        .attr("dy", this.dotRadius / 2)
-                        .attr("y", d => yScale(d.val))
-                }
-                else {
-                    text.attr("y", d => xScale(d.group) + 2)
-                        .attr("dy", -this.dotRadius * 2)
-                        .style("text-anchor", "middle")
-                        .attr("x", d => dimension.yOffset + yScale(d.val))
-                }
-
-
-            }
-
-           
-
             this.tooltipServiceWrapper.addTooltip(circle,
                 (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
                 (tooltipEvent: TooltipEventArgs<any>) => null
             );
 
+        }
+
+        private drawBoxPlot(xScale, yScale, chartSvg, data, dimension) {
+
+            var boxBox = chartSvg.selectAll(".box")
+                .data(data.data)
+                .enter()
+                .append("g")
+                .attr("transform", "translate(" + (dimension.yOffset) + ",0)");;
+
+            var data, data_sorted, q1, median, q3, min, max, svg;
+            var orient = this.orientation;
+            var color = this.boxFill.solid.color;
+            var strokeColor = "#3a3737";
+
+            boxBox.each(function (d) {
+                data = d.values.map(d => d.val);
+                data_sorted = data.sort(d3.ascending);
+                q1 = d3.quantile(data_sorted, .25);
+                median = d3.quantile(data_sorted, .5);
+                q3 = d3.quantile(data_sorted, .75);
+                min = d3.quantile(data_sorted, .05);
+                max = d3.quantile(data_sorted, .95);
+
+                svg = d3.select(this);
+
+                if (orient == 'vertical') {
+                    svg
+                        .append("line")
+                        .attr("x1", xScale(d.key) + xScale.rangeBand() / 2)
+                        .attr("x2", xScale(d.key) + xScale.rangeBand() / 2)
+                        .attr("y1", yScale(min))
+                        .attr("y2", yScale(max))
+                        .attr("stroke", strokeColor);
+
+                    svg
+                        .append("rect")
+                        .attr("x", xScale(d.key))
+                        .attr("y", yScale(q3))
+                        .attr("height", yScale(q1) - yScale(q3))
+                        .attr("width", xScale.rangeBand())
+                        .attr("stroke", strokeColor)
+                        .style("fill", color)
+
+                    svg
+                        .selectAll("toto")
+                        .data([min, median, max])
+                        .enter()
+                        .append("line")
+                        .attr("x1", xScale(d.key))
+                        .attr("x2", xScale(d.key) + xScale.rangeBand())
+                        .attr("y1", function (d) { return (yScale(d)) })
+                        .attr("y2", function (d) { return (yScale(d)) })
+                        .attr("stroke", strokeColor);
+                }
+                else {
+                    svg
+                        .append("line")
+                        .attr("y1", xScale(d.key) + xScale.rangeBand() / 2)
+                        .attr("y2", xScale(d.key) + xScale.rangeBand() / 2)
+                        .attr("x1", yScale(min))
+                        .attr("x2", yScale(max))
+                        .attr("stroke", strokeColor);
+
+                    svg
+                        .append("rect")
+                        .attr("y", xScale(d.key))
+                        .attr("x", yScale(q1))
+                        .attr("width", yScale(q3) - yScale(q1))
+                        .attr("height", xScale.rangeBand())
+                        .attr("stroke", strokeColor)
+                        .style("fill", color)
+
+                    svg
+                        .selectAll("toto")
+                        .data([min, median, max])
+                        .enter()
+                        .append("line")
+                        .attr("y1", xScale(d.key))
+                        .attr("y2", xScale(d.key) + xScale.rangeBand())
+                        .attr("x1", function (d) { return (yScale(d)) })
+                        .attr("x2", function (d) { return (yScale(d)) })
+                        .attr("stroke", strokeColor);
+
+                }
+
+
+
+            })
         }
 
         public setFilterOpacity(element) {
@@ -702,15 +766,19 @@ module powerbi.extensibility.visual {
                     objectEnumeration.push({ objectName: objectName, properties: { valFormat: this.valFormat }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { constantLineValue: this.constantLineValue }, selector: null });
 
                     break;
 
-                
+
                 case 'Axis':
                     objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.fontSize }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { yAxisMinValue: this.yAxisMinValue }, selector: null });
+                    break;
+
+                    case 'Box':
+                    objectEnumeration.push({ objectName: objectName, properties: { stripBox: this.stripBox }, selector: null });
+                   if(this.stripBox) objectEnumeration.push({ objectName: objectName, properties: { boxFill: this.boxFill }, selector: null });
                     break;
 
             };

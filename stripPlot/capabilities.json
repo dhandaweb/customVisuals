@@ -135,25 +135,6 @@
                             }
                         ]
                     }
-                },
-                "showLabel": {
-                    "displayName": "Data Labels",
-                    "type": { "bool": true }
-                }
-            }
-        },
-        "colorSelector": {
-            "displayName": "Data Colors",
-            "properties": {
-                "fill": {
-                    "displayName": "Color",
-                    "type": {
-                        "fill": {
-                            "solid": {
-                                "color": true
-                            }
-                        }
-                    }
                 }
             }
         },
@@ -174,6 +155,25 @@
                     }
                 }
 
+            }
+        },
+        "Box": {
+            "displayName": "Box",
+            "properties": {
+                "stripBox": {
+                    "displayName": "Strip box",
+                    "type": { "bool": true }
+                },
+                "boxFill": {
+                    "displayName": "Box fill color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                }
             }
         }
 
