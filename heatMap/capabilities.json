@@ -154,6 +154,25 @@
                         ]
                     }
                 },
+                "heatSortBy": {
+                    "displayName": "Heat Sort By",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "xAxis",
+                                "displayName": "X Axis"
+                            },
+                            {
+                                "value": "yAxis",
+                                "displayName": "Y Axis"
+                            }
+                        ]
+                    }
+                },
                 "heatRange": {
                     "displayName": "Heat Range",
                     "type": { "text": true }
