@@ -1,6 +1,6 @@
 module powerbi.visuals.plugins {
-    export var slopeChartD9885417F9AAF5BB8D45B007E = {
-        name: 'slopeChartD9885417F9AAF5BB8D45B007E',
+    export var slopeChartD9885417F9AAF5BB8D45B007E_DEBUG = {
+        name: 'slopeChartD9885417F9AAF5BB8D45B007E_DEBUG',
         displayName: 'Slope Chart',
         class: 'Visual',
         version: '1.0.0',

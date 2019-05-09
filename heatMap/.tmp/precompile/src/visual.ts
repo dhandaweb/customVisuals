@@ -55,6 +55,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
         private heatRange: any = 10;
         private heatColorType: any = "linear";
         private heatSort: any = "default";
+        private heatSortBy: any = "default";
 
         private legendPosition: any = "right";
         private middleBinValue: any;
@@ -109,6 +110,25 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
             var data = [], identityData;
             var yFormat, xFormat;
 
+            this.element.style("overflow", "hidden");
+            this.element.select('.heatMap').remove();
+
+            var chartContainer = this.element
+                .append("div")
+                .attr("class", "heatMap")
+                .attr("style", "width:100%;");
+
+            if (this.hasXaxis == false && this.hasYaxis == false) {
+                chartContainer.append("span").html("One dimension is required to draw visual");
+                return;
+            }
+
+            if (this.hasValue == false) {
+                chartContainer.append("span").html("Value is required to draw visual");
+                return;
+            }
+
+
             options.dataViews[0].table.rows.map((d: any, i) => {
                 d.identity = options.dataViews[0].table.identity[i];
                 d.xValue = null;
@@ -147,27 +167,9 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                 d.value = this.valueIndex == -1 ? null : d[this.valueIndex];
                 data.push(d);
             });
-
+          
             data = this.sortHeatData(data);
-
-            this.element.style("overflow", "hidden");
-            this.element.select('.heatMap').remove();
-
-            var chartContainer = this.element
-                .append("div")
-                .attr("class", "heatMap")
-                .attr("style", "width:100%;");
-
-            if (this.hasValue == false) {
-                chartContainer.append("span").html("Value is required to draw visual");
-                return;
-            }
-
-            if (this.hasXaxis == false && this.hasYaxis == false) {
-                chartContainer.append("span").html("One dimension is required to draw visual");
-                return;
-            }
-
+          
             var dimension = this.getDimensions(options.viewport, data);
 
             var chart = chartContainer
@@ -206,7 +208,8 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                     var heat = options.dataViews[0].metadata.objects["Heat"];
                     if (heat.heatScale !== undefined) this.heatScale = heat["heatScale"];
                     if (heat.heatSort !== undefined) this.heatSort = heat["heatSort"];
-
+                    if (heat.heatSortBy !== undefined) this.heatSortBy = heat["heatSortBy"];
+                    
                     if (heat.heatRange !== undefined) this.heatRange = heat["heatRange"];
                     if (heat.heatColorType !== undefined) this.heatColorType = heat["heatColorType"];
                     if (heat.heatColor !== undefined) this.heatColor = heat["heatColor"];
@@ -231,20 +234,69 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
         }
 
         private sortHeatData(data) {
-            var retVal = data;
-
-            if (this.heatSort === "ascending") {
-                retVal = data.sort((a, b) => {
-                    return a.value - b.value > 0 ? -1 : 1;
-                });
-            }
-            else {
-                retVal = data.sort((a, b) => {
-                    return b.value - a.value > 0 ? -1 : 1;
-                });
+           
+            var cloneData = data.slice(0);
+            var returnData = [];
+            if (this.heatSortBy === "default") {
+                if (this.heatSort === "ascending") returnData = this.ascendingSort(cloneData);
+                else if (this.heatSort === "descending") returnData = this.descendingSort(cloneData);
+                else returnData = cloneData;
             }
 
-            return retVal;
+
+            if (this.heatSortBy === "xAxis" || this.heatSortBy === "yAxis") {
+
+                if (this.heatSortBy === "xAxis") {
+                    var groupedData = d3.nest()
+                        .key((d: any) => d.xValue)
+                        .entries(cloneData);
+                }
+
+                if (this.heatSortBy === "yAxis") {
+                    var groupedData = d3.nest()
+                        .key((d: any) => d.yValue)
+                        .entries(cloneData);
+                }
+               
+
+                if (this.heatSort === "ascending") {
+
+                    groupedData.map((d:any) => { 
+                        d.values = this.ascendingSort(d.values)
+                    })
+                    groupedData.map((d: any) => {
+                        d.values.map(d => {
+                            returnData.push(d);
+                        })
+                    });
+                }
+                else if (this.heatSort === "descending") {
+                    groupedData.map((d: any) => {
+                        d.values = this.descendingSort(d.values)
+                    })
+                    groupedData.map((d: any) => {
+                        d.values.map(d => {
+                            returnData.push(d);
+                        })
+                    });
+                }
+                else returnData = cloneData;
+            }
+            else returnData = cloneData;
+            
+            return returnData;
+        }
+
+        private ascendingSort(data) {
+            return data.sort((a, b) => {
+                return a.value - b.value > 0 ? -1 : 1;
+            });
+        }
+
+        private descendingSort(data) {
+            return data.sort((a, b) => {
+                return b.value - a.value > 0 ? -1 : 1;
+            });
         }
 
         private setIndex(options) {
@@ -943,6 +995,9 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                     objectEnumeration.push({ objectName: objectName, properties: { heatColor: this.heatColor }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { heatScale: this.heatScale }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { heatSort: this.heatSort }, selector: null });
+                    if (this.heatSort !== "default") {
+                        objectEnumeration.push({ objectName: objectName, properties: { heatSortBy: this.heatSortBy }, selector: null });
+                    }
                     objectEnumeration.push({ objectName: objectName, properties: { heatRange: this.heatRange }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { heatColorType: this.heatColorType }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { rectRadius: this.rectRadius }, selector: null });

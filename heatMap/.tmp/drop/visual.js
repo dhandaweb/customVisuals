@@ -8930,6 +8930,7 @@ var powerbi;
                         this.heatRange = 10;
                         this.heatColorType = "linear";
                         this.heatSort = "default";
+                        this.heatSortBy = "default";
                         this.legendPosition = "right";
                         this.heatColorOptions = {
                             Heat: ["#9E0142", "#D53E4F", "#F46D43", "#FDAE61", "#FEE08B", "#E6F598", "#ABDDA4", "#66C2A5", "#3288BD", "#5E4FA2"],
@@ -8959,6 +8960,20 @@ var powerbi;
                         this.setIndex(options);
                         var data = [], identityData;
                         var yFormat, xFormat;
+                        this.element.style("overflow", "hidden");
+                        this.element.select('.heatMap').remove();
+                        var chartContainer = this.element
+                            .append("div")
+                            .attr("class", "heatMap")
+                            .attr("style", "width:100%;");
+                        if (this.hasXaxis == false && this.hasYaxis == false) {
+                            chartContainer.append("span").html("One dimension is required to draw visual");
+                            return;
+                        }
+                        if (this.hasValue == false) {
+                            chartContainer.append("span").html("Value is required to draw visual");
+                            return;
+                        }
                         options.dataViews[0].table.rows.map(function (d, i) {
                             d.identity = options.dataViews[0].table.identity[i];
                             d.xValue = null;
@@ -8991,20 +9006,6 @@ var powerbi;
                             data.push(d);
                         });
                         data = this.sortHeatData(data);
-                        this.element.style("overflow", "hidden");
-                        this.element.select('.heatMap').remove();
-                        var chartContainer = this.element
-                            .append("div")
-                            .attr("class", "heatMap")
-                            .attr("style", "width:100%;");
-                        if (this.hasValue == false) {
-                            chartContainer.append("span").html("Value is required to draw visual");
-                            return;
-                        }
-                        if (this.hasXaxis == false && this.hasYaxis == false) {
-                            chartContainer.append("span").html("One dimension is required to draw visual");
-                            return;
-                        }
                         var dimension = this.getDimensions(options.viewport, data);
                         var chart = chartContainer
                             .append("svg")
@@ -9037,6 +9038,8 @@ var powerbi;
                                     this.heatScale = heat["heatScale"];
                                 if (heat.heatSort !== undefined)
                                     this.heatSort = heat["heatSort"];
+                                if (heat.heatSortBy !== undefined)
+                                    this.heatSortBy = heat["heatSortBy"];
                                 if (heat.heatRange !== undefined)
                                     this.heatRange = heat["heatRange"];
                                 if (heat.heatColorType !== undefined)
@@ -9073,18 +9076,64 @@ var powerbi;
                         }
                     };
                     Visual.prototype.sortHeatData = function (data) {
-                        var retVal = data;
-                        if (this.heatSort === "ascending") {
-                            retVal = data.sort(function (a, b) {
-                                return a.value - b.value > 0 ? -1 : 1;
-                            });
+                        var _this = this;
+                        var cloneData = data.slice(0);
+                        var returnData = [];
+                        if (this.heatSortBy === "default") {
+                            if (this.heatSort === "ascending")
+                                returnData = this.ascendingSort(cloneData);
+                            else if (this.heatSort === "descending")
+                                returnData = this.descendingSort(cloneData);
+                            else
+                                returnData = cloneData;
                         }
-                        else {
-                            retVal = data.sort(function (a, b) {
-                                return b.value - a.value > 0 ? -1 : 1;
-                            });
+                        if (this.heatSortBy === "xAxis" || this.heatSortBy === "yAxis") {
+                            if (this.heatSortBy === "xAxis") {
+                                var groupedData = d3.nest()
+                                    .key(function (d) { return d.xValue; })
+                                    .entries(cloneData);
+                            }
+                            if (this.heatSortBy === "yAxis") {
+                                var groupedData = d3.nest()
+                                    .key(function (d) { return d.yValue; })
+                                    .entries(cloneData);
+                            }
+                            if (this.heatSort === "ascending") {
+                                groupedData.map(function (d) {
+                                    d.values = _this.ascendingSort(d.values);
+                                });
+                                groupedData.map(function (d) {
+                                    d.values.map(function (d) {
+                                        returnData.push(d);
+                                    });
+                                });
+                            }
+                            else if (this.heatSort === "descending") {
+                                groupedData.map(function (d) {
+                                    d.values = _this.descendingSort(d.values);
+                                });
+                                groupedData.map(function (d) {
+                                    d.values.map(function (d) {
+                                        returnData.push(d);
+                                    });
+                                });
+                            }
+                            else
+                                returnData = cloneData;
                         }
-                        return retVal;
+                        else
+                            returnData = cloneData;
+                        return returnData;
+                    };
+                    Visual.prototype.ascendingSort = function (data) {
+                        return data.sort(function (a, b) {
+                            return a.value - b.value > 0 ? -1 : 1;
+                        });
+                    };
+                    Visual.prototype.descendingSort = function (data) {
+                        return data.sort(function (a, b) {
+                            return b.value - a.value > 0 ? -1 : 1;
+                        });
                     };
                     Visual.prototype.setIndex = function (options) {
                         var _this = this;
@@ -9662,6 +9711,9 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { heatColor: this.heatColor }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { heatScale: this.heatScale }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { heatSort: this.heatSort }, selector: null });
+                                if (this.heatSort !== "default") {
+                                    objectEnumeration.push({ objectName: objectName, properties: { heatSortBy: this.heatSortBy }, selector: null });
+                                }
                                 objectEnumeration.push({ objectName: objectName, properties: { heatRange: this.heatRange }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { heatColorType: this.heatColorType }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { rectRadius: this.rectRadius }, selector: null });

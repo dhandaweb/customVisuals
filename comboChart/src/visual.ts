@@ -1233,21 +1233,25 @@ module powerbi.extensibility.visual {
                     return rt;
                 });
             }
-
+           
             var shapeMap = {
-                "line": "\uf201",
-                "bar": "\uf080",
-                "area": "\uf1fe",
-                "dot": "\uf111"
+                "line": "\uE876",
+                "bar": "\uE876",
+                "area": "\uE876",
+                "dot": "\uE876"
             }
-            legengG.append("circle")
-                .attr("r", fontSize / 2)
-                .attr("cy", fontSize / 5)
-                .attr("fill", d => d.color);
+            legengG.each(function (d) {
+                d3.select(this)
+                    .append("circle")
+                    .attr("r", fontSize / 2)
+                    .attr("cy", fontSize / 5)
+                    .attr("fill", d => d.color);
+            })
+                
 
             //legengG.append("text")
             //    .text(d => shapeMap[d.shape])
-            //    .attr("style", 'font-size:10px;font-family: "FontAwesome"')
+            //    .attr("style", 'font-size:10px;font-family: "Material Icons""')
             //    .attr("y", fontSize / 5)
             //    .attr("fill", d => d.color);
 

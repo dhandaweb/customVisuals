@@ -9075,10 +9075,10 @@ var powerbi;
                         });
                         if (this.showAs == "perTotal") {
                             //valFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: "0.00 %;-0.00 %;0.00 %", precision: this.valPrecision });
-                            valFormat = d3.format(",." + this.valPrecision + "%");
+                            valFormat = { format: d3.format(",." + this.valPrecision + "%") };
                         }
                         this.formattedData = retData;
-                        return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat, data: retData, legend: legend };
+                        return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat.format, data: retData, legend: legend };
                     };
                     Visual.prototype.setUpAnalyticData = function (data) {
                         var retData;
@@ -9584,8 +9584,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.slopeChartD9885417F9AAF5BB8D45B007E = {
-                name: 'slopeChartD9885417F9AAF5BB8D45B007E',
+            plugins.slopeChartD9885417F9AAF5BB8D45B007E_DEBUG = {
+                name: 'slopeChartD9885417F9AAF5BB8D45B007E_DEBUG',
                 displayName: 'Slope Chart',
                 class: 'Visual',
                 version: '1.0.0',
