@@ -78,6 +78,14 @@
                         }
                     }
                 },
+                "circleJitter": {
+                    "displayName": "Circle Jitter",
+                    "type": { "bool": true }
+                },
+                "drawMedian": {
+                    "displayName": "Draw Median",
+                    "type": { "bool": true }
+                },
                 "valFormat": {
                     "displayName": "Value Format",
                     "type": {

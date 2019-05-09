@@ -8659,8 +8659,8 @@ var powerbi;
     (function (extensibility) {
         var visual;
         (function (visual) {
-            var dotPlotD9885417F9AAF5BB8D45B007E;
-            (function (dotPlotD9885417F9AAF5BB8D45B007E) {
+            var stripPlotD9885417F9AAF5BB8D45B007E;
+            (function (stripPlotD9885417F9AAF5BB8D45B007E) {
                 "use strict";
                 var DataViewObjectsParser = powerbi.extensibility.utils.dataview.DataViewObjectsParser;
                 var VisualSettings = (function (_super) {
@@ -8676,7 +8676,7 @@ var powerbi;
                     }
                     return VisualSettings;
                 }(DataViewObjectsParser));
-                dotPlotD9885417F9AAF5BB8D45B007E.VisualSettings = VisualSettings;
+                stripPlotD9885417F9AAF5BB8D45B007E.VisualSettings = VisualSettings;
                 var dataPointSettings = (function () {
                     function dataPointSettings() {
                         // Default color
@@ -8694,8 +8694,8 @@ var powerbi;
                     }
                     return dataPointSettings;
                 }());
-                dotPlotD9885417F9AAF5BB8D45B007E.dataPointSettings = dataPointSettings;
-            })(dotPlotD9885417F9AAF5BB8D45B007E = visual.dotPlotD9885417F9AAF5BB8D45B007E || (visual.dotPlotD9885417F9AAF5BB8D45B007E = {}));
+                stripPlotD9885417F9AAF5BB8D45B007E.dataPointSettings = dataPointSettings;
+            })(stripPlotD9885417F9AAF5BB8D45B007E = visual.stripPlotD9885417F9AAF5BB8D45B007E || (visual.stripPlotD9885417F9AAF5BB8D45B007E = {}));
         })(visual = extensibility.visual || (extensibility.visual = {}));
     })(extensibility = powerbi.extensibility || (powerbi.extensibility = {}));
 })(powerbi || (powerbi = {}));
@@ -8705,14 +8705,14 @@ var powerbi;
     (function (extensibility) {
         var visual;
         (function (visual) {
-            var dotPlotD9885417F9AAF5BB8D45B007E;
-            (function (dotPlotD9885417F9AAF5BB8D45B007E) {
+            var stripPlotD9885417F9AAF5BB8D45B007E;
+            (function (stripPlotD9885417F9AAF5BB8D45B007E) {
                 var DefaultHandleTouchDelay = 1000;
                 function createTooltipServiceWrapper(tooltipService, rootElement, handleTouchDelay) {
                     if (handleTouchDelay === void 0) { handleTouchDelay = DefaultHandleTouchDelay; }
                     return new TooltipServiceWrapper(tooltipService, rootElement, handleTouchDelay);
                 }
-                dotPlotD9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper = createTooltipServiceWrapper;
+                stripPlotD9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper = createTooltipServiceWrapper;
                 var TooltipServiceWrapper = (function () {
                     function TooltipServiceWrapper(tooltipService, rootElement, handleTouchDelay) {
                         this.visualHostTooltipService = tooltipService;
@@ -8883,7 +8883,7 @@ var powerbi;
                     };
                     return TooltipServiceWrapper;
                 }());
-            })(dotPlotD9885417F9AAF5BB8D45B007E = visual.dotPlotD9885417F9AAF5BB8D45B007E || (visual.dotPlotD9885417F9AAF5BB8D45B007E = {}));
+            })(stripPlotD9885417F9AAF5BB8D45B007E = visual.stripPlotD9885417F9AAF5BB8D45B007E || (visual.stripPlotD9885417F9AAF5BB8D45B007E = {}));
         })(visual = extensibility.visual || (extensibility.visual = {}));
     })(extensibility = powerbi.extensibility || (powerbi.extensibility = {}));
 })(powerbi || (powerbi = {}));
@@ -8918,8 +8918,8 @@ var powerbi;
     (function (extensibility) {
         var visual;
         (function (visual) {
-            var dotPlotD9885417F9AAF5BB8D45B007E;
-            (function (dotPlotD9885417F9AAF5BB8D45B007E) {
+            var stripPlotD9885417F9AAF5BB8D45B007E;
+            (function (stripPlotD9885417F9AAF5BB8D45B007E) {
                 "use strict";
                 var Visual = (function () {
                     function Visual(options) {
@@ -8937,6 +8937,8 @@ var powerbi;
                         this.dotRadius = 6;
                         this.circleOpacity = 100;
                         this.circlestroke = 1;
+                        this.circleJitter = false;
+                        this.drawMedian = false;
                         this.orientation = "vertical";
                         this.fontSize = 11;
                         this.percentiles = [0.05, 0.25, 0.50, 0.75, 0.95];
@@ -8972,7 +8974,7 @@ var powerbi;
                         this.element = d3.select(options.element);
                         this.host = options.host;
                         this.colorPalette = this.host.colorPalette;
-                        this.tooltipServiceWrapper = dotPlotD9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
+                        this.tooltipServiceWrapper = stripPlotD9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
                         this.selectionManager = options.host.createSelectionManager();
                     }
                     Visual.prototype.update = function (options) {
@@ -8982,7 +8984,6 @@ var powerbi;
                         this.draw(options);
                     };
                     Visual.prototype.draw = function (options) {
-                        console.log("1");
                         this.findAvailableMetadata(options.dataViews[0].metadata.columns);
                         var chartContainer = this.element
                             .append("div")
@@ -8992,13 +8993,9 @@ var powerbi;
                             chartContainer.append("span").html("Axis and Value is required to draw the chart");
                             return;
                         }
-                        console.log("2");
                         this.setProperties(options);
-                        console.log("3");
                         var data = this.formatData(options.dataViews[0]);
-                        console.log("4");
                         var dimension = this.getDimensions(options.viewport, data);
-                        console.log("5");
                         var chart = chartContainer
                             .append("svg")
                             .attr("height", dimension.height)
@@ -9012,6 +9009,9 @@ var powerbi;
                         this.drawCircles(xScale, yScale, chartSvg, data, dimension);
                         if (this.stripBox === true) {
                             this.drawBoxPlot(xScale, yScale, chartSvg, data, dimension);
+                        }
+                        if (this.drawMedian === true) {
+                            this.drawStripMedian(xScale, yScale, chartSvg, data, dimension);
                         }
                         this.setFontSize(chartSvg);
                     };
@@ -9043,6 +9043,10 @@ var powerbi;
                                     this.circlestroke = basic["circlestroke"];
                                 if (basic.circleOpacity !== undefined)
                                     this.circleOpacity = basic["circleOpacity"];
+                                if (basic.circleJitter !== undefined)
+                                    this.circleJitter = basic["circleJitter"];
+                                if (basic.drawMedian !== undefined)
+                                    this.drawMedian = basic["drawMedian"];
                                 if (basic.orientation !== undefined)
                                     this.orientation = basic["orientation"];
                                 if (basic.valFormat !== undefined)
@@ -9231,8 +9235,8 @@ var powerbi;
                     };
                     Visual.prototype.drawCircles = function (xScale, yScale, chartSvg, data, dimension) {
                         var _this = this;
-                        console.log("5.1", data);
                         var circleData = data.data;
+                        var offset;
                         var circleG = chartSvg.selectAll(".dots")
                             .data(circleData)
                             .enter()
@@ -9241,20 +9245,34 @@ var powerbi;
                             .data(function (d) { return d.values.filter(function (d) { return d.val !== null; }); })
                             .enter()
                             .append("circle");
-                        console.log("5.2");
                         if (this.orientation == 'vertical') {
-                            circleG.attr("transform", "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)");
+                            circleG.attr("transform", function (d) {
+                                if (_this.circleJitter)
+                                    return "translate(" + dimension.yOffset + ",0)";
+                                return "translate(" + (dimension.yOffset + xScale.rangeBand() / 2) + ",0)";
+                            });
                             circle
-                                .attr("cx", function (d) { return xScale(d.group); })
+                                .attr("cx", function (d) {
+                                if (_this.circleJitter)
+                                    return (Math.random() * ((xScale(d.group) + xScale.rangeBand()) - xScale(d.group)) + xScale(d.group));
+                                return xScale(d.group);
+                            })
                                 .attr("cy", function (d) { return yScale(d.val); });
                         }
                         else {
-                            circleG.attr("transform", "translate(0," + (xScale.rangeBand() / 2) + ")");
+                            circleG.attr("transform", function (d) {
+                                if (_this.circleJitter)
+                                    return "translate(0,0)";
+                                return "translate(0," + (xScale.rangeBand() / 2) + ")";
+                            });
                             circle
-                                .attr("cy", function (d) { return xScale(d.group); })
+                                .attr("cy", function (d) {
+                                if (_this.circleJitter)
+                                    return (Math.random() * ((xScale(d.group) + xScale.rangeBand()) - xScale(d.group)) + xScale(d.group));
+                                return xScale(d.group);
+                            })
                                 .attr("cx", function (d) { return dimension.yOffset + yScale(d.val); });
                         }
-                        console.log("5.3");
                         circle
                             .attr("r", this.dotRadius)
                             .attr("fill", "#b3b3b3")
@@ -9339,6 +9357,51 @@ var powerbi;
                             }
                         });
                     };
+                    Visual.prototype.drawStripMedian = function (xScale, yScale, chartSvg, data, dimension) {
+                        var boxBox = chartSvg.selectAll(".stripBox")
+                            .data(data.data)
+                            .enter()
+                            .append("g")
+                            .attr("transform", "translate(" + (dimension.yOffset) + ",0)");
+                        ;
+                        var data, data_sorted, q1, median, q3, min, max, svg;
+                        var orient = this.orientation;
+                        var strokeColor = "#3a3737";
+                        boxBox.each(function (d) {
+                            data = d.values.map(function (d) { return d.val; });
+                            data_sorted = data.sort(d3.ascending);
+                            q1 = d3.quantile(data_sorted, .25);
+                            median = d3.quantile(data_sorted, .5);
+                            q3 = d3.quantile(data_sorted, .75);
+                            min = d3.quantile(data_sorted, .05);
+                            max = d3.quantile(data_sorted, .95);
+                            svg = d3.select(this);
+                            if (orient == 'vertical') {
+                                svg
+                                    .selectAll("toto")
+                                    .data([median])
+                                    .enter()
+                                    .append("line")
+                                    .attr("x1", xScale(d.key))
+                                    .attr("x2", xScale(d.key) + xScale.rangeBand())
+                                    .attr("y1", function (d) { return (yScale(d)); })
+                                    .attr("y2", function (d) { return (yScale(d)); })
+                                    .attr("stroke", strokeColor);
+                            }
+                            else {
+                                svg
+                                    .selectAll("toto")
+                                    .data([median])
+                                    .enter()
+                                    .append("line")
+                                    .attr("y1", xScale(d.key))
+                                    .attr("y2", xScale(d.key) + xScale.rangeBand())
+                                    .attr("x1", function (d) { return (yScale(d)); })
+                                    .attr("x2", function (d) { return (yScale(d)); })
+                                    .attr("stroke", strokeColor);
+                            }
+                        });
+                    };
                     Visual.prototype.setFilterOpacity = function (element) {
                         var anyFilter = false;
                         element.each(function (d) {
@@ -9353,7 +9416,7 @@ var powerbi;
                         }
                     };
                     Visual.parseSettings = function (dataView) {
-                        return dotPlotD9885417F9AAF5BB8D45B007E.VisualSettings.parse(dataView);
+                        return stripPlotD9885417F9AAF5BB8D45B007E.VisualSettings.parse(dataView);
                     };
                     Visual.prototype.getTooltipData = function (data) {
                         var retData = [];
@@ -9482,6 +9545,8 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { orientation: this.orientation }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { circlestroke: this.circlestroke }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { circleJitter: this.circleJitter }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { drawMedian: this.drawMedian }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { valFormat: this.valFormat }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
@@ -9503,8 +9568,8 @@ var powerbi;
                     };
                     return Visual;
                 }());
-                dotPlotD9885417F9AAF5BB8D45B007E.Visual = Visual;
-            })(dotPlotD9885417F9AAF5BB8D45B007E = visual.dotPlotD9885417F9AAF5BB8D45B007E || (visual.dotPlotD9885417F9AAF5BB8D45B007E = {}));
+                stripPlotD9885417F9AAF5BB8D45B007E.Visual = Visual;
+            })(stripPlotD9885417F9AAF5BB8D45B007E = visual.stripPlotD9885417F9AAF5BB8D45B007E || (visual.stripPlotD9885417F9AAF5BB8D45B007E = {}));
         })(visual = extensibility.visual || (extensibility.visual = {}));
     })(extensibility = powerbi.extensibility || (powerbi.extensibility = {}));
 })(powerbi || (powerbi = {}));
@@ -9514,13 +9579,13 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.dotPlotD9885417F9AAF5BB8D45B007E_DEBUG = {
-                name: 'dotPlotD9885417F9AAF5BB8D45B007E_DEBUG',
-                displayName: 'DotPlot',
+            plugins.stripPlotD9885417F9AAF5BB8D45B007E = {
+                name: 'stripPlotD9885417F9AAF5BB8D45B007E',
+                displayName: 'Strip Plot',
                 class: 'Visual',
                 version: '1.0.0',
                 apiVersion: '1.11.0',
-                create: function (options) { return new powerbi.extensibility.visual.dotPlotD9885417F9AAF5BB8D45B007E.Visual(options); },
+                create: function (options) { return new powerbi.extensibility.visual.stripPlotD9885417F9AAF5BB8D45B007E.Visual(options); },
                 custom: true
             };
         })(plugins = visuals.plugins || (visuals.plugins = {}));
