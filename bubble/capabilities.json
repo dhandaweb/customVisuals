@@ -19,24 +19,6 @@
             ]
         },
         {
-            "displayName": "Size",
-            "name": "size",
-            "kind": "Measure",
-            "requiredTypes": [
-                {
-                    "integer": true
-                },
-                {
-                    "numeric": true
-                }
-            ],
-            "preferredTypes": [
-                {
-                    "numeric": true
-                }
-            ]
-        },
-        {
             "displayName": "Axis",
             "name": "axis",
             "kind": "Grouping"
@@ -64,8 +46,7 @@
                     "group": {
                         "by": "color",
                         "select": [
-                            { "bind": { "to": "values" } },
-                            { "bind": { "to": "size" } }
+                            { "bind": { "to": "values" } }
                         ]
                     }
                 }
@@ -74,10 +55,6 @@
                 {
                     "values": {
                         "min": 0
-                    },
-                    "size": {
-                        "min": 0,
-                        "max": 1
                     },
                     "axis": {
                         "min": 0,

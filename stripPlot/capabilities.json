@@ -62,6 +62,16 @@
                         ]
                     }
                 },
+                "circleColor": {
+                    "displayName": "Circle Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
                 "circleOpacity": {
                     "displayName": "Circle Opacity",
                     "type": {

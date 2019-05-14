@@ -70,6 +70,7 @@ module powerbi.extensibility.visual {
         private showAxis: any = true;
 
         private dotRadius: any = 6;
+        private circleColor: any = { solid: { color: "#01b8aa" } };
         private circleOpacity: any = 100;
         private circlestroke: any = 1;
         private circleJitter: any = false;
@@ -187,6 +188,7 @@ module powerbi.extensibility.visual {
                 if (options.dataViews[0].metadata.objects["Basic"]) {
                     var basic = options.dataViews[0].metadata.objects["Basic"];
                     if (basic.dotRadius !== undefined) this.dotRadius = basic["dotRadius"];
+                    if (basic.circleColor !== undefined) this.circleColor = basic["circleColor"];
                     if (basic.circlestroke !== undefined) this.circlestroke = basic["circlestroke"];
                     if (basic.circleOpacity !== undefined) this.circleOpacity = basic["circleOpacity"];
                     if (basic.circleJitter !== undefined) this.circleJitter = basic["circleJitter"];
@@ -453,8 +455,8 @@ module powerbi.extensibility.visual {
 
             circle
                 .attr("r", this.dotRadius)
-                .attr("fill", "#b3b3b3")
-                .style("stroke", "#b3b3b3")
+                .attr("fill", this.circleColor.solid.color)
+                .style("stroke", this.circleColor.solid.color)
                 .style("stroke-width", this.circlestroke + "px")
                 .style("fill-opacity", this.circleOpacity / 100);
 
@@ -466,7 +468,7 @@ module powerbi.extensibility.visual {
         }
 
         private drawBoxPlot(xScale, yScale, chartSvg, data, dimension) {
-
+            var format = data.yFormat;
             var boxBox = chartSvg.selectAll(".box")
                 .data(data.data)
                 .enter()
@@ -478,6 +480,8 @@ module powerbi.extensibility.visual {
             var color = this.boxFill.solid.color;
             var strokeColor = "#3a3737";
 
+            var lines, lineData,rectData, upperRect, lowerRect;
+            var self = this;
             boxBox.each(function (d) {
                 data = d.values.map(d => d.val);
                 data_sorted = data.sort(d3.ascending);
@@ -489,68 +493,128 @@ module powerbi.extensibility.visual {
 
                 svg = d3.select(this);
 
+                lineData = [
+                    { value: min, caption: "5th percentile", formattedVal: format(min) },
+                    { value: median, caption: "50th percentile", formattedVal: format(median) },
+                    { value: max, caption: "95th percentile", formattedVal: format(max) }
+                ]
+
+                rectData = [
+                    { value: median - q1, caption: "25th percentile", formattedVal: format(median - q1) },
+                    { value: median, caption: "50th percentile", formattedVal: format(median) },
+                    { value: q3-median, caption: "75th percentile", formattedVal: format(q3-median) }
+                ]
+
                 if (orient == 'vertical') {
                     svg
-                        .append("line")
-                        .attr("x1", xScale(d.key) + xScale.rangeBand() / 2)
-                        .attr("x2", xScale(d.key) + xScale.rangeBand() / 2)
-                        .attr("y1", yScale(min))
-                        .attr("y2", yScale(max))
-                        .attr("stroke", strokeColor);
+                    // .append("line")
+                    // .attr("x1", xScale(d.key) + xScale.rangeBand() / 2)
+                    // .attr("x2", xScale(d.key) + xScale.rangeBand() / 2)
+                    // .attr("y1", yScale(min))
+                    // .attr("y2", yScale(max))
+                    // .attr("stroke", strokeColor);
 
-                    svg
+                    lowerRect = svg
                         .append("rect")
+                        .data([rectData])
+                        .attr("x", xScale(d.key))
+                        .attr("y", yScale(median))
+                        .attr("height", yScale(q1) - yScale(median))
+                        .attr("width", xScale.rangeBand())
+                        .style("fill-opacity", ".3")
+                        .style("fill", "#000");
+
+                    upperRect = svg
+                        .append("rect")
+                        .data([rectData])
                         .attr("x", xScale(d.key))
                         .attr("y", yScale(q3))
-                        .attr("height", yScale(q1) - yScale(q3))
+                        .attr("height", yScale(median) - yScale(q3))
                         .attr("width", xScale.rangeBand())
-                        .attr("stroke", strokeColor)
-                        .style("fill", color)
+                        .style("fill-opacity", ".5")
+                        .style("fill", "#ccc")
 
-                    svg
+                    lines = svg
                         .selectAll("toto")
-                        .data([min, median, max])
+                        .data(lineData)
                         .enter()
                         .append("line")
+                        .attr("stroke-width", 2)
                         .attr("x1", xScale(d.key))
                         .attr("x2", xScale(d.key) + xScale.rangeBand())
-                        .attr("y1", function (d) { return (yScale(d)) })
-                        .attr("y2", function (d) { return (yScale(d)) })
+                        .attr("y1", function (d) { return (yScale(d.value)) })
+                        .attr("y2", function (d) { return (yScale(d.value)) })
                         .attr("stroke", strokeColor);
+
                 }
                 else {
-                    svg
-                        .append("line")
-                        .attr("y1", xScale(d.key) + xScale.rangeBand() / 2)
-                        .attr("y2", xScale(d.key) + xScale.rangeBand() / 2)
-                        .attr("x1", yScale(min))
-                        .attr("x2", yScale(max))
-                        .attr("stroke", strokeColor);
+                    // svg
+                    //     .append("line")
+                    //     .attr("y1", xScale(d.key) + xScale.rangeBand() / 2)
+                    //     .attr("y2", xScale(d.key) + xScale.rangeBand() / 2)
+                    //     .attr("x1", yScale(min))
+                    //     .attr("x2", yScale(max))
+                    //     .attr("stroke", strokeColor);
 
-                    svg
+                    lowerRect = svg
                         .append("rect")
+                        .data([rectData])
                         .attr("y", xScale(d.key))
                         .attr("x", yScale(q1))
-                        .attr("width", yScale(q3) - yScale(q1))
+                        .attr("width", yScale(median) - yScale(q1))
                         .attr("height", xScale.rangeBand())
-                        .attr("stroke", strokeColor)
-                        .style("fill", color)
+                        .style("fill-opacity", ".3")
+                        .style("fill", "#000");
 
-                    svg
+                    upperRect = svg
+                        .append("rect")
+                        .data([rectData])
+                        .attr("y", xScale(d.key))
+                        .attr("x", yScale(median))
+                        .attr("width", yScale(q3) - yScale(median))
+                        .attr("height", xScale.rangeBand())
+                        .style("fill-opacity", ".5")
+                        .style("fill", "#ccc")
+
+
+
+                    // svg
+                    //     .append("rect")
+                    //     .attr("y", xScale(d.key))
+                    //     .attr("x", yScale(q1))
+                    //     .attr("width", yScale(q3) - yScale(q1))
+                    //     .attr("height", xScale.rangeBand())
+                    //     .attr("stroke", strokeColor)
+                    //     .style("fill", color)
+
+                    lines = svg
                         .selectAll("toto")
-                        .data([min, median, max])
+                        .data(lineData)
                         .enter()
                         .append("line")
                         .attr("y1", xScale(d.key))
                         .attr("y2", xScale(d.key) + xScale.rangeBand())
-                        .attr("x1", function (d) { return (yScale(d)) })
-                        .attr("x2", function (d) { return (yScale(d)) })
+                        .attr("x1", d => yScale(d.value))
+                        .attr("x2", d => yScale(d.value))
+                        .attr("stroke-width", 2)
                         .attr("stroke", strokeColor);
 
                 }
 
 
+                self.tooltipServiceWrapper.addTooltip(lines,
+                    (tooltipEvent: TooltipEventArgs<any>) => self.getLineTooltipData(tooltipEvent.data),
+                    (tooltipEvent: TooltipEventArgs<any>) => null
+                );
 
+                self.tooltipServiceWrapper.addTooltip(upperRect,
+                    (tooltipEvent: TooltipEventArgs<any>) => self.getUpperRectTooltipData(tooltipEvent.data),
+                    (tooltipEvent: TooltipEventArgs<any>) => null
+                );
+                self.tooltipServiceWrapper.addTooltip(lowerRect,
+                    (tooltipEvent: TooltipEventArgs<any>) => self.getLowerRectTooltipData(tooltipEvent.data),
+                    (tooltipEvent: TooltipEventArgs<any>) => null
+                );
             })
         }
 
@@ -634,6 +698,53 @@ module powerbi.extensibility.visual {
                 displayName: data.group.toString(),
                 value: data.val.toString()
             });
+
+            return retData;
+        }
+
+        private getLineTooltipData(data: any): VisualTooltipDataItem[] {
+            var retData = [];
+
+            retData.push({
+                displayName: "Value",
+                value: data.formattedVal.toString(),
+                header: data.caption.toString()
+            });
+
+            return retData;
+        }
+
+        private getUpperRectTooltipData(data: any): VisualTooltipDataItem[] {
+            var retData = [];
+          
+            retData.push({
+                displayName: data[1].caption.toString(),
+                value: data[1].formattedVal.toString(),
+                header: data[1].caption.toString() + ' - ' + data[2].caption.toString()
+            });
+
+            retData.push({
+                displayName: data[2].caption.toString(),
+                value: data[2].formattedVal.toString()
+            });
+
+            return retData;
+        }
+
+        private getLowerRectTooltipData(data: any): VisualTooltipDataItem[] {
+            var retData = [];
+           
+            retData.push({
+                displayName: data[0].caption.toString(),
+                value: data[0].formattedVal.toString(),
+                header: data[0].caption.toString() + ' - ' + data[1].caption.toString()
+            });
+
+            retData.push({
+                displayName: data[1].caption.toString(),
+                value: data[1].formattedVal.toString()
+            });
+
 
             return retData;
         }
@@ -835,6 +946,8 @@ module powerbi.extensibility.visual {
                 case 'Basic':
                     objectEnumeration.push({ objectName: objectName, properties: { orientation: this.orientation }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { circleColor: this.circleColor }, selector: null });
+
                     objectEnumeration.push({ objectName: objectName, properties: { circlestroke: this.circlestroke }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { circleJitter: this.circleJitter }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { drawMedian: this.drawMedian }, selector: null });
@@ -852,7 +965,7 @@ module powerbi.extensibility.visual {
 
                 case 'Box':
                     objectEnumeration.push({ objectName: objectName, properties: { stripBox: this.stripBox }, selector: null });
-                    if (this.stripBox) objectEnumeration.push({ objectName: objectName, properties: { boxFill: this.boxFill }, selector: null });
+                    // if (this.stripBox) objectEnumeration.push({ objectName: objectName, properties: { boxFill: this.boxFill }, selector: null });
                     break;
 
             };
