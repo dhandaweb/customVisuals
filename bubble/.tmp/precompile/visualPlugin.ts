@@ -1,6 +1,6 @@
 module powerbi.visuals.plugins {
-    export var bubbleD9885417F9AAF5BB8D45B007E_DEBUG = {
-        name: 'bubbleD9885417F9AAF5BB8D45B007E_DEBUG',
+    export var bubbleD9885417F9AAF5BB8D45B007E = {
+        name: 'bubbleD9885417F9AAF5BB8D45B007E',
         displayName: 'Bubble',
         class: 'Visual',
         version: '1.0.0',

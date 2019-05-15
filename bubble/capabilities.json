@@ -72,44 +72,42 @@
         "Basic": {
             "displayName": "Basic",
             "properties": {
-                "dotRadius": {
-                    "displayName": "Dot radius",
-                    "type": {
-                        "formatting": {
-                            "fontSize": true
-                        }
-                    }
-                },
-                "orientation": {
-                    "displayName": "Orientation",
+                "showLabel": {
+                    "displayName": "Data Labels",
                     "type": {
                         "enumeration": [
                             {
-                                "value": "vertical",
-                                "displayName": "Vertical"
+                                "value": "none",
+                                "displayName": "None"
                             },
                             {
-                                "value": "horizontal",
-                                "displayName": "Horizontal"
+                                "value": "label",
+                                "displayName": "Label"
+                            },
+                            {
+                                "value": "labelValue",
+                                "displayName": "Label & Value"
                             }
-
                         ]
                     }
                 },
-                "circleOpacity": {
-                    "displayName": "Circle Opacity",
+                "sort": {
+                    "displayName": "Sort",
                     "type": {
-                        "formatting": {
-                            "fontSize": true
-                        }
-                    }
-                },
-                "circlestroke": {
-                    "displayName": "Circle Stroke",
-                    "type": {
-                        "formatting": {
-                            "fontSize": true
-                        }
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "ascending",
+                                "displayName": "Ascending"
+                            },
+                            {
+                                "value": "descending",
+                                "displayName": "Descending"
+                            }
+                        ]
                     }
                 },
                 "valFormat": {
@@ -169,10 +167,6 @@
                             }
                         ]
                     }
-                },
-                "showLabel": {
-                    "displayName": "Data Labels",
-                    "type": { "bool": true }
                 }
             }
         },
@@ -191,77 +185,7 @@
                 }
             }
         },
-        "Dumbbell": {
-            "displayName": "Dumbbell",
-            "properties": {
-                "connectDots": {
-                    "displayName": "Connect Dots",
-                    "type": { "bool": true }
-                },
-                "connectDotsBy": {
-                    "displayName": "Connect Dots By",
-                    "type": {
-                        "enumeration": [
-                            {
-                                "value": "axis",
-                                "displayName": "Axis"
-                            },
-                            {
-                                "value": "color",
-                                "displayName": "Color"
-                            }
 
-                        ]
-                    }
-                },
-                "dumbbellSort": {
-                    "displayName": "Sort",
-                    "type": {
-                        "enumeration": [
-                            {
-                                "value": "default",
-                                "displayName": "Default"
-                            },
-                            {
-                                "value": "ascending",
-                                "displayName": "Ascending"
-                            },
-                            {
-                                "value": "descending",
-                                "displayName": "Descending"
-                            }
-                        ]
-                    }
-                },
-                "dumbbellLineStroke": {
-                    "displayName": "Dumbbell Line Stroke",
-                    "type": {
-                        "formatting": {
-                            "fontSize": true
-                        }
-                    }
-                }
-            }
-        },
-        "Axis": {
-            "displayName": "Axis",
-            "properties": {
-                "yAxisMinValue": {
-                    "displayName": "Y Axis Start From Min Value",
-                    "type": { "bool": true }
-                },
-                "fontSize": {
-                    "displayName": "Text Size",
-                    "displayNameKey": "Visual_TextSize",
-                    "type": {
-                        "formatting": {
-                            "fontSize": true
-                        }
-                    }
-                }
-
-            }
-        },
         "Legend": {
             "displayName": "Legend",
             "properties": {
@@ -269,6 +193,10 @@
                     "displayName": "Legend Position",
                     "type": {
                         "enumeration": [
+                            {
+                                "value": "none",
+                                "displayName": "None"
+                            },
                             {
                                 "value": "right",
                                 "displayName": "Right"
@@ -288,53 +216,6 @@
                     "displayName": "Legend Name",
                     "type": { "text": true }
                 },
-                "legendColor": {
-                    "displayName": "Legend Color",
-                    "type": {
-                        "enumeration": [
-                            {
-                                "value": "Category1",
-                                "displayName": "Category1"
-                            },
-                            {
-                                "value": "Category2",
-                                "displayName": "Category2"
-                            },
-                            {
-                                "value": "Category3",
-                                "displayName": "Category3"
-                            },
-                            {
-                                "value": "Category4",
-                                "displayName": "Category4"
-                            },
-                            {
-                                "value": "Category5",
-                                "displayName": "Category5"
-                            },
-                            {
-                                "value": "Category6",
-                                "displayName": "Category6"
-                            },
-                            {
-                                "value": "Category7",
-                                "displayName": "Category7"
-                            },
-                            {
-                                "value": "Category8",
-                                "displayName": "Category8"
-                            },
-                            {
-                                "value": "Category9",
-                                "displayName": "Category9"
-                            },
-                            {
-                                "value": "Category10",
-                                "displayName": "Category10"
-                            }
-                        ]
-                    }
-                },
                 "fontSize": {
                     "displayName": "Legend Font Size",
                     "type": {
@@ -344,162 +225,7 @@
                     }
                 }
             }
-        },
-        "Statistics": {
-            "displayName": "Analytics",
-            "properties": {
-                "showAs": {
-                    "displayName": "Show Dots as",
-                    "type": {
-                        "enumeration": [
-                            {
-                                "value": "default",
-                                "displayName": "Default"
-                            },
-                            {
-                                "value": "runningTotal",
-                                "displayName": "Running Total"
-                            },
-                            {
-                                "value": "difference",
-                                "displayName": "Difference"
-                            },
-                            {
-                                "value": "perDifference",
-                                "displayName": "% Difference"
-                            },
-                            {
-                                "value": "differenceFromAverage",
-                                "displayName": "Difference From Average"
-                            },
-                            {
-                                "value": "perDifferenceFromAverage",
-                                "displayName": "% Difference From Average"
-                            },
-                            {
-                                "value": "perAxisValue",
-                                "displayName": "% of Axis Value"
-                            },
-                            {
-                                "value": "perTotal",
-                                "displayName": "% of Total"
-                            },
-                            {
-                                "value": "perGrandTotal",
-                                "displayName": "% of Grand Total"
-                            },
-                            {
-                                "value": "movingAverage",
-                                "displayName": "Moving Average"
-                            }
-                        ]
-                    }
-                },
-                "showMean": {
-                    "displayName": "Show Mean",
-                    "type": { "bool": true }
-                },
-                "showMedian": {
-                    "displayName": "Show Median",
-                    "type": { "bool": true }
-                },
-                "showMode": {
-                    "displayName": "Show Mode",
-                    "type": { "bool": true }
-                },
-                "exponentialSmoothingLine": {
-                    "displayName": "Exponential Smoothing Line",
-                    "type": { "bool": true }
-                },
-                "regressionLine": {
-                    "displayName": "Regression Line",
-                    "type": { "bool": true }
-                },
-                "regressionCurveType": {
-                    "displayName": "Regression Curve Type",
-                    "type": {
-                        "enumeration": [
-                            {
-                                "value": "linear",
-                                "displayName": "Linear"
-                            },
-                            {
-                                "value": "exponential",
-                                "displayName": "Exponential"
-                            }
-
-                        ]
-                    }
-                },
-                "regressionLineType": {
-                    "displayName": "Regression Line Type",
-                    "type": {
-                        "enumeration": [
-                            {
-                                "value": "single",
-                                "displayName": "Single"
-                            },
-                            {
-                                "value": "multiple",
-                                "displayName": "Multiple"
-                            }
-
-                        ]
-                    }
-                },
-                "standardDeviation": {
-                    "displayName": "StandardDeviation",
-                    "type": { "bool": true }
-                },
-                "noOfStandardDeviation": {
-                    "displayName": "No of Standard Deviation",
-                    "type": {
-                        "enumeration": [
-                            {
-                                "value": "1",
-                                "displayName": "1"
-                            },
-                            {
-                                "value": "2",
-                                "displayName": "2"
-                            },
-                            {
-                                "value": "3",
-                                "displayName": "3"
-                            }
-                        ]
-                    }
-                }
-            }
-        },
-        "ConstantLine": {
-            "displayName": "Constant Line",
-            "properties": {
-                "constantLineValue": {
-                    "displayName": "Constant line value",
-                    "type": { "text": true }
-                },
-                "constantLineStrokeWidth": {
-                    "displayName": "Constant line width",
-                    "type": {
-                        "formatting": {
-                            "fontSize": true
-                        }
-                    }
-                },
-                "constantLineColor": {
-                    "displayName": "Constant line color",
-                    "type": {
-                        "fill": {
-                            "solid": {
-                                "color": true
-                            }
-                        }
-                    }
-                }
-            }
         }
-
     }
 } 
 

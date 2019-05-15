@@ -8928,27 +8928,17 @@ var powerbi;
                         this.hasValue = false;
                         this.hasSize = false;
                         this.colorTitle = '';
-                        this.legendPosition = "right";
-                        this.showAs = "default";
-                        this.showMean = false;
-                        this.showMedian = false;
-                        this.showMode = false;
-                        this.regressionLine = false;
-                        this.regressionLineType = "single";
-                        this.regressionCurveType = "linear";
-                        this.standardDeviation = false;
-                        this.noOfStandardDeviation = "1";
+                        this.legendPosition = "none";
+                        this.legendFontSize = 10;
                         this.exponentialSmoothingLine = false;
                         this.formattedData = [];
+                        this.rawFormattedData = [];
+                        this.yAxisMinValue = false;
+                        this.showLabel = "label";
+                        this.fontSize = 11;
                         this.valFormat = 'default';
                         this.valPrecision = 0;
-                        this.yAxisMinValue = false;
-                        this.showLabel = false;
-                        this.dotRadius = 6;
-                        this.circleOpacity = 100;
-                        this.circlestroke = 1;
-                        this.orientation = "vertical";
-                        this.fontSize = 11;
+                        this.sort = "default";
                         this.element = d3.select(options.element);
                         this.host = options.host;
                         this.colorPalette = this.host.colorPalette;
@@ -8982,20 +8972,50 @@ var powerbi;
                             .attr("width", dimension.width)
                             .on("click", function (d, i) {
                             _this.selectionManager.clear();
+                            _this.nodes.style("opacity", function (d) {
+                                d.isFiltered = false;
+                                return 1;
+                            });
                         });
                         var chartSvg = chart.append("g");
+                        var chartLegend = chart.append("g");
                         chartSvg.attr("transform", "translate(0," + 5 + ")");
                         this.drawBubble(dimension, chartSvg, data);
+                        if (this.legendPosition !== "none" && this.hasColor)
+                            this.drawLegend(chartLegend, chartSvg, dimension, data);
                     };
                     Visual.prototype.drawBubble = function (dimension, chartSvg, data) {
                         var _this = this;
                         var bubble = d3.layout.pack()
-                            .sort(null)
-                            .size([dimension.width, dimension.height])
+                            .size([dimension.chartWidth, dimension.chartHeight])
                             .padding(1.5);
-                        var data = this.formattedData.map(function (d) { return { packageName: d.xValue.value, color: d.color, className: d.xValue.value, value: d.yValue.value }; });
+                        if (this.legendPosition === "none")
+                            bubble.size([dimension.width, dimension.height]);
+                        switch (this.sort) {
+                            case "ascending":
+                                bubble.sort(function (a, b) { return d3.ascending(a.value, b.value); });
+                                break;
+                            case "descending":
+                                bubble.sort(function (a, b) { return d3.descending(a.value, b.value); });
+                                break;
+                            default:
+                                bubble.sort(null);
+                                break;
+                        }
+                        var data = this.formattedData.map(function (d) {
+                            return {
+                                packageName: d.xValue.value,
+                                color: d.color,
+                                className: d.xValue.value,
+                                value: d.yValue.value,
+                                selectionId: d.selectionId,
+                                colorValue: d.colorValue,
+                                xValue: d.xValue,
+                                yValue: d.yValue
+                            };
+                        });
                         var bubbleData = bubble.nodes({ children: data });
-                        var node = chartSvg.selectAll(".node")
+                        var node = this.nodes = chartSvg.selectAll(".node")
                             .data(bubbleData.filter(function (d) { return !d.children; }))
                             .enter().append("g")
                             .attr("class", "node")
@@ -9003,13 +9023,32 @@ var powerbi;
                         node.append("circle")
                             .attr("r", function (d) { return d.r; })
                             .style("fill", function (d) { return d.color; });
-                        node.append("text")
-                            .attr("dy", ".3em")
-                            .style("text-anchor", "middle")
-                            .style("font-size", this.fontSize + "px")
-                            .style("pointer-events", "none")
-                            .style("fill", function (d) { return _this.gettextColor(d.color); })
-                            .text(function (d) { return d.className.substring(0, d.r / 4); });
+                        node.on("click", function (d, i) {
+                            d.isFiltered = !d.isFiltered;
+                            _this.selectionManager.select(d.selectionId, true);
+                            _this.setFilterOpacity(node);
+                            d3.event.stopPropagation();
+                        });
+                        this.tooltipServiceWrapper.addTooltip(node, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
+                        if (this.showLabel !== "none") {
+                            var caption = node.append("text")
+                                .style("text-anchor", "middle")
+                                .style("font-size", this.fontSize + "px")
+                                .style("pointer-events", "none")
+                                .style("fill", function (d) { return _this.gettextColor(d.color); })
+                                .text(function (d) { return d.className.substring(0, d.r / 4); });
+                            caption.attr("dy", ".3em");
+                            if (this.showLabel === "labelValue") {
+                                var val = node.append("text")
+                                    .attr("dy", "10px")
+                                    .style("text-anchor", "middle")
+                                    .style("pointer-events", "none")
+                                    .style("fill", function (d) { return _this.gettextColor(d.color); })
+                                    .text(function (d) { return d.yValue.caption.substring(0, d.r / 4); });
+                                val.style("font-size", (this.fontSize - 3) + "px");
+                                caption.attr("dy", "0px");
+                            }
+                        }
                     };
                     Visual.prototype.formatData = function (rawData) {
                         var _this = this;
@@ -9078,6 +9117,11 @@ var powerbi;
                                 });
                             }
                         }
+                        var legendD = formattedData.map(function (d) { return { key: d.key, color: d.color }; });
+                        var nm = (this.legendName !== undefined) ? this.legendName.length > 0 ? this.legendName : this.colorTitle : this.colorTitle;
+                        if (this.hasColor)
+                            legendD.unshift({ key: nm, color: "transparent" });
+                        var legend = this.setLegendWidth(this.element, legendD);
                         var retData = formattedData;
                         var yAxis = [];
                         retData.map(function (d) {
@@ -9085,43 +9129,36 @@ var powerbi;
                                 yAxis.push(d.yValue.value);
                             });
                         });
+                        this.rawFormattedData = retData;
                         this.formattedData = [];
                         formattedData.forEach(function (d) {
                             d.values.forEach(function (d) {
                                 _this.formattedData.push(d);
                             });
                         });
-                        // console.log(formattedData);
-                        // console.log("********Formatted Data *******");
-                        return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat.format, data: retData };
+                        return { xAxis: xAxis, yAxis: yAxis, yFormat: valFormat.format, data: retData, legend: legend, };
                     };
                     Visual.prototype.setProperties = function (options) {
                         if (options.dataViews[0].metadata.objects) {
                             if (options.dataViews[0].metadata.objects["Basic"]) {
                                 var basic = options.dataViews[0].metadata.objects["Basic"];
-                                if (basic.dotRadius !== undefined)
-                                    this.dotRadius = basic["dotRadius"];
-                                if (basic.circlestroke !== undefined)
-                                    this.circlestroke = basic["circlestroke"];
-                                if (basic.circleOpacity !== undefined)
-                                    this.circleOpacity = basic["circleOpacity"];
                                 if (basic.showLabel !== undefined)
                                     this.showLabel = basic["showLabel"];
-                                if (basic.orientation !== undefined)
-                                    this.orientation = basic["orientation"];
+                                if (basic.sort !== undefined)
+                                    this.sort = basic["sort"];
                                 if (basic.valFormat !== undefined)
                                     this.valFormat = basic["valFormat"];
                                 if (basic.valPrecision !== undefined)
                                     this.valPrecision = basic["valPrecision"];
                             }
-                            if (options.dataViews[0].metadata.objects["Axis"]) {
-                                var axis = options.dataViews[0].metadata.objects["Axis"];
-                                if (axis.showLabel !== undefined)
-                                    this.showLabel = axis["showLabel"];
-                                if (axis.fontSize !== undefined)
-                                    this.fontSize = axis["fontSize"];
-                                if (axis.yAxisMinValue !== undefined)
-                                    this.yAxisMinValue = axis["yAxisMinValue"];
+                            if (options.dataViews[0].metadata.objects["Legend"]) {
+                                var legend = options.dataViews[0].metadata.objects["Legend"];
+                                if (legend.legendPosition !== undefined)
+                                    this.legendPosition = legend["legendPosition"];
+                                if (legend.fontSize !== undefined)
+                                    this.legendFontSize = legend["fontSize"];
+                                if (legend.legendName !== undefined)
+                                    this.legendName = legend["legendName"];
                             }
                         }
                     };
@@ -9130,7 +9167,6 @@ var powerbi;
                         this.hasValue = false;
                         this.hasColor = false;
                         this.hasAxis = false;
-                        this.hasSize = false;
                         metadata.map(function (d, i) {
                             if (d.roles["axis"]) {
                                 _this.hasAxis = true;
@@ -9166,13 +9202,15 @@ var powerbi;
                     Visual.prototype.getDimensions = function (vp, data) {
                         var xlegendOffset = 0;
                         var ylegendOffset = 0;
-                        if (this.legendPosition == "right")
-                            ylegendOffset = 0;
-                        if (this.legendPosition == "top" || this.legendPosition === "bottom")
-                            xlegendOffset = 0;
+                        if (this.legendPosition !== "none" && this.hasColor) {
+                            if (this.legendPosition == "right")
+                                ylegendOffset = d3.max(data.legend.map(function (d) { return d.width; })) + (4 * this.legendFontSize);
+                            if (this.legendPosition == "top" || this.legendPosition === "bottom")
+                                xlegendOffset = this.legendFontSize * 3;
+                        }
                         var xdata = data.xAxis;
                         var xDomain = d3.scale.ordinal().domain(xdata).domain();
-                        var xT = this.axisLabelArray(xDomain.slice(0).filter(function (d) { return d !== null; }), (vp.width - this.getYOffset(data) - ylegendOffset), this.element, this.orientation);
+                        var xT = this.axisLabelArray(xDomain.slice(0).filter(function (d) { return d !== null; }), (vp.width - this.getYOffset(data) - ylegendOffset), this.element);
                         var xOffset, yOffset, chartWidth, chartHeight, xFilter, xTickval;
                         xOffset = xT.Space + 20;
                         if (xOffset > vp.height / 4)
@@ -9219,12 +9257,6 @@ var powerbi;
                             displayName: data.yValue.title,
                             value: data.yValue.caption,
                         });
-                        if (this.hasSize === true) {
-                            retData.push({
-                                displayName: data.size.title,
-                                value: data.size.caption,
-                            });
-                        }
                         if (this.hasColor === true) {
                             retData.push({
                                 displayName: data.colorValue.title,
@@ -9242,7 +9274,7 @@ var powerbi;
                         return bbox.width;
                     };
                     ;
-                    Visual.prototype.axisLabelArray = function (labels, chartwidth, el, orientation) {
+                    Visual.prototype.axisLabelArray = function (labels, chartwidth, el) {
                         var self = this;
                         var fontsize = this.fontSize;
                         var rotate = false;
@@ -9251,45 +9283,37 @@ var powerbi;
                         var svg = el.append("svg").attr("width", 0).attr("height", 0);
                         var scale = d3.scale.ordinal().domain(labels).rangeRoundBands([0, chartwidth]);
                         var maxWidth = scale.rangeBand();
-                        if (orientation === "vertical") {
-                            labels.map(function (text) {
-                                var words = String(text).split(/\s+/).reverse();
-                                words.map(function (d) { wordsArray.push(d); });
-                                var word, line = [];
-                            });
+                        labels.map(function (text) {
+                            var words = String(text).split(/\s+/).reverse();
+                            words.map(function (d) { wordsArray.push(d); });
+                            var word, line = [];
+                        });
+                        var longest = labels.sort(function (a, b) { return b.length - a.length; })[0];
+                        if (this.getTextWidth(svg, longest, fontsize) > maxWidth)
+                            rotate = true;
+                        if (rotate === true) {
                             var longest = labels.sort(function (a, b) { return b.length - a.length; })[0];
-                            if (this.getTextWidth(svg, longest, fontsize) > maxWidth)
-                                rotate = true;
-                            if (rotate === true) {
-                                var longest = labels.sort(function (a, b) { return b.length - a.length; })[0];
-                                space = self.getTextWidth(svg, longest, fontsize);
-                            }
-                            else {
-                                var lineCountArr = [1];
-                                labels.map(function (d, i) {
-                                    var mWidth = (i === 0 || i === labels.length - 1) ? maxWidth / 2 : maxWidth;
-                                    var textContent = String(d), spanContent;
-                                    var words = textContent.split(/\s+/).reverse(), word, lineCount = 0;
-                                    var line = [], t = "";
-                                    while (word = words.pop()) {
-                                        line.push(word);
-                                        t = line.join(' ');
-                                        if (self.getTextWidth(svg, t, fontsize) > mWidth) {
-                                            line.pop();
-                                            spanContent = line.join(' ');
-                                            lineCountArr.push(++lineCount);
-                                        }
-                                    }
-                                    ;
-                                });
-                                space = 10 * (d3.max(lineCountArr));
-                            }
+                            space = self.getTextWidth(svg, longest, fontsize);
                         }
                         else {
-                            var long = labels.sort(function (a, b) { return b.length - a.length; })[0];
-                            var longest_1 = String(long);
-                            var needWarpping = false;
-                            space = this.getTextWidth(svg, longest_1, fontsize);
+                            var lineCountArr = [1];
+                            labels.map(function (d, i) {
+                                var mWidth = (i === 0 || i === labels.length - 1) ? maxWidth / 2 : maxWidth;
+                                var textContent = String(d), spanContent;
+                                var words = textContent.split(/\s+/).reverse(), word, lineCount = 0;
+                                var line = [], t = "";
+                                while (word = words.pop()) {
+                                    line.push(word);
+                                    t = line.join(' ');
+                                    if (self.getTextWidth(svg, t, fontsize) > mWidth) {
+                                        line.pop();
+                                        spanContent = line.join(' ');
+                                        lineCountArr.push(++lineCount);
+                                    }
+                                }
+                                ;
+                            });
+                            space = 10 * (d3.max(lineCountArr));
                         }
                         svg.remove();
                         return { Rotate: rotate, Space: space };
@@ -9324,38 +9348,102 @@ var powerbi;
                         var max = d3.max(data.yAxis);
                         return 2 + (data.yFormat(max).length + 1) * this.fontSize / 1.5;
                     };
+                    Visual.prototype.drawLegend = function (chartLegend, chartSvg, dimension, data) {
+                        if (this.legendPosition == "right") {
+                            chartLegend.attr("transform", "translate(" + (dimension.chartWidth + dimension.yOffset + (this.legendFontSize * 2)) + "," + (5) + ")");
+                        }
+                        if (this.legendPosition == "top") {
+                            chartSvg.attr("transform", "translate(0," + this.legendFontSize * 3 + ")");
+                            chartLegend.attr("transform", "translate(" + (10) + "," + this.legendFontSize + ")");
+                        }
+                        if (this.legendPosition == "bottom") {
+                            chartLegend.attr("transform", "translate(" + (10) + "," + (dimension.chartHeight + dimension.xOffset + (this.legendFontSize * 2)) + ")");
+                        }
+                        var fontSize = parseInt(this.legendFontSize);
+                        var legengG = chartLegend.selectAll(".legend")
+                            .data(data.legend)
+                            .enter()
+                            .append("g");
+                        if (this.legendPosition == "right")
+                            legengG.attr("transform", function (d, i) { return "translate(0," + i * (fontSize + 5) + ")"; });
+                        else {
+                            var wd = 0, rt;
+                            legengG.attr("transform", function (d, i) {
+                                rt = "translate(" + wd + ",0)";
+                                wd = wd + d.width;
+                                return rt;
+                            });
+                        }
+                        legengG.append("circle")
+                            .attr("r", fontSize / 2)
+                            .attr("cy", fontSize / 5)
+                            .attr("fill", function (d) { return d.color; });
+                        legengG
+                            .append("text")
+                            .attr("x", function (d) { return d.color === "transparent" ? -5 : fontSize; })
+                            .attr("font-weight", function (d) { return d.color === "transparent" ? "bold" : "normal"; })
+                            .attr("style", function (d) {
+                            if (d.color === "transparent")
+                                return 'fill:rgb(102, 102, 102);font-family: "Segoe UI Semibold", wf_segoe-ui_semibold, helvetica, arial, sans-serif;';
+                            else
+                                return 'fill:rgb(102, 102, 102);font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif';
+                        })
+                            .style("font-size", fontSize + "px")
+                            .attr("y", fontSize / 2)
+                            .text(function (d) { return d.text; });
+                        legengG.style("font-size", fontSize);
+                    };
+                    ;
+                    Visual.prototype.setLegendWidth = function (el, legendData) {
+                        var _this = this;
+                        var svg = el.append("svg").attr("width", 0).attr("height", 0);
+                        var legend = legendData.map(function (d) {
+                            return {
+                                width: _this.getTextWidth(svg, d.key, _this.legendFontSize) + 20,
+                                color: d.color,
+                                text: d.key
+                            };
+                        });
+                        svg.remove();
+                        return legend;
+                    };
                     Visual.prototype.enumerateObjectInstances = function (options) {
                         var objectName = options.objectName;
                         var objectEnumeration = [];
                         switch (objectName) {
                             case 'Basic':
-                                objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { circlestroke: this.circlestroke }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { valFormat: this.valFormat }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { sort: this.sort }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { valPrecision: this.valPrecision }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { circleOpacity: this.circleOpacity }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { valFormat: this.valFormat }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { showLabel: this.showLabel }, selector: null });
                                 break;
                             case 'colorSelector':
-                                for (var _i = 0, _a = this.formattedData; _i < _a.length; _i++) {
-                                    var barDataPoint = _a[_i];
-                                    objectEnumeration.push({
-                                        objectName: objectName,
-                                        displayName: barDataPoint.key,
-                                        properties: {
-                                            fill: {
-                                                solid: {
-                                                    color: barDataPoint.color
+                                if (this.hasColor) {
+                                    for (var _i = 0, _a = this.rawFormattedData; _i < _a.length; _i++) {
+                                        var barDataPoint = _a[_i];
+                                        objectEnumeration.push({
+                                            objectName: objectName,
+                                            displayName: barDataPoint.key,
+                                            properties: {
+                                                fill: {
+                                                    solid: {
+                                                        color: barDataPoint.color
+                                                    }
                                                 }
-                                            }
-                                        },
-                                        selector: barDataPoint.iden.getSelector()
-                                    });
+                                            },
+                                            selector: barDataPoint.iden.getSelector()
+                                        });
+                                    }
                                 }
                                 break;
-                            case 'Axis':
-                                objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.fontSize }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { yAxisMinValue: this.yAxisMinValue }, selector: null });
+                            case 'Legend':
+                                if (this.hasColor) {
+                                    objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });
+                                    if (this.legendPosition !== "none") {
+                                        objectEnumeration.push({ objectName: objectName, properties: { legendName: this.legendName }, selector: null });
+                                        objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.legendFontSize }, selector: null });
+                                    }
+                                }
                                 break;
                         }
                         ;
@@ -9375,8 +9463,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.bubbleD9885417F9AAF5BB8D45B007E_DEBUG = {
-                name: 'bubbleD9885417F9AAF5BB8D45B007E_DEBUG',
+            plugins.bubbleD9885417F9AAF5BB8D45B007E = {
+                name: 'bubbleD9885417F9AAF5BB8D45B007E',
                 displayName: 'Bubble',
                 class: 'Visual',
                 version: '1.0.0',
