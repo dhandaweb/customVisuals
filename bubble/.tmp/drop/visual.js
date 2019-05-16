@@ -9007,13 +9007,13 @@ var powerbi;
                                 packageName: d.xValue.value,
                                 color: d.color,
                                 className: d.xValue.value,
-                                value: d.yValue.value,
+                                value: Math.abs(d.yValue.value),
                                 selectionId: d.selectionId,
                                 colorValue: d.colorValue,
                                 xValue: d.xValue,
                                 yValue: d.yValue
                             };
-                        });
+                        }).filter(function (d) { return d.value > 0; });
                         var bubbleData = bubble.nodes({ children: data });
                         var node = this.nodes = chartSvg.selectAll(".node")
                             .data(bubbleData.filter(function (d) { return !d.children; }))
@@ -9022,7 +9022,8 @@ var powerbi;
                             .attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; });
                         node.append("circle")
                             .attr("r", function (d) { return d.r; })
-                            .style("fill", function (d) { return d.color; });
+                            .style("fill", function (d) { return d.yValue.value > 0 ? d.color : "transparent"; })
+                            .style("stroke", function (d) { return d.yValue.value > 0 ? "transparent" : d.color; });
                         node.on("click", function (d, i) {
                             d.isFiltered = !d.isFiltered;
                             _this.selectionManager.select(d.selectionId, true);
@@ -9035,7 +9036,7 @@ var powerbi;
                                 .style("text-anchor", "middle")
                                 .style("font-size", this.fontSize + "px")
                                 .style("pointer-events", "none")
-                                .style("fill", function (d) { return _this.gettextColor(d.color); })
+                                .style("fill", function (d) { return d.yValue.value > 0 ? _this.gettextColor(d.color) : "#000"; })
                                 .text(function (d) { return d.className.substring(0, d.r / 4); });
                             caption.attr("dy", ".3em");
                             if (this.showLabel === "labelValue") {
@@ -9204,7 +9205,7 @@ var powerbi;
                         var ylegendOffset = 0;
                         if (this.legendPosition !== "none" && this.hasColor) {
                             if (this.legendPosition == "right")
-                                ylegendOffset = d3.max(data.legend.map(function (d) { return d.width; })) + (4 * this.legendFontSize);
+                                ylegendOffset = 20 + d3.max(data.legend.map(function (d) { return d.width; })) + (4 * this.legendFontSize);
                             if (this.legendPosition == "top" || this.legendPosition === "bottom")
                                 xlegendOffset = this.legendFontSize * 3;
                         }
@@ -9212,14 +9213,15 @@ var powerbi;
                         var xDomain = d3.scale.ordinal().domain(xdata).domain();
                         var xT = this.axisLabelArray(xDomain.slice(0).filter(function (d) { return d !== null; }), (vp.width - this.getYOffset(data) - ylegendOffset), this.element);
                         var xOffset, yOffset, chartWidth, chartHeight, xFilter, xTickval;
-                        xOffset = xT.Space + 20;
+                        xOffset = xT.Space;
                         if (xOffset > vp.height / 4)
                             xOffset = vp.height / 4 > 100 ? 100 : vp.height / 4;
                         yOffset = this.getYOffset(data);
-                        chartWidth = vp.width - yOffset - ylegendOffset;
-                        chartHeight = vp.height - xOffset - xlegendOffset;
+                        chartWidth = vp.width - ylegendOffset;
+                        chartHeight = vp.height - xlegendOffset;
                         xFilter = (xT.Rotate === true) ? (chartWidth / xDomain.length < 12 ? (Math.ceil(xDomain.length / chartWidth * 20)) : 1) : 1;
                         xTickval = xDomain.filter(function (d, i) { return (i % xFilter === 0); });
+                        console.log(xOffset, yOffset);
                         return {
                             width: vp.width,
                             height: vp.height,
@@ -9357,7 +9359,7 @@ var powerbi;
                             chartLegend.attr("transform", "translate(" + (10) + "," + this.legendFontSize + ")");
                         }
                         if (this.legendPosition == "bottom") {
-                            chartLegend.attr("transform", "translate(" + (10) + "," + (dimension.chartHeight + dimension.xOffset + (this.legendFontSize * 2)) + ")");
+                            chartLegend.attr("transform", "translate(" + (10) + "," + (dimension.chartHeight + (this.legendFontSize * 2)) + ")");
                         }
                         var fontSize = parseInt(this.legendFontSize);
                         var legengG = chartLegend.selectAll(".legend")

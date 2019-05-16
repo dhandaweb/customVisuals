@@ -161,13 +161,13 @@ module powerbi.extensibility.visual.bubbleD9885417F9AAF5BB8D45B007E  {
                     packageName: d.xValue.value,
                     color: d.color,
                     className: d.xValue.value,
-                    value: d.yValue.value,
+                    value: Math.abs(d.yValue.value),
                     selectionId: d.selectionId,
                     colorValue: d.colorValue,
                     xValue: d.xValue,
                     yValue: d.yValue
                 }
-            });
+            }).filter(d=>d.value>0);
 
             var bubbleData = bubble.nodes({ children: data })
 
@@ -179,7 +179,8 @@ module powerbi.extensibility.visual.bubbleD9885417F9AAF5BB8D45B007E  {
 
             node.append("circle")
                 .attr("r", d => d.r)
-                .style("fill", d => d.color);
+                .style("fill", d => d.yValue.value > 0 ? d.color : "transparent")
+                .style("stroke", d => d.yValue.value > 0 ? "transparent" : d.color);
 
             node.on("click", (d, i) => {
                 d.isFiltered = !d.isFiltered;
@@ -200,7 +201,7 @@ module powerbi.extensibility.visual.bubbleD9885417F9AAF5BB8D45B007E  {
                     .style("text-anchor", "middle")
                     .style("font-size", this.fontSize + "px")
                     .style("pointer-events", "none")
-                    .style("fill", d => this.gettextColor(d.color))
+                    .style("fill", d => d.yValue.value > 0 ? this.gettextColor(d.color) : "#000")
                     .text(d => d.className.substring(0, d.r / 4));
 
                 caption.attr("dy", ".3em");
@@ -406,7 +407,7 @@ module powerbi.extensibility.visual.bubbleD9885417F9AAF5BB8D45B007E  {
             let xlegendOffset = 0;
             let ylegendOffset = 0;
             if (this.legendPosition !== "none" && this.hasColor){
-                if (this.legendPosition == "right") ylegendOffset = d3.max(data.legend.map(d => d.width)) + (4 * this.legendFontSize);
+                if (this.legendPosition == "right") ylegendOffset =  20 + d3.max(data.legend.map(d => d.width)) + (4 * this.legendFontSize);
                 if (this.legendPosition == "top" || this.legendPosition === "bottom") xlegendOffset = this.legendFontSize * 3;
             }
 
@@ -418,15 +419,15 @@ module powerbi.extensibility.visual.bubbleD9885417F9AAF5BB8D45B007E  {
 
             let xOffset, yOffset, chartWidth, chartHeight, xFilter, xTickval;
 
-            xOffset = xT.Space + 20;
+            xOffset = xT.Space;
             if (xOffset > vp.height / 4) xOffset = vp.height / 4 > 100 ? 100 : vp.height / 4;
             yOffset = this.getYOffset(data);
-            chartWidth = vp.width - yOffset - ylegendOffset;
-            chartHeight = vp.height - xOffset - xlegendOffset;
+            chartWidth = vp.width -  ylegendOffset ;
+            chartHeight = vp.height -  xlegendOffset;
             xFilter = (xT.Rotate === true) ? (chartWidth / xDomain.length < 12 ? (Math.ceil(xDomain.length / chartWidth * 20)) : 1) : 1;
             xTickval = xDomain.filter((d, i) => (i % xFilter === 0));
 
-
+console.log(xOffset,yOffset);
 
             return {
                 width: vp.width,
@@ -599,7 +600,7 @@ module powerbi.extensibility.visual.bubbleD9885417F9AAF5BB8D45B007E  {
                 chartLegend.attr("transform", "translate(" + (10) + "," + this.legendFontSize + ")");
             }
             if (this.legendPosition == "bottom") {
-                chartLegend.attr("transform", "translate(" + (10) + "," + (dimension.chartHeight + dimension.xOffset + (this.legendFontSize * 2)) + ")");
+                chartLegend.attr("transform", "translate(" + (10) + "," + (dimension.chartHeight + (this.legendFontSize * 2)) + ")");
             }
             var fontSize = parseInt(this.legendFontSize);
 
