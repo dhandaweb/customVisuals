@@ -70,6 +70,7 @@ module powerbi.extensibility.visual.stripPlotD9885417F9AAF5BB8D45B007E  {
         private showAxis: any = true;
 
         private dotRadius: any = 6;
+        private circleColorType: any = "multiple"
         private circleColor: any = { solid: { color: "#01b8aa" } };
         private circleOpacity: any = 100;
         private circlestroke: any = 1;
@@ -102,7 +103,7 @@ module powerbi.extensibility.visual.stripPlotD9885417F9AAF5BB8D45B007E  {
 
             this.element.style("overflow", "hidden");
             this.element.select('.stripPlot').remove();
-
+            this.columns = options.dataViews[0].metadata.columns;
             this.colorPalette.reset();
 
             this.draw(options);
@@ -165,7 +166,8 @@ module powerbi.extensibility.visual.stripPlotD9885417F9AAF5BB8D45B007E  {
 
                 data.push({
                     val: d[this.valuesIndex],
-                    group: d[this.groupIndex]
+                    group: d[this.groupIndex],
+                    iden: rawData.table.identity[i]
                 });
 
             });
@@ -173,6 +175,30 @@ module powerbi.extensibility.visual.stripPlotD9885417F9AAF5BB8D45B007E  {
             var nestedData = d3.nest()
                 .key((d: any) => d.group)
                 .entries(data);
+
+            this.formattedData = nestedData.map((d: any, i) => {
+                d.color = this.colorPalette.getColor(d.key).value;
+
+                if (rawData.categorical.categories !== undefined) {
+                    if (rawData.categorical.categories[0].objects[i] !== undefined) {
+                        d.color = rawData.categorical.categories[0].objects[i].colorSelector.fill.solid.color;
+                    }
+                }
+
+                const categoryColumn: DataViewCategoryColumn = {
+                    source: this.columns[this.groupIndex],
+                    values: null,
+                    identity: [d.values[0].iden]
+                };
+
+                var id = this.host.createSelectionIdBuilder()
+                    .withCategory(categoryColumn, 0)
+                    .createSelectionId();
+
+                d.iden = id;
+
+                return d;
+            });
 
             var xAxis = data.map(d => d.group);
             var yAxis = data.map(d => d.val);
@@ -188,6 +214,9 @@ module powerbi.extensibility.visual.stripPlotD9885417F9AAF5BB8D45B007E  {
                 if (options.dataViews[0].metadata.objects["Basic"]) {
                     var basic = options.dataViews[0].metadata.objects["Basic"];
                     if (basic.dotRadius !== undefined) this.dotRadius = basic["dotRadius"];
+
+
+                    if (basic.circleColorType !== undefined) this.circleColorType = basic["circleColorType"];
                     if (basic.circleColor !== undefined) this.circleColor = basic["circleColor"];
                     if (basic.circlestroke !== undefined) this.circlestroke = basic["circlestroke"];
                     if (basic.circleOpacity !== undefined) this.circleOpacity = basic["circleOpacity"];
@@ -419,6 +448,8 @@ module powerbi.extensibility.visual.stripPlotD9885417F9AAF5BB8D45B007E  {
                 .data(circleData)
                 .enter()
                 .append("g")
+                .attr("fill", d => d.color)
+                .style("stroke", d => d.color);
 
             var circle = this.circles = circleG.selectAll(".dots")
                 .data(d => d.values.filter(d => d.val !== null))
@@ -453,10 +484,13 @@ module powerbi.extensibility.visual.stripPlotD9885417F9AAF5BB8D45B007E  {
                     .attr("cx", d => dimension.yOffset + yScale(d.val))
             }
 
+            if (this.circleColorType === "single") {
+                circle.attr("fill", this.circleColor.solid.color)
+                    .style("stroke", this.circleColor.solid.color);
+            }
+
             circle
                 .attr("r", this.dotRadius)
-                .attr("fill", this.circleColor.solid.color)
-                .style("stroke", this.circleColor.solid.color)
                 .style("stroke-width", this.circlestroke + "px")
                 .style("fill-opacity", this.circleOpacity / 100);
 
@@ -480,7 +514,7 @@ module powerbi.extensibility.visual.stripPlotD9885417F9AAF5BB8D45B007E  {
             var color = this.boxFill.solid.color;
             var strokeColor = "#3a3737";
 
-            var lines, lineData,rectData, upperRect, lowerRect;
+            var lines, lineData, rectData, upperRect, lowerRect;
             var self = this;
             boxBox.each(function (d) {
                 data = d.values.map(d => d.val);
@@ -502,7 +536,7 @@ module powerbi.extensibility.visual.stripPlotD9885417F9AAF5BB8D45B007E  {
                 rectData = [
                     { value: median - q1, caption: "25th percentile", formattedVal: format(median - q1) },
                     { value: median, caption: "50th percentile", formattedVal: format(median) },
-                    { value: q3-median, caption: "75th percentile", formattedVal: format(q3-median) }
+                    { value: q3 - median, caption: "75th percentile", formattedVal: format(q3 - median) }
                 ]
 
                 if (orient == 'vertical') {
@@ -716,7 +750,7 @@ module powerbi.extensibility.visual.stripPlotD9885417F9AAF5BB8D45B007E  {
 
         private getUpperRectTooltipData(data: any): VisualTooltipDataItem[] {
             var retData = [];
-          
+
             retData.push({
                 displayName: data[1].caption.toString(),
                 value: data[1].formattedVal.toString(),
@@ -733,7 +767,7 @@ module powerbi.extensibility.visual.stripPlotD9885417F9AAF5BB8D45B007E  {
 
         private getLowerRectTooltipData(data: any): VisualTooltipDataItem[] {
             var retData = [];
-           
+
             retData.push({
                 displayName: data[0].caption.toString(),
                 value: data[0].formattedVal.toString(),
@@ -946,7 +980,11 @@ module powerbi.extensibility.visual.stripPlotD9885417F9AAF5BB8D45B007E  {
                 case 'Basic':
                     objectEnumeration.push({ objectName: objectName, properties: { orientation: this.orientation }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { circleColor: this.circleColor }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { circleColorType: this.circleColorType }, selector: null });
+
+                    if (this.circleColorType === "single") objectEnumeration.push({ objectName: objectName, properties: { circleColor: this.circleColor }, selector: null });
+
+
 
                     objectEnumeration.push({ objectName: objectName, properties: { circlestroke: this.circlestroke }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { circleJitter: this.circleJitter }, selector: null });
@@ -966,6 +1004,26 @@ module powerbi.extensibility.visual.stripPlotD9885417F9AAF5BB8D45B007E  {
                 case 'Box':
                     objectEnumeration.push({ objectName: objectName, properties: { stripBox: this.stripBox }, selector: null });
                     // if (this.stripBox) objectEnumeration.push({ objectName: objectName, properties: { boxFill: this.boxFill }, selector: null });
+                    break;
+
+                case 'colorSelector':
+                    if (this.circleColorType === "multiple") {
+                        for (let barDataPoint of this.formattedData) {
+
+                            objectEnumeration.push({
+                                objectName: objectName,
+                                displayName: barDataPoint.key,
+                                properties: {
+                                    fill: {
+                                        solid: {
+                                            color: barDataPoint.color
+                                        }
+                                    }
+                                },
+                                selector: barDataPoint.iden.getSelector()
+                            });
+                        }
+                    }
                     break;
 
             };

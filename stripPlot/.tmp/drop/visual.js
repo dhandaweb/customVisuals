@@ -8935,6 +8935,7 @@ var powerbi;
                         this.yAxisMinValue = false;
                         this.showAxis = true;
                         this.dotRadius = 6;
+                        this.circleColorType = "multiple";
                         this.circleColor = { solid: { color: "#01b8aa" } };
                         this.circleOpacity = 100;
                         this.circlestroke = 1;
@@ -8981,6 +8982,7 @@ var powerbi;
                     Visual.prototype.update = function (options) {
                         this.element.style("overflow", "hidden");
                         this.element.select('.stripPlot').remove();
+                        this.columns = options.dataViews[0].metadata.columns;
                         this.colorPalette.reset();
                         this.draw(options);
                     };
@@ -9023,12 +9025,31 @@ var powerbi;
                         rawData.table.rows.forEach(function (d, i) {
                             data.push({
                                 val: d[_this.valuesIndex],
-                                group: d[_this.groupIndex]
+                                group: d[_this.groupIndex],
+                                iden: rawData.table.identity[i]
                             });
                         });
                         var nestedData = d3.nest()
                             .key(function (d) { return d.group; })
                             .entries(data);
+                        this.formattedData = nestedData.map(function (d, i) {
+                            d.color = _this.colorPalette.getColor(d.key).value;
+                            if (rawData.categorical.categories !== undefined) {
+                                if (rawData.categorical.categories[0].objects[i] !== undefined) {
+                                    d.color = rawData.categorical.categories[0].objects[i].colorSelector.fill.solid.color;
+                                }
+                            }
+                            var categoryColumn = {
+                                source: _this.columns[_this.groupIndex],
+                                values: null,
+                                identity: [d.values[0].iden]
+                            };
+                            var id = _this.host.createSelectionIdBuilder()
+                                .withCategory(categoryColumn, 0)
+                                .createSelectionId();
+                            d.iden = id;
+                            return d;
+                        });
                         var xAxis = data.map(function (d) { return d.group; });
                         var yAxis = data.map(function (d) { return d.val; });
                         var valFormat = this.getValueFormat(this.valuesFormatter, d3.map(yAxis), this.valFormat, this.valPrecision);
@@ -9040,6 +9061,8 @@ var powerbi;
                                 var basic = options.dataViews[0].metadata.objects["Basic"];
                                 if (basic.dotRadius !== undefined)
                                     this.dotRadius = basic["dotRadius"];
+                                if (basic.circleColorType !== undefined)
+                                    this.circleColorType = basic["circleColorType"];
                                 if (basic.circleColor !== undefined)
                                     this.circleColor = basic["circleColor"];
                                 if (basic.circlestroke !== undefined)
@@ -9243,7 +9266,9 @@ var powerbi;
                         var circleG = chartSvg.selectAll(".dots")
                             .data(circleData)
                             .enter()
-                            .append("g");
+                            .append("g")
+                            .attr("fill", function (d) { return d.color; })
+                            .style("stroke", function (d) { return d.color; });
                         var circle = this.circles = circleG.selectAll(".dots")
                             .data(function (d) { return d.values.filter(function (d) { return d.val !== null; }); })
                             .enter()
@@ -9276,10 +9301,12 @@ var powerbi;
                             })
                                 .attr("cx", function (d) { return dimension.yOffset + yScale(d.val); });
                         }
+                        if (this.circleColorType === "single") {
+                            circle.attr("fill", this.circleColor.solid.color)
+                                .style("stroke", this.circleColor.solid.color);
+                        }
                         circle
                             .attr("r", this.dotRadius)
-                            .attr("fill", this.circleColor.solid.color)
-                            .style("stroke", this.circleColor.solid.color)
                             .style("stroke-width", this.circlestroke + "px")
                             .style("fill-opacity", this.circleOpacity / 100);
                         this.tooltipServiceWrapper.addTooltip(circle, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
@@ -9628,7 +9655,9 @@ var powerbi;
                             case 'Basic':
                                 objectEnumeration.push({ objectName: objectName, properties: { orientation: this.orientation }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { dotRadius: this.dotRadius }, selector: null });
-                                objectEnumeration.push({ objectName: objectName, properties: { circleColor: this.circleColor }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { circleColorType: this.circleColorType }, selector: null });
+                                if (this.circleColorType === "single")
+                                    objectEnumeration.push({ objectName: objectName, properties: { circleColor: this.circleColor }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { circlestroke: this.circlestroke }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { circleJitter: this.circleJitter }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { drawMedian: this.drawMedian }, selector: null });
@@ -9644,6 +9673,25 @@ var powerbi;
                             case 'Box':
                                 objectEnumeration.push({ objectName: objectName, properties: { stripBox: this.stripBox }, selector: null });
                                 // if (this.stripBox) objectEnumeration.push({ objectName: objectName, properties: { boxFill: this.boxFill }, selector: null });
+                                break;
+                            case 'colorSelector':
+                                if (this.circleColorType === "multiple") {
+                                    for (var _i = 0, _a = this.formattedData; _i < _a.length; _i++) {
+                                        var barDataPoint = _a[_i];
+                                        objectEnumeration.push({
+                                            objectName: objectName,
+                                            displayName: barDataPoint.key,
+                                            properties: {
+                                                fill: {
+                                                    solid: {
+                                                        color: barDataPoint.color
+                                                    }
+                                                }
+                                            },
+                                            selector: barDataPoint.iden.getSelector()
+                                        });
+                                    }
+                                }
                                 break;
                         }
                         ;

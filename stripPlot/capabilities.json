@@ -62,6 +62,22 @@
                         ]
                     }
                 },
+                "circleColorType": {
+                    "displayName": "Circle color type",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "single",
+                                "displayName": "Single"
+                            },
+                            {
+                                "value": "multiple",
+                                "displayName": "Data Colors"
+                            }
+
+                        ]
+                    }
+                },
                 "circleColor": {
                     "displayName": "Circle Color",
                     "type": {
@@ -193,8 +209,22 @@
                     }
                 }
             }
+        },
+        "colorSelector": {
+            "displayName": "Data Colors",
+            "properties": {
+                "fill": {
+                    "displayName": "Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                }
+            }
         }
-
     }
 } 
 
