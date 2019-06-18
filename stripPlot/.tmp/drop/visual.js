@@ -9035,8 +9035,10 @@ var powerbi;
                         this.formattedData = nestedData.map(function (d, i) {
                             d.color = _this.colorPalette.getColor(d.key).value;
                             if (rawData.categorical.categories !== undefined) {
-                                if (rawData.categorical.categories[0].objects[i] !== undefined) {
-                                    d.color = rawData.categorical.categories[0].objects[i].colorSelector.fill.solid.color;
+                                if (rawData.categorical.categories[0].objects !== undefined) {
+                                    if (rawData.categorical.categories[0].objects[i] !== undefined) {
+                                        d.color = rawData.categorical.categories[0].objects[i].colorSelector.fill.solid.color;
+                                    }
                                 }
                             }
                             var categoryColumn = {

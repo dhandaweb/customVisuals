@@ -9229,6 +9229,7 @@ var powerbi;
                             });
                         });
                         if (this.showAs == "perDifference"
+                            || this.showAs == "perDifferenceFromAverage"
                             || this.showAs == "perTotal"
                             || this.showAs == "perGrandTotal"
                             || this.showAs == "perAxisValue")
@@ -9558,6 +9559,8 @@ var powerbi;
                             circle.attr("r", function (d) {
                                 return d.size.value !== null ? sizeScale(Math.abs(d.size.value)) : 0;
                             });
+                            circle
+                                .style("fill-opacity", function (d) { return d.size.value < 0 ? 0 : _this.circleOpacity / 100; });
                         }
                         this.tooltipServiceWrapper.addTooltip(circle, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
                     };
@@ -9907,7 +9910,7 @@ var powerbi;
                                     d.AnalyticValue = average;
                                     d.values.map(function (d, i) {
                                         if (d.yValue.value !== null) {
-                                            d.yValue.value = d.yValue.value - average / average;
+                                            d.yValue.value = d.yValue.value - average;
                                         }
                                     });
                                     return d;
@@ -9920,7 +9923,9 @@ var powerbi;
                                     d.AnalyticValue = average;
                                     d.values.map(function (d) {
                                         if (d.yValue.value !== null) {
-                                            d.yValue.value = d.yValue.value - average / average;
+                                            console.log(d.yValue.value);
+                                            d.yValue.value = (d.yValue.value - average) / average;
+                                            console.log("After", average, d.yValue.value, d.yValue.value - average);
                                         }
                                     });
                                     return d;

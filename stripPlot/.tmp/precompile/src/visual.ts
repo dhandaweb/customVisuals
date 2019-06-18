@@ -180,9 +180,11 @@ module powerbi.extensibility.visual.stripPlotD9885417F9AAF5BB8D45B007E  {
                 d.color = this.colorPalette.getColor(d.key).value;
 
                 if (rawData.categorical.categories !== undefined) {
-                    if (rawData.categorical.categories[0].objects[i] !== undefined) {
+                    if (rawData.categorical.categories[0].objects !== undefined) {
+                        if (rawData.categorical.categories[0].objects[i] !== undefined) {
                         d.color = rawData.categorical.categories[0].objects[i].colorSelector.fill.solid.color;
                     }
+                }
                 }
 
                 const categoryColumn: DataViewCategoryColumn = {

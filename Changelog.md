@@ -1,6 +1,39 @@
 # Change Log - PowerBI Visual Tools (pbiviz)
 
 This page contains information about changes to the PowerBI Visual Tools (pbiviz).
+## pbiviz v2.5.0 
+* Added Analytics Pane support
+Note: API v2.4.0 skipped as it does not include any public changes
+
+## pbiviz v2.3.0
+* custom visuals now support a landing page
+
+## pbiviz v2.2.2
+* Update package-lock.json to fix vulnerabilities
+
+## pbiviz v2.2.1
+* Deprecated `applySelectionFilter` from `ISelectionManager`
+
+## pbiviz v2.2.0
+* Custom visuals now support context menu
+
+## pibviz v2.1.2
+* Remove jasmine-node package
+
+## pibviz v2.1.1
+* Fix vulnerabilities
+
+## pibviz v2.1.0
+* use Custom Visuals Selection id's instead of old Selection id's 
+* remove Semantic Query dependency inside the iFrame
+* Serialize DataView and remove multiple DataView types
+
+## pbiviz v1.13.1
+* Added support of parameter `supportsSynchronizingFilterState`
+* Added support of parameter `filterState` for properties that makes property a part of filtration model
+
+## pbiviz v1.13.0
+* Expanded `host.colorPalette` now expose a boolean `isHighContrast` flag and several non-data colors (including `foreground`, `foregroundSelected`, `background` and `hyperlink` all of which are required for high-contrast accessibility support)
 
 ## pbiviz v1.11.3
 * Resolve PowerShell params issue on Win8.

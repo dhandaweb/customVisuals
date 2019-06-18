@@ -1,8 +1,8 @@
 {
   "_from": "powerbi-visuals-tools",
-  "_id": "powerbi-visuals-tools@1.11.3",
+  "_id": "powerbi-visuals-tools@2.5.0",
   "_inBundle": false,
-  "_integrity": "sha1-x8OaOxN0BwoqzxqDLTNbgPI1SKs=",
+  "_integrity": "sha512-DoHa8hSJ0++/YSMRWIaXlfrXRghvVnaB38LQmnMoV6tn602nidNK/QsPf0jcrVTiQ54MYwRiQ1yXMR0APIQh/g==",
   "_location": "/powerbi-visuals-tools",
   "_phantomChildren": {},
   "_requested": {
@@ -18,10 +18,10 @@
   "_requiredBy": [
     "#USER"
   ],
-  "_resolved": "https://registry.npmjs.org/powerbi-visuals-tools/-/powerbi-visuals-tools-1.11.3.tgz",
-  "_shasum": "c7c39a3b1374070a2acf1a832d335b80f23548ab",
+  "_resolved": "https://registry.npmjs.org/powerbi-visuals-tools/-/powerbi-visuals-tools-2.5.0.tgz",
+  "_shasum": "79c0d375a387d96a5dcf81fdf57250fdbf0b8da9",
   "_spec": "powerbi-visuals-tools",
-  "_where": "C:\\",
+  "_where": "C:\\Users\\DHARMINDERDHANDA",
   "author": {
     "name": "Microsoft"
   },
@@ -35,15 +35,14 @@
   "dependencies": {
     "chalk": "1.1.3",
     "commander": "2.9.0",
-    "connect": "3.4.1",
+    "connect": "^3.6.6",
     "fs-extra": "0.28.0",
     "jsonschema": "1.1.0",
     "jszip": "3.0.0",
-    "less": "2.7.3",
-    "lodash": "4.11.1",
-    "powerbi-visuals-package-validator": "^1.0.1",
+    "less": "^3.8.1",
+    "lodash": "^4.17.11",
     "powerbi-visuals-utils-dataviewutils": "1.2.0",
-    "serve-static": "1.10.2",
+    "serve-static": "^1.13.2",
     "source-map-concat": "1.0.1",
     "typescript": "2.3.3",
     "uglify-js": "2.6.2",
@@ -53,12 +52,10 @@
   "description": "Command line tool for creating and publishing visuals for Power BI",
   "devDependencies": {
     "async": "2.0.1",
+    "eslint": "5.6.1",
     "jasmine": "2.8.0",
-    "jasmine-node": "1.14.5",
     "jasmine-spec-reporter": "2.5.0",
-    "jscs": "3.0.7",
-    "jshint": "2.9.2",
-    "ps-tree": "1.1.0",
+    "ps-tree": "1.2.0",
     "request": "2.83.0",
     "tree-kill": "^1.1.0",
     "wrench": "1.5.9"
@@ -76,13 +73,28 @@
   },
   "scripts": {
     "clean-tests": "node spec/clean-tests.js",
-    "debug-tests": "npm run clean-tests && npm run jscs && npm run jshint && npm run jasmine-inspect",
+    "debug-tests": "npm run clean-tests && npm run eslint && npm run jasmine-inspect",
+    "eslint": "eslint bin lib spec",
     "jasmine": "node spec/jasmine-runner.js",
     "jasmine-inspect": "node --inspect spec/jasmine-runner.js",
-    "jscs": "jscs bin lib spec",
-    "jshint": "jshint bin lib spec",
     "start": "node ./bin/pbiviz.js",
-    "test": "npm run clean-tests && npm run jscs && npm run jshint && npm run jasmine"
+    "test": "npm run clean-tests && npm run eslint && npm run jasmine"
   },
-  "version": "1.11.3"
+  "version": "2.5.0",
+  "warnings": [
+    {
+      "code": "ENOTSUP",
+      "required": {
+        "node": "^6.0.0"
+      },
+      "pkgid": "powerbi-visuals-tools@2.5.0"
+    },
+    {
+      "code": "ENOTSUP",
+      "required": {
+        "node": "^6.0.0"
+      },
+      "pkgid": "powerbi-visuals-tools@2.5.0"
+    }
+  ]
 }

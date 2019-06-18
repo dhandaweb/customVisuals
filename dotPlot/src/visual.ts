@@ -303,7 +303,7 @@ module powerbi.extensibility.visual {
             });
 
             if (this.showAs == "perDifference"
-                //|| this.showAs == "perDifferenceFromAverage"
+                || this.showAs == "perDifferenceFromAverage"
                 || this.showAs == "perTotal"
                 || this.showAs == "perGrandTotal"
                 || this.showAs == "perAxisValue"
@@ -670,6 +670,10 @@ module powerbi.extensibility.visual {
                 circle.attr("r", d => {
                     return d.size.value !== null ? sizeScale(Math.abs(d.size.value)) : 0
                 });
+
+                circle
+                .style("fill-opacity", d => d.size.value < 0 ? 0 : this.circleOpacity / 100);
+
 
             }
 
@@ -1134,7 +1138,7 @@ module powerbi.extensibility.visual {
                         d.AnalyticValue = average;
                         d.values.map(function (d, i) {
                             if (d.yValue.value !== null) {
-                                d.yValue.value = d.yValue.value - average / average;
+                                d.yValue.value = d.yValue.value - average ;
                             }
                         });
                         return d;
@@ -1142,13 +1146,17 @@ module powerbi.extensibility.visual {
                     break;
 
                 case "perDifferenceFromAverage":
+                  
                     var average;
                     retData = cdata.map(function (d) {
                         average = d3.sum(d.values.map(function (d) { return d.yValue.value; })) / d.values.length;
                         d.AnalyticValue = average;
+                       
                         d.values.map(function (d) {
                             if (d.yValue.value !== null) {
-                                d.yValue.value = d.yValue.value - average / average;
+                                console.log(d.yValue.value);
+                                d.yValue.value = (d.yValue.value - average) / average;
+                                console.log("After",average, d.yValue.value,d.yValue.value - average);
                             }
                         });
                         return d;

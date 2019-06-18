@@ -399,7 +399,7 @@
             "displayName": "Left axis",
             "properties": {
                 "leftAxisMinValue": {
-                    "displayName": "Axis start from nin value",
+                    "displayName": "Axis start from min value",
                     "type": {
                         "bool": true
                     }
@@ -427,6 +427,10 @@
                             {
                                 "value": "trillion",
                                 "displayName": "Trillion"
+                            },
+                            {
+                                "value": "percentage",
+                                "displayName": "Percentage"
                             },
                             {
                                 "value": "none",
@@ -520,6 +524,10 @@
                             {
                                 "value": "trillion",
                                 "displayName": "Trillion"
+                            },
+                            {
+                                "value": "percentage",
+                                "displayName": "Percentage"
                             },
                             {
                                 "value": "none",

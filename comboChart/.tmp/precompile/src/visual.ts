@@ -260,7 +260,19 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                 if (this.hasBar) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.bar);
-                    barData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "bar", this.showBarAs);
+
+                    var format, precision;
+
+                    if(this.barAxis === "left"){
+                        format = this.leftValFormat;
+                        precision = this.leftValPrecision;
+                    } 
+                    else{
+                        format = this.rightValFormat;
+                        precision = this.rightValPrecision;
+                    }
+
+                    barData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "bar", this.showBarAs, format, precision );
 
                     if (this.barGroupType === "stacked") {
 
@@ -295,7 +307,19 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                 if (this.hasArea) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.area);
-                    areaData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "area", this.showAreaAs);
+
+                    var format, precision;
+
+                    if(this.areaAxis === "left"){
+                        format = this.leftValFormat;
+                        precision = this.leftValPrecision;
+                    } 
+                    else{
+                        format = this.rightValFormat;
+                        precision = this.rightValPrecision;
+                    }
+
+                    areaData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "area", this.showAreaAs,format, precision);
 
 
                     if (this.areaGroupType === "stacked") {
@@ -327,7 +351,16 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                 if (this.hasLine) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.line);
-                    lineData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "line", this.showLineAs);
+                    if(this.lineAxis === "left"){
+                        format = this.leftValFormat;
+                        precision = this.leftValPrecision;
+                    } 
+                    else{
+                        format = this.rightValFormat;
+                        precision = this.rightValPrecision;
+                    }
+
+                    lineData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "line", this.showLineAs, format, precision);
                     lineData.map(d => {
                         d.shape = "line";
                         d.values.map(d => {
@@ -339,7 +372,17 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
                 if (this.hasDot) {
                     var valuesG = rawData.categorical.values.filter(d => d.source.roles.dot);
-                    dotData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "dot", this.showDotAs);
+                    
+                    if(this.dotAxis === "left"){
+                        format = this.leftValFormat;
+                        precision = this.leftValPrecision;
+                    } 
+                    else{
+                        format = this.rightValFormat;
+                        precision = this.rightValPrecision;
+                    }
+
+                    dotData = this.getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, "dot", this.showDotAs,format, precision);
                     dotData.map(d => {
                         d.shape = "dot";
                         d.values.map(d => {
@@ -357,8 +400,9 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
 
             if (this.hasColor) legendD.unshift({ key: legendName, color: "transparent" });
 
-            leftAxisFormat = this.getValueFormat(this.barFormat, d3.max(leftAxisData));
-            rightAxisFormat = this.getValueFormat(this.lineFormat, d3.max(rightAxisData));
+
+            leftAxisFormat = this.getValueFormat(this.barFormat, d3.max(leftAxisData),this.leftValFormat, this.leftValPrecision);
+            rightAxisFormat = this.getValueFormat(this.lineFormat, d3.max(rightAxisData),this.rightValFormat, this.rightValPrecision);
 
             var legend = this.setLegendWidth(this.element, legendD);
 
@@ -374,7 +418,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
             }
         }
 
-        private getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, type, showAs) {
+        private getMeasureColorData(grouped, valuesG, metadata, rawData, xAxis, xMetadata, type, showAs, format, precision) {
 
             var formattedData = [];
 
@@ -382,24 +426,24 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                 var valuesMetadata = metadata.filter(d => d.roles[type])[0].displayName;
                 var filteredValues = valuesG.filter(d => d.source.displayName == valuesMetadata);
 
-                formattedData = this.getColorData(filteredValues, grouped, rawData, xMetadata, xAxis);
+                formattedData = this.getColorData(filteredValues, grouped, rawData, xMetadata, xAxis, format, precision);
 
             }
-            else formattedData = this.getMeasureData(valuesG, grouped, rawData, xMetadata, xAxis);
+            else formattedData = this.getMeasureData(valuesG, grouped, rawData, xMetadata, xAxis,format, precision);
 
             var retData = this.setUpAnalyticData(formattedData, showAs)
 
             return retData;
         }
 
-        private getColorData(filteredValues, grouped, rawData, xMetadata, xAxis) {
+        private getColorData(filteredValues, grouped, rawData, xMetadata, xAxis,format, precision) {
 
             if (this.colorFormat !== undefined) {
                 var colorFormat = powerbi.extensibility.utils.formatting.valueFormatter.create({ format: this.colorFormat });
             }
 
             return filteredValues.map((d, i) => {
-                var valFormat = this.getValueFormat(d.source.format, d3.max(d.values.map(d => d)));
+                var valFormat = this.getValueFormat(d.source.format, d3.max(d.values.map(d => d)),format, precision);
 
                 let color: any = this.colorPalette.getColor(d.source.groupName).value;
 
@@ -425,10 +469,10 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
             })
         }
 
-        private getMeasureData(filteredValues, grouped, rawData, xMetadata, xAxis) {
+        private getMeasureData(filteredValues, grouped, rawData, xMetadata, xAxis,format, precision) {
             return filteredValues.map((d, i) => {
 
-                var valFormat = this.getValueFormat(d.source.format, d3.max(d.values.map(d => d)));
+                var valFormat = this.getValueFormat(d.source.format, d3.max(d.values.map(d => d)), format, precision);
 
                 var color = this.colorPalette.colors[this.colorIndex].value;
 
@@ -1138,12 +1182,13 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                         .attr("dx", this.dotRadius)
                         .attr("dy", this.dotRadius / 2)
                         .attr("y", d => scale(d.yValue.value))
-
-                    this.tooltipServiceWrapper.addTooltip(circle,
-                        (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
-                        (tooltipEvent: TooltipEventArgs<any>) => null
-                    );
+                   
                 }
+
+                this.tooltipServiceWrapper.addTooltip(circle,
+                    (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
+                    (tooltipEvent: TooltipEventArgs<any>) => null
+                );
 
                 var stat = {
                     showMean: this.showDotMean,
@@ -1240,10 +1285,14 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                 "area": "\uE876",
                 "dot": "\uE876"
             }
-            legengG.append("circle")
-                .attr("r", fontSize / 2)
-                .attr("cy", fontSize / 5)
-                .attr("fill", d => d.color);
+            legengG.each(function (d) {
+                d3.select(this)
+                    .append("circle")
+                    .attr("r", fontSize / 2)
+                    .attr("cy", fontSize / 5)
+                    .attr("fill", d => d.color);
+            })
+                
 
             //legengG.append("text")
             //    .text(d => shapeMap[d.shape])
@@ -1288,7 +1337,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                     value: data.colorValue.caption,
                 });
             }
-
+console.log(retData);
             return retData;
         }
 
@@ -1446,12 +1495,15 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
             chartSvg.selectAll("text").style("font-size", this.fontSize + "px");
         }
 
-        private getValueFormat(val, max) {
-
+        private getValueFormat(val, max, format, precision) {
+           
             let valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
             let iValueFormatter = valueFormatter.create({});
             let valF = null;
-            switch (this.leftValFormat) {
+
+            if(format === "percentage") return { format: d3.format(",." + precision + "%") }
+
+            switch (format) {
                 case 'thousand':
                     valF = 1001;
                     break;
@@ -1468,10 +1520,10 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                     valF = max;
                     break;
                 case 'none':
-                    return { format: d3.format(",." + this.leftValPrecision + "f") }
+                    return { format: d3.format(",." + precision + "f") }
             }
-
-            iValueFormatter = valueFormatter.create({ format: val, value: valF, precision: this.leftValPrecision });
+           
+            iValueFormatter = valueFormatter.create({ format: val, value: valF, precision: precision });
 
             return iValueFormatter;
         }
@@ -1579,7 +1631,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                         d.AnalyticValue = average;
                         d.values.map(function (d, i) {
                             if (d.yValue.value !== null) {
-                                d.yValue.value = d.yValue.value - average / average;
+                                d.yValue.value = (d.yValue.value - average);
                             }
                         });
                         return d;
@@ -1593,7 +1645,7 @@ module powerbi.extensibility.visual.comboChartD9885417F9AAF5BB8D45B007E  {
                         d.AnalyticValue = average;
                         d.values.map(function (d) {
                             if (d.yValue.value !== null) {
-                                d.yValue.value = d.yValue.value - average / average;
+                                d.yValue.value = (d.yValue.value - average) / average;
                             }
                         });
                         return d;

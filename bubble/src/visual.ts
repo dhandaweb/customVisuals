@@ -167,7 +167,7 @@ module powerbi.extensibility.visual {
                     xValue: d.xValue,
                     yValue: d.yValue
                 }
-            }).filter(d=>d.value>0);
+            }).filter(d=> d.value > 0 && d.value !== null);
 
             var bubbleData = bubble.nodes({ children: data })
 
@@ -427,7 +427,6 @@ module powerbi.extensibility.visual {
             xFilter = (xT.Rotate === true) ? (chartWidth / xDomain.length < 12 ? (Math.ceil(xDomain.length / chartWidth * 20)) : 1) : 1;
             xTickval = xDomain.filter((d, i) => (i % xFilter === 0));
 
-console.log(xOffset,yOffset);
 
             return {
                 width: vp.width,
