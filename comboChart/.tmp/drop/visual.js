@@ -10090,24 +10090,37 @@ var powerbi;
                                 return rt;
                             });
                         }
-                        var shapeMap = {
-                            "line": "\uE876",
-                            "bar": "\uE876",
-                            "area": "\uE876",
-                            "dot": "\uE876"
-                        };
                         legengG.each(function (d) {
-                            d3.select(this)
-                                .append("circle")
-                                .attr("r", fontSize / 2)
-                                .attr("cy", fontSize / 5)
-                                .attr("fill", function (d) { return d.color; });
+                            if (d.shape === "bar") {
+                                d3.select(this)
+                                    .append("rect")
+                                    .attr("x", -5)
+                                    .attr("width", 8)
+                                    .attr("height", 8)
+                                    .attr("fill", function (d) { return d.color; });
+                            }
+                            if (d.shape === "line") {
+                                d3.select(this)
+                                    .append("rect")
+                                    .attr("x", -5)
+                                    .attr("width", 8)
+                                    .attr("height", 2)
+                                    .attr("fill", function (d) { return d.color; });
+                            }
+                            if (d.shape === "area") {
+                                d3.select(this)
+                                    .append("path")
+                                    .attr("d", d3.svg.symbol().type("triangle-up").size(20))
+                                    .attr("fill", function (d) { return d.color; });
+                            }
+                            if (d.shape === "dot") {
+                                d3.select(this)
+                                    .append("circle")
+                                    .attr("r", fontSize / 2)
+                                    .attr("cy", fontSize / 5)
+                                    .attr("fill", function (d) { return d.color; });
+                            }
                         });
-                        //legengG.append("text")
-                        //    .text(d => shapeMap[d.shape])
-                        //    .attr("style", 'font-size:10px;font-family: "Material Icons""')
-                        //    .attr("y", fontSize / 5)
-                        //    .attr("fill", d => d.color);
                         legengG
                             .append("text")
                             .attr("x", function (d) { return d.color === "transparent" ? -5 : fontSize; })
@@ -10143,7 +10156,6 @@ var powerbi;
                                 value: data.colorValue.caption,
                             });
                         }
-                        console.log(retData);
                         return retData;
                     };
                     Visual.prototype.getTextWidth = function (container, text, fontsize) {
@@ -10162,7 +10174,8 @@ var powerbi;
                             return {
                                 width: _this.getTextWidth(svg, d.key, _this.legendFontSize) + 20,
                                 color: d.color,
-                                text: d.key
+                                text: d.key,
+                                shape: d.shape
                             };
                         });
                         svg.remove();
