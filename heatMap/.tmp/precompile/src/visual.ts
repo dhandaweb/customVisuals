@@ -127,7 +127,7 @@ module powerbi.extensibility.visual.heatMapCCFC224D9885417F9AAF5BB8D45B007E  {
                 chartContainer.append("span").html("Value is required to draw visual");
                 return;
             }
-
+          
 
             options.dataViews[0].table.rows.map((d: any, i) => {
                 d.identity = options.dataViews[0].table.identity[i];

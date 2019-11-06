@@ -285,6 +285,20 @@
                 }
             }
         }
+    },
+    "sorting": {
+        "implicit": {
+            "clauses": [
+                {
+                    "role": "xAxis",
+                    "direction": 1
+                },
+                {
+                    "role": "yAxis",
+                    "direction": 1
+                }
+            ]
+        }
     }
 } 
 

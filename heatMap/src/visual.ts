@@ -127,7 +127,7 @@ module powerbi.extensibility.visual {
                 chartContainer.append("span").html("Value is required to draw visual");
                 return;
             }
-
+          
 
             options.dataViews[0].table.rows.map((d: any, i) => {
                 d.identity = options.dataViews[0].table.identity[i];
