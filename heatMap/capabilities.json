@@ -110,8 +110,40 @@
                                 "displayName": "Yellow Orange Brown"
                             },
                             {
-                                "value": "YlOrRd",
-                                "displayName": "Yellow Orange Red"
+                                "value": "Orange",
+                                "displayName": "Orange"
+                            },
+                            {
+                                "value": "Teal",
+                                "displayName": "Teal"
+                            },
+                            {
+                                "value": "Cerulean",
+                                "displayName": "Cerulean"
+                            },
+                            {
+                                "value": "OrangeGrayBlue",
+                                "displayName": "Orange Gray Blue"
+                            },
+                            {
+                                "value": "BlueGrayOrange",
+                                "displayName": "Blue Gray Orange"
+                            },
+                            {
+                                "value": "TealYellow",
+                                "displayName": "Teal Yellow"
+                            },
+                            {
+                                "value": "YellowTeal",
+                                "displayName": "Yellow Teal"
+                            },
+                            {
+                                "value": "BlueOrange",
+                                "displayName": "Blue Orange"
+                            },
+                            {
+                                "value": "OrangeBlue",
+                                "displayName": "Orange Blue"
                             }
                         ]
                     }

@@ -79,7 +79,17 @@ module powerbi.extensibility.visual {
             YlOrRd: ["#ffffcc", "#ffeda0", "#fed976", "#feb24c", "#fd8d3c", "#fc4e2a", "#e31a1c", "#bd0026", "#800026", "#730022", "#61011D"],
             YlOrBr: ["#ffffe5", "#fff7bc", "#fee391", "#fec44f", "#fe9929", "#ec7014", "#cc4c02", "#993404", "#662506", "#592005", "#4A1B04"],
             RedBlue: ["#0367A8", "#008FC4", "#1FADC8", "#61C7C6", "#92DCC7", "#B9E8C9", "#FCB99C", "#F79277", "#FD684E", "#EA4029", "#CD1720", "#A11118"],
-            OrangeGreen: ["#54AF5F", "#74CB6D", "#92DE75", "#B6EC84", "#F8CFA1", "#FDAF71", "#FD9049", "#F36620", "#D94912", "#AA3911"]
+            OrangeGreen: ["#54AF5F", "#74CB6D", "#92DE75", "#B6EC84", "#F8CFA1", "#FDAF71", "#FD9049", "#F36620", "#D94912", "#AA3911"],
+            Blue:["#128EFF","#349EFF","#4BA9FF","#65B5FF","#70BAFF","#86C5FF","#9BCFFF","#A9D6FF","#BADEFF","#CBE6FF","#DBEEFF"],
+            Orange:["#E66C37","#E77543","#E97E50","#EB875C","#EC9169","#EE9975","#EFA17F","#F0A889","#F2B195","#F3B9A0","#F5C3AE"],
+            Teal:["#499195","#589A9F","#67A4AB","#76ADB5","#82B5BE","#93BFC9","#A0C8D3","#AED0DD","#BCDAE7","#CAE2F1","#DBEDFD"],
+            Cerulean:["#31689B","#4175A6","#5182B1","#618FBC","#719CC7","#81A9D2","#91B6DD","#A1C3E8","#B1D0F3","#C2DDFF","#D2DCFF"],
+            OrangeGrayBlue:["#E66D39","#E17D51","#DD8C69","#D99D82","#D5AD9C","#CFC4BF","#BEC7CF","#9CBBD9","#76AFE4","#50A2EE","#2493F9"],
+            BlueGrayOrange:["#2493F9","#50A2EE","#76AFE4","#9CBBD9","#BEC7CF","#CFC4BF","#D5AD9C","#D99D82","#DD8C69","#E17D51","#E66D39"],
+            TealYellow:["#4B9296","#669F9E","#80ACA5","#99B8AC","#B2C5B4","#CFD3BC","#DCD4A2","#E0D184","#E5CE63","#E9CC49","#F0C716"],
+            YellowTeal:["#F0C716","#E9CC49","#E5CE63","#E0D184","#DCD4A2","#CFD3BC","#B2C5B4","#99B8AC","#80ACA5","#669F9E","#4B9296"],
+            BlueOrange:["#699DCF","#80AAD3","#97B8D7","#B0C6DC","#CAD5E0","#FFE7D0","#EAD2BB","#EFBE8F","#F4AA61","#F99431","#FF7E01"],
+            OrangeBlue:["#FF7E01","#F99431","#F4AA61","#EFBE8F","#EAD2BB","#FFE7D0","#CAD5E0","#B0C6DC","#97B8D7","#80AAD3","#699DCF"],
         }
 
         private xAxisLabel: any = "all";
