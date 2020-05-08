@@ -100,6 +100,9 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
         private periodIndex: number;
         private dateFormat: any;
 
+        private sortBy: any = "default";
+        private sortHeader: any = "default";
+
         private iValueFormatter: any;
         private element: d3.Selection<SVGElement>;
         private container: d3.Selection<SVGElement>;
@@ -121,6 +124,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
         private RowBanding: any;
         private HighlightNegative: any;
         private NegativeTextColor: any;
+
 
 
         constructor(options: VisualConstructorOptions) {
@@ -201,6 +205,14 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                     if (thresholdObj["belowThreshold4Color"] !== undefined) this.belowThreshold4Color = thresholdObj["belowThreshold4Color"];
 
                 }
+
+                  if (options.dataViews[0].metadata.objects["Sort"]) {
+                    var sortObj = options.dataViews[0].metadata.objects["Sort"];
+
+                    if (sortObj["sortHeader"] !== undefined) this.sortHeader = sortObj["sortHeader"];
+                    if (sortObj["sortBy"] !== undefined) this.sortBy = sortObj["sortBy"];
+                  
+                }
             }
 
             this.element.style("overflow", "auto");
@@ -212,9 +224,9 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
             this.hasActual = false;
             this.hasPeriod = false;
             this.hasGroup = false;
-            
+
             this.columns.map((d, i) => {
-               
+
                 if (d.roles["target"]) {
                     this.hasTarget = true;
                     this.targetIndex = i;
@@ -228,7 +240,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                     this.groupIndex = i;
                 }
                 if (d.roles["period"]) {
-                   
+
                     this.hasPeriod = true;
                     this.dateFormat = d.format;
                     this.periodIndex = i;
@@ -243,7 +255,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                 .attr("style", "width:100%;")
                 .append("table")
                 .attr("style", "width:100%;text-align:left;border-spacing:0");
-          
+
             if (this.hasActual === false || (this.hasPeriod === false && this.hasGroup === false)) {
                 table
                     .append("html")
@@ -316,7 +328,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
             });
 
 
-
+        data = this.sortData(data);
 
 
             if (nestedData.length === 0) {
@@ -373,6 +385,49 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
             this.updateRowStyle(tbody, thead);
             this.setFontSize(table);
 
+        }
+
+        public sortData(data) {
+
+            if(this.sortHeader !== "default" && this.sortBy !== "default") {
+
+                if(this.sortHeader === "key"){
+    
+                        if(this.sortBy === "ascending"){
+                                return data.sort((a, b)=>{
+                                    if(a.key < b.key) { return -1; }
+                                    if(a.key > b.key) { return 1; }
+                                    return 0;
+                                })
+                        }
+                        else if(this.sortBy === "descending"){
+                                return data.sort((a, b)=>{
+                                    if(a.key < b.key) { return 1; }
+                                    if(a.key > b.key) { return -1; }
+                                    return 0;
+                                })
+                        }
+                        else{
+                            return data;
+                        }
+
+                }
+                if(this.sortBy === "ascending"){
+                    return data.sort((a,b) => {
+                                return a[this.sortHeader] - b[this.sortHeader];
+                                });
+                }
+                else if(this.sortBy === "descending"){
+                    return data.sort((a,b) => {
+                                return b[this.sortHeader] - a[this.sortHeader];
+                                });
+                }
+            }
+            else {
+                return data;
+            }
+          
+           
         }
 
         public setFilterOpacity(rows) {
@@ -1099,7 +1154,13 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                     }
 
                     break;
+                    case 'Sort':
 
+                        objectEnumeration.push({ objectName: objectName, properties: { 'sortHeader': this.sortHeader }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { 'sortBy': this.sortBy }, selector: null });
+                       
+
+                    break;
 
             };
 

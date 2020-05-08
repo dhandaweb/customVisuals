@@ -100,6 +100,9 @@ module powerbi.extensibility.visual {
         private periodIndex: number;
         private dateFormat: any;
 
+        private sortBy: any = "default";
+        private sortHeader: any = "default";
+
         private iValueFormatter: any;
         private element: d3.Selection<SVGElement>;
         private container: d3.Selection<SVGElement>;
@@ -201,6 +204,14 @@ module powerbi.extensibility.visual {
                     if (thresholdObj["belowThreshold3Color"] !== undefined) this.belowThreshold3Color = thresholdObj["belowThreshold3Color"];
                     if (thresholdObj["belowThreshold4Color"] !== undefined) this.belowThreshold4Color = thresholdObj["belowThreshold4Color"];
 
+                }
+
+                  if (options.dataViews[0].metadata.objects["Sort"]) {
+                    var sortObj = options.dataViews[0].metadata.objects["Sort"];
+
+                    if (sortObj["sortHeader"] !== undefined) this.sortHeader = sortObj["sortHeader"];
+                    if (sortObj["sortBy"] !== undefined) this.sortBy = sortObj["sortBy"];
+                  
                 }
             }
 
@@ -317,7 +328,7 @@ module powerbi.extensibility.visual {
             });
 
 
-
+        data = this.sortData(data);
 
 
             if (nestedData.length === 0) {
@@ -374,6 +385,49 @@ module powerbi.extensibility.visual {
             this.updateRowStyle(tbody, thead);
             this.setFontSize(table);
 
+        }
+
+        public sortData(data) {
+
+            if(this.sortHeader !== "default" && this.sortBy !== "default") {
+
+                if(this.sortHeader === "key"){
+    
+                        if(this.sortBy === "ascending"){
+                                return data.sort((a, b)=>{
+                                    if(a.key < b.key) { return -1; }
+                                    if(a.key > b.key) { return 1; }
+                                    return 0;
+                                })
+                        }
+                        else if(this.sortBy === "descending"){
+                                return data.sort((a, b)=>{
+                                    if(a.key < b.key) { return 1; }
+                                    if(a.key > b.key) { return -1; }
+                                    return 0;
+                                })
+                        }
+                        else{
+                            return data;
+                        }
+
+                }
+                if(this.sortBy === "ascending"){
+                    return data.sort((a,b) => {
+                                return a[this.sortHeader] - b[this.sortHeader];
+                                });
+                }
+                else if(this.sortBy === "descending"){
+                    return data.sort((a,b) => {
+                                return b[this.sortHeader] - a[this.sortHeader];
+                                });
+                }
+            }
+            else {
+                return data;
+            }
+          
+           
         }
 
         public setFilterOpacity(rows) {
@@ -1100,7 +1154,13 @@ module powerbi.extensibility.visual {
                     }
 
                     break;
+                    case 'Sort':
 
+                        objectEnumeration.push({ objectName: objectName, properties: { 'sortHeader': this.sortHeader }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { 'sortBy': this.sortBy }, selector: null });
+                       
+
+                    break;
 
             };
 

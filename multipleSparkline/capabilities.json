@@ -258,6 +258,73 @@
                     }
                 }
             }
+        },
+        "Sort": {
+            "displayName": "Sort",
+            "properties": {
+                "sortHeader": {
+                    "displayName": "Sort Header",
+                    "type": {
+                        "enumeration": [
+                             {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "key",
+                                "displayName": "Metric"
+                            },
+                            {
+                                "value": "actual",
+                                "displayName": "Current"
+                            },
+                              {
+                                "value": "secondLastActual",
+                                "displayName": "Prior"
+                            },
+                              {
+                                "value": "change",
+                                "displayName": "Change"
+                            },
+                              {
+                                "value": "perChange",
+                                "displayName": "Percentage change"
+                            },
+                              {
+                                "value": "target",
+                                "displayName": "Target"
+                            },
+                             {
+                                "value": "variance",
+                                "displayName": "Variance"
+                            },
+                             {
+                                "value": "variancePer",
+                                "displayName": "Variance Percentage"
+                            }
+                        ]
+                    }
+                },
+                "sortBy": {
+                    "displayName": "Sort by",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "default",
+                                "displayName": "Default"
+                            },
+                            {
+                                "value": "ascending",
+                                "displayName": "Ascending"
+                            },
+                            {
+                                "value": "descending",
+                                "displayName": "Descending"
+                            }
+                        ]
+                    }
+                }
+            }
         }
     }
 } 
