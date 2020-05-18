@@ -75,12 +75,13 @@
         "Actual": {
             "displayName": "Actual",
             "properties": {
-                "showActual": {
-                    "displayName": "Show actual",
-                    "type": { "bool": true }
+              
+                "currentHeader": {
+                    "displayName": "Current header",
+                    "type": { "text": true }
                 },
-                "actualHeader": {
-                    "displayName": "Actual header",
+                "priorHeader": {
+                    "displayName": "Prior header",
                     "type": { "text": true }
                 },
                 "showChange": {
@@ -107,15 +108,11 @@
                     "displayName": "Total change",
                     "type": { "text": true }
                 },
-                "fontSize": {
-                    "displayName": "Text Size",
-                    "displayNameKey": "Visual_TextSize",
-                    "type": {
-                        "formatting": {
-                            "fontSize": true
-                        }
-                    }
+                "filterNullPeriod": {
+                    "displayName": "Filter nulls in Actual",
+                    "type": { "bool": true }
                 }
+               
             }
         },
         "Target": {
@@ -162,6 +159,34 @@
                                 "displayName": "Green Red"
                             }
                         ]
+                    }
+                }
+            }
+        },
+        "Metric": {
+            "displayName": "Metric",
+            "properties": {
+                "metricHeader": {
+                    "displayName": "Metric Header",
+                    "type": { "text": true }
+                }
+            }
+        },
+        "Sparkline": {
+            "displayName": "Sparkline",
+            "properties": {
+                "sparklineHeader": {
+                    "displayName": "Sparkline Header",
+                    "type": { "text": true }
+                },
+                "sparklineColor": {
+                    "displayName": "Sparkline color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
                     }
                 }
             }
@@ -220,8 +245,16 @@
         "Bullet": {
             "displayName": "Bullet",
             "properties": {
+                "bulletHeader": {
+                    "displayName": "Bullet Header",
+                    "type": { "text": true }
+                },
                 "bulletScaleMinZero": {
                     "displayName": "Bullet scale min zero",
+                    "type": { "bool": true }
+                },
+                "bulletSynchronize": {
+                    "displayName": "Synchronize Bullet",
                     "type": { "bool": true }
                 },
                 "conditionalBullet": {
@@ -322,6 +355,77 @@
                                 "displayName": "Descending"
                             }
                         ]
+                    }
+                }
+            }
+        },
+        "Style": {
+            "displayName": "Style & Formatting",
+            "properties": {
+                "fontSize": {
+                    "displayName": "Font Size",
+                    "displayNameKey": "Visual_TextSize",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                },
+                "fontColor": {
+                    "displayName": "Font color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "fontStyle": {
+                    "displayName": "Font style",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "Segoe UI",
+                                "displayName": "Segoe UI"
+                            },
+                            {
+                                "value": "helvetica",
+                                "displayName": "Helvetica"
+                            },
+                            {
+                                "value": "arial",
+                                "displayName": "Arial"
+                            }, 
+                            {
+                                "value": "sans-serif",
+                                "displayName": "Sans serif"
+                            }
+                        ]
+                    }
+                },
+                "rowBanding": {
+                    "displayName": "Row banding",
+                    "type": { "bool": true }
+                },
+                "rowBandingColor": {
+                    "displayName": "Row banding color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "headerLineColor": {
+                    "displayName": "Header Line Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
                     }
                 }
             }

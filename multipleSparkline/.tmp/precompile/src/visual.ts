@@ -40,22 +40,24 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
         private additionalValues: any = [];
 
         private columns: any;
-        private showActual: any = false;
-        private actualHeader: any = "Actual";
+        private currentHeader: any = "Current";
+        private priorHeader: any = "Prior";
         private showChange: any = true;
         private changeHeader: any = "Change";
         private showPerChange: any = true;
         private percentageChangeHeader: any = "% Change";
         private showTotalChange: any = false;
         private totalChangeHeader: any = "Tot Change";
-
+        
         private showTarget: any = true;
         private targetHeader: any = "Target";
         private showVariance: any = true;
         private varianceHeader: any = "Variance";
         private showVariancePer: any = true;
         private variancePerHeader: any = "% Variance";
-        private bulletScaleMinZero: any = true;
+      
+
+        private metricHeader: any = "Metric";
 
         private trendIndicator: any = true;
         private flipTrendDirection: any = false;
@@ -69,8 +71,12 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
         private intensityScale: any = "1,4 6,8";
         private intensityColor: any = { solid: { color: "#4682b4" } };
 
+        private bulletScaleMinZero: any = true;
+        private bulletHeader:any = "Bullet";
         private conditionalBullet: any = true;
         private conditionalBulletColorScale: any = "5,10,100";
+        private bulletSynchronize: any = true;
+        private singleBulletColor: any = { solid: { color: "#4682b4" } };
 
         private conditionalBulletColorOptions: any = {
             "RedGreen": ["#ff4701", "#00ad00"],
@@ -82,7 +88,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
         private conditionalVarianceColor: any = "GreenRed";
 
         private conditionalBulletColor: any = "GreenRed";
-        private singleBulletColor: any = { solid: { color: "#4682b4" } };
+       
 
         private aboveThresholdColor: any = { solid: { color: "#00ad00" } };
         private belowThreshold1Color: any = { solid: { color: "#fff701" } };
@@ -120,12 +126,17 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
 
         private fontSize: any = 12;
         private HeaderTextColor: any;
-        private BoldHeaderText: any;
-        private RowBanding: any;
-        private HighlightNegative: any;
-        private NegativeTextColor: any;
+      
+        private headerLineColor: any = { solid: { color: "#ee9207" } }; 
+        private rowBanding: any = true;
+        private fontColor: any = { solid: { color: "#777777" } }; 
+        private rowBandingColor: any = { solid: { color: "#ececec" } }; 
+        private fontStyle: any = "Segoe UI";
 
+        private sparklineHeader:any = "Sparkline";
+        private sparklineColor: any = { solid: { color: "#4682b4" } }; 
 
+        private filterNullPeriod:any = false;
 
         constructor(options: VisualConstructorOptions) {
 
@@ -145,16 +156,18 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
             if (options.dataViews[0].metadata.objects) {
                 if (options.dataViews[0].metadata.objects["Actual"]) {
                     var actObj = options.dataViews[0].metadata.objects["Actual"];
-                    //if (actObj.showActual !== undefined) this.showActual = actObj["showActual"];
-                    if (actObj["actualHeader"] !== undefined) this.actualHeader = actObj["actualHeader"];
+                 
+                    if (actObj["currentHeader"] !== undefined) this.currentHeader = actObj["currentHeader"];
+                    if (actObj["priorHeader"] !== undefined) this.priorHeader = actObj["priorHeader"];
                     if (actObj["showChange"] !== undefined) this.showChange = actObj["showChange"];
                     if (actObj["changeHeader"] !== undefined) this.changeHeader = actObj["changeHeader"];
                     if (actObj["showPerChange"] !== undefined) this.showPerChange = actObj["showPerChange"];
                     if (actObj["percentageChangeHeader"] !== undefined) this.percentageChangeHeader = actObj["percentageChangeHeader"];
                     // if (actObj["showTotalChange"] !== undefined) this.showTotalChange = actObj["showTotalChange"];
                     if (actObj["totalChangeHeader"] !== undefined) this.totalChangeHeader = actObj["totalChangeHeader"];
-                    if (actObj.fontSize !== undefined) this.fontSize = actObj["fontSize"];
-
+                    if (actObj["filterNullPeriod"] !== undefined) this.filterNullPeriod = actObj["filterNullPeriod"];
+                   
+                    
                 }
                 if (options.dataViews[0].metadata.objects["Target"]) {
                     var targetObj = options.dataViews[0].metadata.objects["Target"];
@@ -170,6 +183,18 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                     if (targetObj["conditionalVarianceColor"] !== undefined) this.conditionalVarianceColor = targetObj["conditionalVarianceColor"];
 
                 }
+                if (options.dataViews[0].metadata.objects["Metric"]) {
+                    var metricObj = options.dataViews[0].metadata.objects["Metric"];
+
+                    if (metricObj["metricHeader"] !== undefined) this.metricHeader = metricObj["metricHeader"];
+                
+                }
+                if (options.dataViews[0].metadata.objects["Sparkline"]) {
+                    var sparklineObj = options.dataViews[0].metadata.objects["Sparkline"];
+                    if (sparklineObj["sparklineHeader"] !== undefined) this.sparklineHeader = sparklineObj["sparklineHeader"];
+                    if (sparklineObj["sparklineColor"] !== undefined) this.sparklineColor = sparklineObj["sparklineColor"];
+                }
+
                 if (options.dataViews[0].metadata.objects["Trend"]) {
                     var trendObj = options.dataViews[0].metadata.objects["Trend"];
 
@@ -180,12 +205,15 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                 if (options.dataViews[0].metadata.objects["Bullet"]) {
                     var bulletObj = options.dataViews[0].metadata.objects["Bullet"];
 
+                    if (bulletObj["bulletHeader"] !== undefined) this.bulletHeader = bulletObj["bulletHeader"];
                     if (bulletObj["conditionalBullet"] !== undefined) this.conditionalBullet = bulletObj["conditionalBullet"];
                     if (bulletObj["conditionalBulletColor"] !== undefined) this.conditionalBulletColor = bulletObj["conditionalBulletColor"];
                     if (bulletObj["singleBulletColor"] !== undefined) this.singleBulletColor = bulletObj["singleBulletColor"];
                     if (bulletObj["conditionalBulletColorScale"] !== undefined) this.conditionalBulletColorScale = bulletObj["conditionalBulletColorScale"];
                     if (bulletObj["bulletScaleMinZero"] !== undefined) this.bulletScaleMinZero = bulletObj["bulletScaleMinZero"];
-
+                    if (bulletObj["bulletSynchronize"] !== undefined) this.bulletSynchronize = bulletObj["bulletSynchronize"];
+                   
+                    
                 }
                 if (options.dataViews[0].metadata.objects["Intensity"]) {
                     var intensityObj = options.dataViews[0].metadata.objects["Intensity"];
@@ -213,12 +241,21 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                     if (sortObj["sortBy"] !== undefined) this.sortBy = sortObj["sortBy"];
                   
                 }
+
+                if (options.dataViews[0].metadata.objects["Style"]) {
+                    var styleObj = options.dataViews[0].metadata.objects["Style"];
+
+                    if (styleObj["rowBanding"] !== undefined) this.rowBanding = styleObj["rowBanding"];
+                    if (styleObj["rowBandingColor"] !== undefined) this.rowBandingColor = styleObj["rowBandingColor"];
+                    if (styleObj["headerLineColor"] !== undefined) this.headerLineColor = styleObj["headerLineColor"];
+                    if (styleObj.fontSize !== undefined) this.fontSize = styleObj["fontSize"];
+                    if (styleObj.fontColor !== undefined) this.fontColor = styleObj["fontColor"];
+                    if (styleObj.fontStyle !== undefined) this.fontStyle = styleObj["fontStyle"];
+                }
             }
 
             this.element.style("overflow", "auto");
             this.element.select('.multipleSparkline').remove();
-
-
 
             this.hasTarget = false;
             this.hasActual = false;
@@ -248,12 +285,17 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                 return d;
             });
 
-
-            var table = this.element
+            var element = this.element
                 .append("div")
                 .attr("class", "multipleSparkline")
-                .attr("style", "width:100%;")
-                .append("table")
+                .attr("style", "width:100%;");
+
+                element.append("div").attr("style","padding:5px 15px;text-decoration:underline;font-size:10px;background:orange;color:#fff;")
+                .append("a")
+                .attr("src","http://ddvisual.com.au/")
+                .text('This is the demo version of visual. BUY NOW! Visit: http://ddvisual.com.au');
+
+            var table = element.append("table")
                 .attr("style", "width:100%;text-align:left;border-spacing:0");
 
             if (this.hasActual === false || (this.hasPeriod === false && this.hasGroup === false)) {
@@ -278,6 +320,8 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
 
 
             nestedData.map((d, i) => {
+                if(this.filterNullPeriod === true) d.values = d.values.filter(d=>d.actual !== null);
+                
                 var actual = this.hasActual ? d.values[d.values.length - 1].actual : 0;
                 var secondLastActual = 0;
                 if (d.values[d.values.length - 2]) secondLastActual = this.hasActual ? d.values[d.values.length - 2].actual : 0;
@@ -340,14 +384,21 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                 return;
             }
 
-            var thead = table.append("thead").attr("style", 'color:rgb(102, 102, 102);font-family: "Segoe UI Semibold", wf_segoe-ui_semibold, helvetica, arial, sans-serif;');
+            var thead = table.append("thead");
             var tbody = table.append("tbody");
 
             var rows = tbody.selectAll(".rows")
                 .data(data)
                 .enter()
                 .append("tr")
-                .style("background", function (d, i) { return i % 2 === 0 ? "#fff" : "#ececec" });
+            
+            if(this.rowBanding) {
+                rows.style("background", (d, i)=> { return i % 2 === 0 ? "transparent" : this.rowBandingColor.solid.color });
+                rows.style("color", (d, i)=> { return i % 2 === 0 ? this.fontColor.solid.color : this.pickTextColorBasedOnBgColorSimple(this.rowBandingColor.solid.color, "#fff", this.fontColor.solid.color) });
+            }
+            else{
+                rows.style("color",  this.fontColor.solid.color);
+            }
 
             rows.on("click", (d, i) => {
                 d.isFiltered = !d.isFiltered;
@@ -359,12 +410,12 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
 
             this.showIntensityCircle(rows, thead);
             this.drawMetric(rows, thead);
-
+           
             if (this.hasPeriod) {
                 this.drawSparkline(data, rows, thead);
                 this.drawBisectorToolTip();
             }
-
+           
             this.drawCurrent(rows, thead);
 
             if (this.hasPeriod) {
@@ -372,11 +423,9 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                 this.drawChange(rows, thead);
                 this.drawPerChange(rows, thead);
                 this.drawTotalChange(rows, thead);
-
                 this.showTrendIndicator(rows, thead);
             }
-
-            this.drawActual(rows, thead);
+            
             this.drawBullet(data, rows, thead);
             this.drawTarget(rows, thead);
             this.drawVariance(rows, thead);
@@ -384,7 +433,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
             this.drawAdditionalFields(rows, thead);
             this.updateRowStyle(tbody, thead);
             this.setFontSize(table);
-
+         
         }
 
         public sortData(data) {
@@ -450,7 +499,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
 
             thead.append("th")
                 .append("span")
-                .html("Metric");
+                .html(this.metricHeader);
 
             rows
                 .append("td")
@@ -462,7 +511,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
 
             thead.append("th")
                 .append("span")
-                .html("Current");
+                .html(this.currentHeader);
 
             var current = rows
                 .append("td")
@@ -481,12 +530,15 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
 
             thead.append("th")
                 .append("span")
-                .html("Prior");
+                .html(this.priorHeader);
 
             var prior = rows
                 .append("td")
                 .append("html")
-                .text((d) => this.iValueFormatter.format(d.values[d.values.length - 2].yValue));
+                .text((d) => {
+                   if(d.values.length > 1) return this.iValueFormatter.format(d.values[d.values.length - 2].yValue)
+                   else return "-";
+                });
 
             this.tooltipServiceWrapper.addTooltip(prior,
                 (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data, 'Prior'),
@@ -498,7 +550,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
             if (this.hasActual) {
                 thead.append("th")
                     .append("span")
-                    .html("Sparkline");
+                    .html(this.sparklineHeader);
 
                 this.sparklineSelection = rows.append("td")
                     .append("svg")
@@ -507,7 +559,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
 
                 this.sparklineSelection.append("path")
                     .attr("class", "line")
-                    .attr("style", "stroke: steelblue; stroke-width:2; fill: none;")
+                    .attr("style", "stroke: "+ this.sparklineColor.solid.color +"; stroke-width:2; fill: none;")
                     .attr("d", function (d: any) {
 
                         var xDomain = [];
@@ -528,26 +580,6 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
             }
         }
 
-        public drawActual(rows: any, thead: any) {
-
-            if (this.showActual && this.showTarget) {
-                thead.append("th")
-                    .append("span")
-                    .html(this.actualHeader);
-
-                var actual = rows
-                    .append("td")
-                    .append("html")
-                    .text((d) => this.iValueFormatter.format(d.actual));
-
-
-                this.tooltipServiceWrapper.addTooltip(actual,
-                    (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data, 'Actual'),
-                    (tooltipEvent: TooltipEventArgs<any>) => null
-                );
-            }
-        }
-
         public drawChange(rows: any, thead: any) {
 
             if (this.hasActual && this.showChange) {
@@ -558,9 +590,15 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                 var change = rows
                     .append("td")
                     .append("html")
-                    .text((d) => d.change);
+                    .text((d) => {
+                        if(d.values.length > 1) d.change
+                        else return "-"
+                    });
 
-                change.text((d) => this.iValueFormatter.format(d.change));
+                change.text((d) =>{
+                    if(d.values.length > 1) return this.iValueFormatter.format(d.change)
+                    else return "-"
+                } );
 
                 this.tooltipServiceWrapper.addTooltip(change,
                     (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data, 'Change'),
@@ -579,7 +617,10 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                 var perChange = rows
                     .append("td")
                     .append("html")
-                    .text((d) => d.perChange.toFixed(2) + "%");
+                    .text((d) => {
+                        if(d.values.length > 1) return d.perChange.toFixed(2) + "%"
+                        else return "-"
+                    });
 
             }
         }
@@ -621,12 +662,14 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                     .append("path")
                     .attr('d', triangle)
                     .attr('transform', function (d) {
-                        return "translate(10,12), rotate(" + d.trend + ")";
+                        if(d.values.length < 2) return "translate(10,-1112)";
+                        else if(d.actual == d.secondLastActual) return "translate(10,-1112)";
+                        else return "translate(10,12), rotate(" + d.trend + ")";
                     })
                     .style("fill", d => d.trend === 0 ? color[0] : color[1]);
 
             }
-
+          
         }
 
         public showIntensityCircle(rows: any, thead: any) {
@@ -683,7 +726,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
             if (this.hasTarget) {
                 thead.append("th")
                     .append("span")
-                    .html("Bullet");
+                    .html(this.bulletHeader);
 
                 var targetMax = d3.max(data.map((d) => d.target));
                 var actualMax = d3.max(data.map((d) => d.actual));
@@ -702,9 +745,15 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                     .attr("class", "bullet");
 
                 bullet.append("rect").attr("width", 120).attr("height", 20).attr("style", "fill:#d0cece;")
-
+var scale;
                 var bulletRect = bullet.append("rect")
-                    .attr("width", (d) => barScale(d.actual))
+                    .attr("width", (d) => {
+                        if (this.bulletSynchronize === false){
+                            scale = d3.scale.linear().range([0, 120]).domain([0, d.target* 1.15]);
+                           return scale(d.actual)
+                        }
+                        return barScale(d.actual)
+                    })
                     .attr("height", 20);
 
                 if (this.conditionalBullet === false) {
@@ -718,32 +767,38 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                         });
                 }
 
-                var thresholdData = this.columns.filter((d, i) => {
-                    d.Index = i;
-                    return d.roles["threshold"] == true
-                });
+                // var thresholdData = this.columns.filter((d, i) => {
+                //     d.Index = i;
+                //     return d.roles["threshold"] == true
+                // });
 
-                if (thresholdData.length > 0) {
-                    bulletRect
-                        .style("fill", d => {
-                            let item = d.values[d.values.length - 1];
-                            var fill = "#fff";
-                            thresholdData.forEach((t, i) => {
-                                if (d.target >= item[t.Index]) fill = this.aboveThresholdColor.solid.color;
-                                else {
-                                    let y = 'belowThreshold' + (i + 1) + 'Color';
-                                    if (d.target < item[t.Index]) fill = this[y].solid.color;
-                                }
-                            })
+                // if (thresholdData.length > 0) {
+                //     bulletRect
+                //         .style("fill", d => {
+                //             let item = d.values[d.values.length - 1];
+                //             var fill = "#fff";
+                //             thresholdData.forEach((t, i) => {
+                //                 if (d.target >= item[t.Index]) fill = this.aboveThresholdColor.solid.color;
+                //                 else {
+                //                     let y = 'belowThreshold' + (i + 1) + 'Color';
+                //                     if (d.target < item[t.Index]) fill = this[y].solid.color;
+                //                 }
+                //             })
 
-                            return fill;
+                //             return fill;
 
-                        });
-                }
+                //         });
+                // }
 
                 bullet.append("rect")
                     .attr("width", 2)
-                    .attr("x", (d) => barScale(d.target))
+                    .attr("x", (d) => {
+                        if (this.bulletSynchronize === false){
+                            scale = d3.scale.linear().range([0, 120]).domain([0, d.target* 1.15]);
+                           return scale(d.target)
+                        }
+                        return barScale(d.target)
+                    })
                     .attr("height", 20)
                     .attr("style", "fill:#000;");
 
@@ -842,7 +897,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
         }
 
         private setFontSize(chartSvg) {
-            chartSvg.style("font-size", this.fontSize + "px").style("color", "rgb(119, 119, 119)");
+            chartSvg.style("font-size", this.fontSize + "px").style("font-family", this.fontStyle);
         }
         //#region Tooltip
         public drawBisectorToolTip() {
@@ -948,10 +1003,23 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
         }
         //#endregion
 
+        public pickTextColorBasedOnBgColorSimple(bgColor, lightColor, darkColor) {
+            var color = (bgColor.charAt(0) === '#') ? bgColor.substring(1, 7) : bgColor;
+            var r = parseInt(color.substring(0, 2), 16); // hexToR
+            var g = parseInt(color.substring(2, 4), 16); // hexToG
+            var b = parseInt(color.substring(4, 6), 16); // hexToB
+            return (((r * 0.299) + (g * 0.587) + (b * 0.114)) > 186) ?
+              darkColor : lightColor;
+          }
+
         public updateRowStyle(tbody: any, thead: any) {
 
-            thead.selectAll("th").attr("style", "padding:5px;border-bottom: 1px solid #ee9207;");
-            tbody.selectAll("td").attr("style", "padding:5px;");
+            thead.selectAll("th")
+            .attr("style", "padding:5px;border-bottom: 1px solid "+ this.headerLineColor.solid.color +";color:"+ this.fontColor.solid.color +";");
+           
+            tbody.selectAll("td")
+            .attr("style", "padding:5px;");
+
         }
 
         private static parseSettings(dataView: DataView): VisualSettings {
@@ -1092,17 +1160,18 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
 
             switch (objectName) {
                 case 'Actual':
-                    // objectEnumeration.push({ objectName: objectName, properties: { showActual: this.showActual}, selector: null });
-                    // objectEnumeration.push({ objectName: objectName, properties: { actualHeader: this.actualHeader},selector: null});
+                    objectEnumeration.push({ objectName: objectName, properties: { currentHeader: this.currentHeader},selector: null});
+                    objectEnumeration.push({ objectName: objectName, properties: { priorHeader: this.priorHeader},selector: null});
                     objectEnumeration.push({ objectName: objectName, properties: { showChange: this.showChange }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { changeHeader: this.changeHeader }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { showPerChange: this.showPerChange }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { percentageChangeHeader: this.percentageChangeHeader }, selector: null });
+                    objectEnumeration.push({ objectName: objectName, properties: { filterNullPeriod: this.filterNullPeriod }, selector: null });
+                   
                     //objectEnumeration.push({ objectName: objectName, properties: { showTotalChange: this.showTotalChange }, selector: null });
                     // objectEnumeration.push({ objectName: objectName, properties: { totalChangeHeader: this.totalChangeHeader }, selector: null });
-                    objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.fontSize }, selector: null });
                     break;
-
+                    
                 case 'Target':
                     objectEnumeration.push({ objectName: objectName, properties: { showTarget: this.showTarget }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { targetHeader: this.targetHeader }, selector: null });
@@ -1114,7 +1183,15 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                     if (this.conditionalVariance) objectEnumeration.push({ objectName: objectName, properties: { conditionalVarianceColor: this.conditionalVarianceColor }, selector: null });
 
                     break;
+                case 'Metric':
+                        objectEnumeration.push({ objectName: objectName, properties: { metricHeader: this.metricHeader }, selector: null });
+                    break;  
 
+                case 'Sparkline':
+                        objectEnumeration.push({ objectName: objectName, properties: {sparklineHeader: this.sparklineHeader }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: {sparklineColor: this.sparklineColor }, selector: null });
+                    break;  
+                   
                 case 'Trend':
                     objectEnumeration.push({ objectName: objectName, properties: { show: this.trendIndicator }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { flipTrendDirection: this.flipTrendDirection }, selector: null });
@@ -1128,13 +1205,14 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                     break;
 
                 case 'Bullet':
+                    objectEnumeration.push({ objectName: objectName, properties: { bulletHeader: this.bulletHeader }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { conditionalBullet: this.conditionalBullet }, selector: null });
                     if (this.conditionalBullet) objectEnumeration.push({ objectName: objectName, properties: { conditionalBulletColor: this.conditionalBulletColor }, selector: null });
                     if (this.conditionalBullet) objectEnumeration.push({ objectName: objectName, properties: { conditionalBulletColorScale: this.conditionalBulletColorScale }, selector: null });
                     if (!this.conditionalBullet) objectEnumeration.push({ objectName: objectName, properties: { singleBulletColor: this.singleBulletColor }, selector: null });
                     objectEnumeration.push({ objectName: objectName, properties: { bulletScaleMinZero: this.bulletScaleMinZero }, selector: null });
-
-
+                    objectEnumeration.push({ objectName: objectName, properties: { bulletSynchronize: this.bulletSynchronize }, selector: null });
+                    
                     break;
                 case 'Threshold':
 
@@ -1150,14 +1228,21 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                         if (thresholdData.length > 1) objectEnumeration.push({ objectName: objectName, properties: { 'belowThreshold2Color': this.belowThreshold2Color }, selector: null });
                         if (thresholdData.length > 2) objectEnumeration.push({ objectName: objectName, properties: { 'belowThreshold3Color': this.belowThreshold3Color }, selector: null });
                         if (thresholdData.length > 3) objectEnumeration.push({ objectName: objectName, properties: { 'belowThreshold4Color': this.belowThreshold4Color }, selector: null });
-
                     }
 
                     break;
                     case 'Sort':
-
                         objectEnumeration.push({ objectName: objectName, properties: { 'sortHeader': this.sortHeader }, selector: null });
                         objectEnumeration.push({ objectName: objectName, properties: { 'sortBy': this.sortBy }, selector: null });
+                    break;
+
+                    case 'Style':
+                        objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.fontSize }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { fontColor: this.fontColor }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { fontStyle: this.fontStyle }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { 'headerLineColor': this.headerLineColor }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { 'rowBanding': this.rowBanding }, selector: null });
+                        if(this.rowBanding)objectEnumeration.push({ objectName: objectName, properties: { 'rowBandingColor': this.rowBandingColor }, selector: null });
                        
 
                     break;
