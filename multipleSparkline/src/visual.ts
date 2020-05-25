@@ -105,7 +105,6 @@ module powerbi.extensibility.visual {
         private hasPeriod: any;
         private periodIndex: number;
         private dateFormat: any;
-
         private sortBy: any = "default";
         private sortHeader: any = "default";
 
@@ -125,8 +124,9 @@ module powerbi.extensibility.visual {
         public TooltipEnabledDataPoint: any;
 
         private fontSize: any = 12;
-        private HeaderTextColor: any;
-      
+        private headerFixed: any = false;
+        private headerBgColor: any = { solid: { color: "#ffffff" } }; 
+     
         private headerLineColor: any = { solid: { color: "#ee9207" } }; 
         private rowBanding: any = true;
         private fontColor: any = { solid: { color: "#777777" } }; 
@@ -247,15 +247,21 @@ module powerbi.extensibility.visual {
 
                     if (styleObj["rowBanding"] !== undefined) this.rowBanding = styleObj["rowBanding"];
                     if (styleObj["rowBandingColor"] !== undefined) this.rowBandingColor = styleObj["rowBandingColor"];
-                    if (styleObj["headerLineColor"] !== undefined) this.headerLineColor = styleObj["headerLineColor"];
+                   
                     if (styleObj.fontSize !== undefined) this.fontSize = styleObj["fontSize"];
                     if (styleObj.fontColor !== undefined) this.fontColor = styleObj["fontColor"];
                     if (styleObj.fontStyle !== undefined) this.fontStyle = styleObj["fontStyle"];
+
+                    if (styleObj["headerLineColor"] !== undefined) this.headerLineColor = styleObj["headerLineColor"];
+                    if (styleObj["headerFixed"] !== undefined) this.headerFixed = styleObj["headerFixed"];
+                    if (styleObj["headerBgColor"] !== undefined) this.headerBgColor = styleObj["headerBgColor"];
+                   
                 }
             }
 
             this.element.style("overflow", "auto");
             this.element.select('.multipleSparkline').remove();
+
 
             this.hasTarget = false;
             this.hasActual = false;
@@ -290,10 +296,11 @@ module powerbi.extensibility.visual {
                 .attr("class", "multipleSparkline")
                 .attr("style", "width:100%;");
 
-                element.append("div").attr("style","padding:5px 15px;text-decoration:underline;font-size:10px;background:orange;color:#fff;")
-                .append("a")
-                .attr("src","http://ddvisual.com.au/")
-                .text('This is the demo version of visual. BUY NOW! Visit: http://ddvisual.com.au');
+            // element.append("div").attr("style","padding:5px 15px;text-decoration:underline;font-size:10px;background:orange;color:#fff;")
+            //     .append("a")
+            //     .attr("src","http://ddvisual.com.au/")
+            //     .text('This is the demo version of visual. BUY NOW! Visit: http://ddvisual.com.au');
+
 
             var table = element.append("table")
                 .attr("style", "width:100%;text-align:left;border-spacing:0");
@@ -433,6 +440,8 @@ module powerbi.extensibility.visual {
             this.drawAdditionalFields(rows, thead);
             this.updateRowStyle(tbody, thead);
             this.setFontSize(table);
+
+          
          
         }
 
@@ -837,11 +846,11 @@ var scale;
                     .append("td")
                     .append("html")
                     .text((d) => this.iValueFormatter.format(d.variance));
-
+                   
                 if (this.conditionalVariance == true) {
                     variance.style("color", d => {
-                        if (d.variance > 0) return this.conditionalBulletColorOptions[this.conditionalBulletColor][0];
-                        else return this.conditionalBulletColorOptions[this.conditionalBulletColor][1];
+                        if (d.variance > 0) return this.conditionalBulletColorOptions[this.conditionalVarianceColor][0];
+                        else return this.conditionalBulletColorOptions[this.conditionalVarianceColor][1];
                     });
                 }
 
@@ -865,8 +874,8 @@ var scale;
 
                 if (this.conditionalVariance == true) {
                     variancePer.style("color", d => {
-                        if (d.variance > 0) return this.conditionalBulletColorOptions[this.conditionalBulletColor][0];
-                        else return this.conditionalBulletColorOptions[this.conditionalBulletColor][1];
+                        if (d.variance > 0) return this.conditionalBulletColorOptions[this.conditionalVarianceColor][0];
+                        else return this.conditionalBulletColorOptions[this.conditionalVarianceColor][1];
                     });
                 }
 
@@ -898,6 +907,15 @@ var scale;
 
         private setFontSize(chartSvg) {
             chartSvg.style("font-size", this.fontSize + "px").style("font-family", this.fontStyle);
+            //
+            if(this.headerFixed){
+                chartSvg.selectAll("th").style("position","sticky").style("top",0);
+                
+            }
+            chartSvg.selectAll("th").style("background",this.headerBgColor.solid.color);
+            chartSvg.selectAll("th").style("color",this.pickTextColorBasedOnBgColorSimple(this.headerBgColor.solid.color, "#ffffff", this.fontColor.solid.color))  
+            
+            
         }
         //#region Tooltip
         public drawBisectorToolTip() {
@@ -1243,8 +1261,11 @@ var scale;
                         objectEnumeration.push({ objectName: objectName, properties: { 'headerLineColor': this.headerLineColor }, selector: null });
                         objectEnumeration.push({ objectName: objectName, properties: { 'rowBanding': this.rowBanding }, selector: null });
                         if(this.rowBanding)objectEnumeration.push({ objectName: objectName, properties: { 'rowBandingColor': this.rowBandingColor }, selector: null });
-                       
 
+                        objectEnumeration.push({ objectName: objectName, properties: { 'headerFixed': this.headerFixed }, selector: null });
+                        objectEnumeration.push({ objectName: objectName, properties: { 'headerBgColor': this.headerBgColor }, selector: null });
+                       
+                   
                     break;
 
             };

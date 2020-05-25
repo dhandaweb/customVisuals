@@ -418,6 +418,20 @@
                         }
                     }
                 },
+                "headerFixed": {
+                    "displayName": "Header Fixed",
+                    "type": { "bool": true }
+                },
+                "headerBgColor": {
+                    "displayName": "Header Background Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
                 "headerLineColor": {
                     "displayName": "Header Line Color",
                     "type": {
