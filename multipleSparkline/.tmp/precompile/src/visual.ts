@@ -259,7 +259,8 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                 }
             }
 
-            this.element.style("overflow", "auto");
+            this.element.style("overflow", "auto")
+            .style("position", "fixed").style("width", "100%");
             this.element.select('.multipleSparkline').remove();
 
 
@@ -309,7 +310,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                 table
                     .append("html")
                     .attr("style", "")
-                    .html("Data is required to draw the visual");
+                    .text("Data is required to draw the visual");
 
                 return;
             }
@@ -386,7 +387,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
                 table
                     .append("html")
                     .attr("style", "")
-                    .html("Data is required to draw visual");
+                    .text("Data is required to draw visual");
 
                 return;
             }
@@ -508,7 +509,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
 
             thead.append("th")
                 .append("span")
-                .html(this.metricHeader);
+                .text(this.metricHeader);
 
             rows
                 .append("td")
@@ -520,7 +521,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
 
             thead.append("th")
                 .append("span")
-                .html(this.currentHeader);
+                .text(this.currentHeader);
 
             var current = rows
                 .append("td")
@@ -539,7 +540,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
 
             thead.append("th")
                 .append("span")
-                .html(this.priorHeader);
+                .text(this.priorHeader);
 
             var prior = rows
                 .append("td")
@@ -559,7 +560,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
             if (this.hasActual) {
                 thead.append("th")
                     .append("span")
-                    .html(this.sparklineHeader);
+                    .text(this.sparklineHeader);
 
                 this.sparklineSelection = rows.append("td")
                     .append("svg")
@@ -594,7 +595,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
             if (this.hasActual && this.showChange) {
                 thead.append("th")
                     .append("span")
-                    .html(this.changeHeader);
+                    .text(this.changeHeader);
 
                 var change = rows
                     .append("td")
@@ -621,7 +622,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
             if (this.hasActual && this.showPerChange) {
                 thead.append("th")
                     .append("span")
-                    .html(this.percentageChangeHeader);
+                    .text(this.percentageChangeHeader);
 
                 var perChange = rows
                     .append("td")
@@ -639,7 +640,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
             if (this.hasActual && this.showTotalChange) {
                 thead.append("th")
                     .append("span")
-                    .html(this.totalChangeHeader);
+                    .text(this.totalChangeHeader);
 
                 var perChange = rows
                     .append("td")
@@ -656,7 +657,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
 
                 thead.append("th")
                     .append("span")
-                    .html(" ");
+                    .text(" ");
 
                 var trendIndicator = rows
                     .append("td")
@@ -701,7 +702,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
 
                 thead.append("th")
                     .append("span")
-                    .html(" ");
+                    .text(" ");
 
                 var intensityCircle = rows
                     .append("td")
@@ -735,7 +736,7 @@ module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45
             if (this.hasTarget) {
                 thead.append("th")
                     .append("span")
-                    .html(this.bulletHeader);
+                    .text(this.bulletHeader);
 
                 var targetMax = d3.max(data.map((d) => d.target));
                 var actualMax = d3.max(data.map((d) => d.actual));
@@ -820,7 +821,7 @@ var scale;
             if (this.showTarget && this.hasTarget) {
                 thead.append("th")
                     .append("span")
-                    .html(this.targetHeader);
+                    .text(this.targetHeader);
 
                 var target = rows
                     .append("td")
@@ -840,7 +841,7 @@ var scale;
             if (this.showVariance && this.hasTarget) {
                 thead.append("th")
                     .append("span")
-                    .html(this.varianceHeader);
+                    .text(this.varianceHeader);
 
                 var variance = rows
                     .append("td")
@@ -865,7 +866,7 @@ var scale;
             if (this.showVariancePer && this.hasTarget) {
                 thead.append("th")
                     .append("span")
-                    .html(this.variancePerHeader);
+                    .text(this.variancePerHeader);
 
                 var variancePer = rows
                     .append("td")
@@ -893,7 +894,7 @@ var scale;
 
                 thead.append("th")
                     .append("span")
-                    .html(d.key);
+                    .text(d.key);
 
                 rows
                     .append("td")
@@ -909,7 +910,7 @@ var scale;
             chartSvg.style("font-size", this.fontSize + "px").style("font-family", this.fontStyle);
             //
             if(this.headerFixed){
-                chartSvg.selectAll("th").style("position","sticky").style("top",0);
+                chartSvg.selectAll("th").style("position","sticky").style("top","-1px");
                 
             }
             chartSvg.selectAll("th").style("background",this.headerBgColor.solid.color);
