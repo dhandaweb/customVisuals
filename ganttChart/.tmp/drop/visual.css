@@ -1,4 +1,4 @@
-.visual-heatMapCCFC224D9885417F9AAF5BB8D45B007E_DEBUG {
+.visual-multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E_DEBUG {
   /*
  *  Power BI Visualizations
  *
@@ -25,23 +25,17 @@
  *  THE SOFTWARE.
  */
 }
-.visual-heatMapCCFC224D9885417F9AAF5BB8D45B007E_DEBUG .overflowingText {
+.visual-multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E_DEBUG .overflowingText {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   display: block;
 }
-.visual-heatMapCCFC224D9885417F9AAF5BB8D45B007E_DEBUG p {
+.visual-multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E_DEBUG p {
   font-size: 20px;
   font-weight: bold;
 }
-.visual-heatMapCCFC224D9885417F9AAF5BB8D45B007E_DEBUG p em {
+.visual-multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E_DEBUG p em {
   background: yellow;
   padding: 5px;
-}
-.visual-heatMapCCFC224D9885417F9AAF5BB8D45B007E_DEBUG .axis path {
-  fill: none;
-}
-.visual-heatMapCCFC224D9885417F9AAF5BB8D45B007E_DEBUG .axis line {
-  stroke: #b3b3b3;
 }

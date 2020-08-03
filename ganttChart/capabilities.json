@@ -1,0 +1,99 @@
+{
+    "dataRoles": [
+        {
+            "displayName": "Task",
+            "name": "task",
+            "kind": "Grouping"
+           
+        },
+        {
+            "displayName": "Group",
+            "name": "group",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Time From",
+            "name": "timeFrom",
+            "kind": "Grouping"
+
+        },
+        {
+            "displayName": "Time To",
+            "name": "timeTo",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Additional",
+            "name": "additional",
+            "kind": "Measure"
+          
+        }
+    ],
+    "dataViewMappings": [
+        {
+            "table": {
+                "rows": {
+                    "dataReductionAlgorithm": {
+                        "top": {
+                            "count": 30000
+                        }
+                    },
+                    "select": [
+                        {
+                            "for": {
+                                "in": "timeFrom"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "timeTo"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "group"
+                            }
+                        }
+
+                    ]
+                }
+            },
+            "conditions": [
+                {
+                    "timeFrom": {
+                        "min": 0,
+                        "max": 1
+                    },
+                    "timeTo": {
+                        "min": 0,
+                        "max": 1
+                    },
+                    "heat": {
+                        "min": 0,
+                        "max": 1
+                    },
+                    "additional": {
+                        "min": 0,
+                        "max": 1
+                    },
+                    "group": {
+                        "min": 0,
+                        "max": 1
+                    }
+                }
+            ]
+        }
+    ],
+    "objects": {
+        "Heat": {
+            "displayName": "Heat",
+            "properties": {
+              
+                "currentHeader": {
+                    "displayName": "Heat",
+                    "type": { "text": true }
+                }
+            }
+        }
+    }
+} 

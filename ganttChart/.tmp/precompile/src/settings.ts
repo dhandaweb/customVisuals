@@ -1,5 +1,4 @@
-.visual-heatMapCCFC224D9885417F9AAF5BB8D45B007E_DEBUG {
-  /*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -24,24 +23,36 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
-}
-.visual-heatMapCCFC224D9885417F9AAF5BB8D45B007E_DEBUG .overflowingText {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  display: block;
-}
-.visual-heatMapCCFC224D9885417F9AAF5BB8D45B007E_DEBUG p {
-  font-size: 20px;
-  font-weight: bold;
-}
-.visual-heatMapCCFC224D9885417F9AAF5BB8D45B007E_DEBUG p em {
-  background: yellow;
-  padding: 5px;
-}
-.visual-heatMapCCFC224D9885417F9AAF5BB8D45B007E_DEBUG .axis path {
-  fill: none;
-}
-.visual-heatMapCCFC224D9885417F9AAF5BB8D45B007E_DEBUG .axis line {
-  stroke: #b3b3b3;
+
+module powerbi.extensibility.visual.multipleSparklineCCFC224D9885417F9AAF5BB8D45B007E  {
+    "use strict";
+
+    import DataViewObjectsParser = powerbi.extensibility.utils.dataview.DataViewObjectsParser;
+
+    export class VisualSettings extends DataViewObjectsParser {
+        public dataPoint: dataPointSettings = new dataPointSettings();
+
+        public IndicatorColor = {
+            "RedGreen": ["red", "green"],
+            "GreenRed": ["green", "red"]
+        };
+
+      }
+
+    export class dataPointSettings {
+     // Default color
+      public defaultColor: string = "";
+     // Show all
+      public showAllDataPoints: boolean = true;
+     // Fill
+      public fill: string = "";
+     // Color saturation
+      public fillRule: string = "";
+     // Text Size
+      public fontSize: number = 12;
+      // Actual
+      public showActual: boolean = true;
+
+     }
+
 }
