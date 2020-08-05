@@ -1,8 +1,8 @@
 {
     "dataRoles": [
         {
-            "displayName": "Task",
-            "name": "task",
+            "displayName": "Activity",
+            "name": "activity",
             "kind": "Grouping"
            
         },
@@ -53,8 +53,12 @@
                             "for": {
                                 "in": "group"
                             }
+                        },
+                        {
+                            "for": {
+                                "in": "activity"
+                            }
                         }
-
                     ]
                 }
             },
@@ -68,7 +72,7 @@
                         "min": 0,
                         "max": 1
                     },
-                    "heat": {
+                    "activity": {
                         "min": 0,
                         "max": 1
                     },
