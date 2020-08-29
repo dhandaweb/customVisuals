@@ -8925,7 +8925,7 @@ var powerbi;
                     function Visual(options) {
                         this.additionalValues = [];
                         this.currentHeader = "Current";
-                        this.hasHeat = false;
+                        this.fontSize = 12;
                         this.timeFrom = false;
                         this.timeTo = false;
                         this.activity = false;
@@ -8934,6 +8934,7 @@ var powerbi;
                         this.groupIndex = 0;
                         this.timeFromIndex = 0;
                         this.timeToIndex = 0;
+                        this.color = ["#8950FC", "#3699FF", "#019C8C", "#7A084B", "#0BB7AF", "#F65163"];
                         this.element = d3.select(options.element);
                         this.host = options.host;
                         this.tooltipServiceWrapper = ganttChartCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
@@ -8944,8 +8945,8 @@ var powerbi;
                         this.columns = options.dataViews[0].metadata.columns;
                         this.selectionManager.registerOnSelectCallback(function () {
                         });
+                        this.dateFormat = this.getDateFormat("DD/MM/YYYY");
                         this.element.select('.ganttChart').remove();
-                        console.log(options.dataViews[0].metadata.columns);
                         this.columns.map(function (d, i) {
                             if (d.roles["activity"]) {
                                 _this.activity = true;
@@ -8966,15 +8967,17 @@ var powerbi;
                             return d;
                         });
                         this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ value: 1001 });
-                        console.log(options.dataViews[0]);
                         var data = [];
                         options.dataViews[0].table.rows.map(function (d, i) {
-                            data.push({ timeFrom: d[_this.timeFromIndex], timeTo: d[_this.timeToIndex], group: d[_this.groupIndex], activity: d[_this.activityIndex] });
+                            data.push({
+                                timeFrom: (d[_this.timeFromIndex]),
+                                timeTo: (d[_this.timeToIndex]),
+                                group: d[_this.groupIndex],
+                                activity: d[_this.activityIndex]
+                            });
                         });
-                        console.log(data);
                         var dimension = this.getDimensions(options.viewport, data);
-                        var dataFormat = this.getDateFormat("YYYY-DD-MM");
-                        var xScale = this.setXScale(data, dimension, dataFormat);
+                        var xScale = this.setXScale(data, dimension);
                         var yScale = this.setYScale(data, dimension);
                         var chartContainer = this.element
                             .append("div")
@@ -8991,32 +8994,29 @@ var powerbi;
                         chartSvg.attr("transform", "translate(0," + 5 + ")");
                         this.drawXScale(xScale, chartSvg, dimension);
                         this.drawYScale(yScale, chartSvg, dimension, data);
-                        this.drawActivityRect(xScale, yScale, chartSvg, data, dimension);
+                        var ganttRect = this.drawActivityRect(xScale, yScale, chartSvg, data, dimension);
+                        this.drawXBrush(xScale, yScale, chartSvg, dimension, ganttRect);
                     };
                     Visual.prototype.getDimensions = function (vp, data) {
-                        var xlegendOffset = 0;
-                        var ylegendOffset = 0;
-                        var yRightOff = 0;
-                        var xdata = data.xAxis;
-                        var yOff = 100;
+                        var _this = this;
+                        var max = d3.max(data.map(function (d) { return d.activity.length * (_this.fontSize / 2); }));
                         var xOffset, yOffset, chartWidth, chartHeight;
-                        xOffset = 50;
-                        if (xOffset > vp.height / 4)
-                            xOffset = vp.height / 4 > 100 ? 100 : vp.height / 4;
-                        yOffset = yOff;
-                        chartWidth = vp.width - yOffset - ylegendOffset - yRightOff;
-                        chartHeight = vp.height - xOffset - xlegendOffset;
+                        var xbrushOffset = 30;
+                        xOffset = xbrushOffset + 40;
+                        yOffset = max;
+                        chartWidth = vp.width - yOffset;
+                        chartHeight = vp.height - xOffset;
                         return {
                             width: vp.width,
                             height: vp.height,
                             xOffset: xOffset,
                             yOffset: yOffset,
-                            yRightOff: yRightOff,
+                            xbrushOffset: xbrushOffset,
                             chartWidth: chartWidth,
                             chartHeight: chartHeight
                         };
                     };
-                    Visual.prototype.setXScale = function (data, dimension, dataFormat) {
+                    Visual.prototype.setXScale = function (data, dimension) {
                         var xdomain = [];
                         data.map(function (d) {
                             xdomain.push((d.timeFrom));
@@ -9024,33 +9024,42 @@ var powerbi;
                         });
                         var scale = d3.time.scale()
                             .domain(d3.extent(xdomain))
-                            .range([0, dimension.chartWidth - dimension.yOffset]);
+                            .range([0, dimension.chartWidth]);
                         return scale;
                     };
                     Visual.prototype.setYScale = function (data, dimension) {
                         var scale = d3.scale.ordinal()
-                            .rangeBands([0, dimension.chartHeight], .05)
+                            .rangeBands([0, dimension.chartHeight], .2)
                             .domain(data.map(function (d) { return d.activity; }));
                         return scale;
+                    };
+                    Visual.prototype.setXAxisStyle = function (chartSvg) {
+                        chartSvg.select("g.xaxis").selectAll("text")
+                            .attr("fill", "rgb(119, 119, 119)")
+                            .style("text-anchor", "end")
+                            .attr("font-size", this.fontSize + "px")
+                            .attr("dx", 6)
+                            .attr("dy", -1)
+                            .attr("transform", function (d) {
+                            return "rotate(-50)";
+                        });
                     };
                     Visual.prototype.drawXScale = function (xScale, chartSvg, dimension) {
                         var xaxis = d3.svg.axis()
                             .scale(xScale)
+                            .tickSize(-dimension.chartHeight, 0)
                             .orient("bottom");
                         var xAxisG = chartSvg
                             .append("g")
                             .attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight) + ")")
-                            .attr("class", "axis")
+                            .attr("class", "xaxis")
                             .call(xaxis);
-                        xAxisG.selectAll("text")
-                            .attr("fill", "rgb(119, 119, 119)")
-                            .append("title")
-                            .text(function (d) { return d; });
-                        xAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
+                        this.setXAxisStyle(chartSvg);
                     };
                     Visual.prototype.drawYScale = function (yScale, chartSvg, dimension, data) {
                         var yaxis = d3.svg.axis()
                             .scale(yScale)
+                            .tickSize(-dimension.width, 0)
                             .orient("left");
                         var yAxisG = chartSvg
                             .append("g")
@@ -9058,15 +9067,13 @@ var powerbi;
                             .attr("transform", "translate(" + (dimension.yOffset) + "," + (0) + ")")
                             .attr("class", "axis")
                             .call(yaxis);
-                        yAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
+                        yAxisG.selectAll("text")
+                            .attr("font-size", this.fontSize + "px")
+                            .attr("fill", "rgb(119, 119, 119)");
+                        yAxisG.selectAll("line")
+                            .attr("transform", "translate(" + (-dimension.yOffset) + "," + (-yScale.rangeBand() / 2 - yScale.rangeBand() * .1) + ")");
                     };
-                    Visual.prototype.drawActivityRect = function (xScale, yScale, chartSvg, data, dimension) {
-                        console.log("YRangeBand", yScale.rangeBand());
-                        var rectG = chartSvg
-                            .selectAll(".ganttrect")
-                            .data(data)
-                            .enter()
-                            .append("g");
+                    Visual.prototype.setRectPosition = function (rectG, xScale, yScale, dimension) {
                         rectG.attr("transform", function (d) {
                             var xVal, yVal;
                             xVal = xScale(d.timeFrom);
@@ -9077,7 +9084,19 @@ var powerbi;
                                 xVal = -10000;
                             return "translate(" + (xVal + dimension.yOffset) + "," + yVal + ")";
                         });
-                        rectG.append("rect")
+                    };
+                    Visual.prototype.drawActivityRect = function (xScale, yScale, chartSvg, data, dimension) {
+                        var _this = this;
+                        var colorScale = d3.scale.ordinal()
+                            .range(this.color);
+                        var rectG = chartSvg
+                            .selectAll(".ganttrect")
+                            .data(data)
+                            .enter()
+                            .append("g");
+                        this.setRectPosition(rectG, xScale, yScale, dimension);
+                        var rect = rectG.append("rect")
+                            .attr("fill", function (d) { return colorScale(d.activity); })
                             .attr("width", function (d) {
                             var width = xScale(d.timeTo) - xScale(d.timeFrom);
                             if (width === undefined || isNaN(width))
@@ -9094,6 +9113,55 @@ var powerbi;
                             .attr("rx", 3)
                             .attr("ry", 3)
                             .attr("height", yScale.rangeBand());
+                        this.tooltipServiceWrapper.addTooltip(rect, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
+                        return rectG;
+                    };
+                    Visual.prototype.getTooltipData = function (data) {
+                        var retData = [];
+                        retData.push({
+                            displayName: data.activity,
+                            value: data.group
+                        });
+                        retData.push({
+                            displayName: 'Start date',
+                            value: data.timeFrom.toLocaleString("en-GB", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric"
+                            })
+                        });
+                        retData.push({
+                            displayName: 'End date',
+                            value: data.timeTo.toLocaleString("en-GB", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric"
+                            })
+                        });
+                        return retData;
+                    };
+                    Visual.prototype.drawXBrush = function (xScale, yScale, chartSvg, dimension, rectG) {
+                        var _this = this;
+                        var xaxis;
+                        var brush = d3.svg.brush()
+                            .x(xScale.copy())
+                            .on("brush", function () {
+                            xScale.domain(brush.empty() ? xScale.domain() : brush.extent());
+                            xaxis = d3.svg.axis()
+                                .scale(xScale)
+                                .tickSize(-dimension.chartHeight, 0)
+                                .orient("bottom");
+                            chartSvg.select("g.xaxis").call(xaxis);
+                            _this.setXAxisStyle(chartSvg);
+                            _this.setRectPosition(rectG, xScale, yScale, dimension);
+                        });
+                        var xBrush = chartSvg
+                            .append("g")
+                            .attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.height - dimension.xbrushOffset) + ")")
+                            .call(brush);
+                        xBrush.selectAll("rect")
+                            .attr("fill", "#f6f6f6")
+                            .attr("height", 20);
                     };
                     Visual.prototype.getDateFormat = function (format) {
                         var dataFormat;

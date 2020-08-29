@@ -60,17 +60,19 @@ module powerbi.extensibility.visual {
         public TooltipEnabledDataPoint: any;
 
        
-        private hasHeat: any = false;
+        private fontSize: any = 12;
         private timeFrom: any = false;
         private timeTo: any = false;
         private activity: any = false;
         private group: any = false;
-
+        private dateFormat: any;
 
         private activityIndex: any = 0;
         private groupIndex: any = 0;
         private timeFromIndex: any = 0;
         private timeToIndex: any = 0;
+
+        private color =["#8950FC","#3699FF","#019C8C","#7A084B","#0BB7AF","#F65163"];
 
         constructor(options: VisualConstructorOptions) {
 
@@ -86,11 +88,9 @@ module powerbi.extensibility.visual {
             this.selectionManager.registerOnSelectCallback(() => {
                
             });
-
+            this.dateFormat = this.getDateFormat("DD/MM/YYYY");
            this.element.select('.ganttChart').remove();
          
-           console.log(options.dataViews[0].metadata.columns);
-          
             this.columns.map((d, i) => {
                 if (d.roles["activity"]) {
                     this.activity = true;
@@ -111,21 +111,22 @@ module powerbi.extensibility.visual {
                 return d;
             });
 
-           
-
-
             this.iValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter.create({ value: 1001 });
-
-            console.log(options.dataViews[0]);
 
             var data = [];
             options.dataViews[0].table.rows.map((d: any, i) => {
-                data.push({timeFrom:d[this.timeFromIndex],timeTo:d[this.timeToIndex],group:d[this.groupIndex], activity:d[this.activityIndex]});
+                data.push({
+                    timeFrom:(d[this.timeFromIndex]),
+                    timeTo:(d[this.timeToIndex]),
+                    group:d[this.groupIndex],
+                    activity:d[this.activityIndex]
+                });
+
             });
-            console.log(data);
+          
             var dimension = this.getDimensions(options.viewport, data);
-            var dataFormat = this.getDateFormat("YYYY-DD-MM");
-            var xScale = this.setXScale(data, dimension,dataFormat);
+          
+            var xScale = this.setXScale(data, dimension);
             var yScale = this.setYScale(data, dimension);
             
             
@@ -149,38 +150,35 @@ module powerbi.extensibility.visual {
         this.drawXScale(xScale, chartSvg, dimension);
         this.drawYScale(yScale, chartSvg, dimension, data);
        
-        this.drawActivityRect(xScale,yScale, chartSvg,data,dimension);
+        var ganttRect  = this.drawActivityRect(xScale,yScale, chartSvg,data,dimension);
 
+        this.drawXBrush(xScale,yScale,chartSvg,dimension,ganttRect)
         }
 
         private getDimensions(vp, data) {
-            let xlegendOffset = 0;
-            let ylegendOffset = 0;
-            let yRightOff = 0;
 
-            let xdata = data.xAxis;
+           var max = d3.max(data.map(d=>d.activity.length*(this.fontSize/2)));
 
-            let yOff = 100;
             let xOffset, yOffset, chartWidth, chartHeight;
-
-            xOffset = 50;
-            if (xOffset > vp.height / 4) xOffset = vp.height / 4 > 100 ? 100 : vp.height / 4;
-            yOffset = yOff;
-            chartWidth = vp.width - yOffset - ylegendOffset - yRightOff;
-            chartHeight = vp.height - xOffset - xlegendOffset;
+            let xbrushOffset = 30;
+            xOffset = xbrushOffset + 40;
+           
+            yOffset = max;
+            chartWidth = vp.width - yOffset ;
+            chartHeight = vp.height - xOffset;
            
             return {
                 width: vp.width,
                 height: vp.height,
                 xOffset: xOffset,
                 yOffset: yOffset,
-                yRightOff: yRightOff,
+                xbrushOffset:xbrushOffset,
                 chartWidth: chartWidth,
                 chartHeight: chartHeight
             }
         }
 
-        private setXScale(data, dimension,dataFormat) {
+        private setXScale(data, dimension) {
            
             var xdomain = [];
             data.map((d:any)=>{
@@ -190,7 +188,7 @@ module powerbi.extensibility.visual {
 
             let scale = d3.time.scale()
                             .domain(d3.extent(xdomain))
-                            .range([0, dimension.chartWidth-dimension.yOffset]);
+                            .range([0, dimension.chartWidth]);
 
 
             return scale;
@@ -199,31 +197,39 @@ module powerbi.extensibility.visual {
         private setYScale(data, dimension) {
 
             var scale = d3.scale.ordinal()
-                            .rangeBands([0, dimension.chartHeight], .05)
+                            .rangeBands([0, dimension.chartHeight], .2)
                             .domain(data.map(d=>d.activity));
 
             return scale;
         }
       
+        private setXAxisStyle(chartSvg){
+           
+            chartSvg.select("g.xaxis").selectAll("text")
+                .attr("fill", "rgb(119, 119, 119)")
+                .style("text-anchor", "end")
+                .attr("font-size",this.fontSize + "px")
+                  .attr("dx", 6)
+                  .attr("dy", -1)
+                  .attr("transform", function (d) {
+                      return "rotate(-50)"
+                  });
+        }
+
         private drawXScale(xScale, chartSvg, dimension) {
 
             var xaxis = d3.svg.axis()
                 .scale(xScale)
-               
+                .tickSize(-dimension.chartHeight, 0)
                 .orient("bottom");
 
             var xAxisG = chartSvg
                 .append("g")
                 .attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight) + ")")
-                .attr("class", "axis")
+                .attr("class", "xaxis")
                 .call(xaxis)
 
-            xAxisG.selectAll("text")
-                .attr("fill", "rgb(119, 119, 119)")
-                .append("title")
-                .text(d => d);
-
-            xAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
+                this.setXAxisStyle(chartSvg) 
 
         }
 
@@ -231,6 +237,7 @@ module powerbi.extensibility.visual {
            
             var yaxis = d3.svg.axis()
                 .scale(yScale)
+                .tickSize(-dimension.width, 0)
                 .orient("left");
 
             var yAxisG = chartSvg
@@ -240,18 +247,15 @@ module powerbi.extensibility.visual {
                 .attr("class", "axis")
                 .call(yaxis);
 
-            yAxisG.selectAll("text").attr("fill", "rgb(119, 119, 119)");
+            yAxisG.selectAll("text")
+            .attr("font-size",this.fontSize + "px")
+            .attr("fill", "rgb(119, 119, 119)");
+
+            yAxisG.selectAll("line")
+            .attr("transform", "translate("+ (-dimension.yOffset) +"," + (-yScale.rangeBand()/2 -yScale.rangeBand()*.1 ) + ")")
         }
 
-        public drawActivityRect(xScale, yScale, chartSvg,data,dimension){
-            console.log("YRangeBand", yScale.rangeBand());
-        
-            var rectG = chartSvg
-                    .selectAll(".ganttrect")
-                    .data(data)
-                .enter()
-                    .append("g");
-
+        private setRectPosition(rectG,xScale,yScale,dimension){
             rectG.attr("transform", function (d) {
                 var xVal, yVal;
 
@@ -263,8 +267,24 @@ module powerbi.extensibility.visual {
 
                 return "translate(" + (xVal + dimension.yOffset) + "," + yVal + ")";
             });
+        }
+        
+        public drawActivityRect(xScale, yScale, chartSvg,data,dimension){
+        
+            var colorScale = d3.scale.ordinal()
+            .range(this.color);
 
-            rectG.append("rect")
+            var rectG = chartSvg
+                    .selectAll(".ganttrect")
+                    .data(data)
+                .enter()
+                    .append("g");
+
+            
+            this.setRectPosition(rectG,xScale,yScale,dimension);
+
+           var rect = rectG.append("rect")
+            .attr("fill",function(d){ return colorScale(d.activity)})
             .attr("width", function (d) {
                 var width = xScale(d.timeTo) - xScale(d.timeFrom);
                 if (width === undefined || isNaN(width)) width = 0;
@@ -278,9 +298,71 @@ module powerbi.extensibility.visual {
             .attr("rx", 3)
             .attr("ry", 3)
             .attr("height", yScale.rangeBand());
-        
+
+            this.tooltipServiceWrapper.addTooltip(rect,
+                (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
+                (tooltipEvent: TooltipEventArgs<any>) => null
+            );
+
+        return rectG;
         }
-      
+        private getTooltipData(data: any): VisualTooltipDataItem[] {
+            var retData = [];
+        
+            retData.push({
+                displayName: data.activity,
+                value: data.group
+            });
+
+            retData.push({
+                displayName: 'Start date',
+                value: data.timeFrom.toLocaleString("en-GB", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric"
+                  })
+            });
+
+            retData.push({
+                displayName: 'End date',
+                value: data.timeTo.toLocaleString("en-GB", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric"
+                  })
+            });
+
+            return retData;
+        }
+
+        public drawXBrush(xScale,yScale,chartSvg,dimension,rectG){
+            var xaxis;
+            var brush = d3.svg.brush()
+                            .x(xScale.copy())
+                            .on("brush", ()=>{
+                                
+                                xScale.domain(brush.empty() ? xScale.domain() : brush.extent());
+
+                                xaxis = d3.svg.axis()
+                                .scale(xScale)
+                                .tickSize(-dimension.chartHeight, 0)
+                                .orient("bottom");
+
+                                chartSvg.select("g.xaxis").call(xaxis);
+                                this.setXAxisStyle(chartSvg); 
+                                this.setRectPosition(rectG,xScale,yScale,dimension);
+                            });
+
+             var xBrush = chartSvg
+                            .append("g")
+                            .attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.height - dimension.xbrushOffset) + ")")
+                            .call(brush);  
+                            
+                            xBrush.selectAll("rect")
+                                   .attr("fill","#f6f6f6")
+                                   .attr("height", 20);
+        }
+
         public getDateFormat(format) {
                 var dataFormat :any;
             switch (format) {
@@ -330,9 +412,8 @@ module powerbi.extensibility.visual {
             var b = parseInt(color.substring(4, 6), 16); // hexToB
             return (((r * 0.299) + (g * 0.587) + (b * 0.114)) > 186) ?
               darkColor : lightColor;
-          }
+        }
 
-      
 
         private static parseSettings(dataView: DataView): VisualSettings {
             return VisualSettings.parse(dataView) as VisualSettings;

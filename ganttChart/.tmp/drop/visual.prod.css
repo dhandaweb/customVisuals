@@ -17,9 +17,13 @@
 }
 .visual-ganttChartCCFC224D9885417F9AAF5BB8D45B007E_DEBUG .axis path {
   fill: none;
-  stroke: #cccccc;
+  stroke: #fff;
   stroke-width: 1px;
 }
 .visual-ganttChartCCFC224D9885417F9AAF5BB8D45B007E_DEBUG .axis line {
-  stroke: #cccccc;
+  stroke: #fff;
+}
+.visual-ganttChartCCFC224D9885417F9AAF5BB8D45B007E_DEBUG .tick line {
+  stroke: #f6f6f6;
+  shape-rendering: crispedges;
 }
