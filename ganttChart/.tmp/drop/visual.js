@@ -8934,7 +8934,10 @@ var powerbi;
                         this.groupIndex = 0;
                         this.timeFromIndex = 0;
                         this.timeToIndex = 0;
-                        this.color = ["#8950FC", "#3699FF", "#019C8C", "#7A084B", "#0BB7AF", "#F65163"];
+                        this.showXaxisBrush = false;
+                        this.showYaxisBrush = false;
+                        //private color =["#8950FC","#3699FF","#019C8C","#7A084B","#0BB7AF","#F65163","#0BB783",];
+                        this.color = ["#00B9FA", "#63A8FF", "#63A8FF", "#7EA0FF", "#9798FF", "#AF8EFD", "#C683F2", "#FF4FAC", "#F95CC2", "#FF4FAC", "#FF4395"];
                         this.element = d3.select(options.element);
                         this.host = options.host;
                         this.tooltipServiceWrapper = ganttChartCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
@@ -8943,6 +8946,7 @@ var powerbi;
                     Visual.prototype.update = function (options) {
                         var _this = this;
                         this.columns = options.dataViews[0].metadata.columns;
+                        this.setProperties(options);
                         this.selectionManager.registerOnSelectCallback(function () {
                         });
                         this.dateFormat = this.getDateFormat("DD/MM/YYYY");
@@ -8995,15 +8999,30 @@ var powerbi;
                         this.drawXScale(xScale, chartSvg, dimension);
                         this.drawYScale(yScale, chartSvg, dimension, data);
                         var ganttRect = this.drawActivityRect(xScale, yScale, chartSvg, data, dimension);
-                        this.drawXBrush(xScale, yScale, chartSvg, dimension, ganttRect);
+                        if (this.showXaxisBrush)
+                            this.drawXBrush(xScale, yScale, chartSvg, dimension, ganttRect);
+                        if (this.showYaxisBrush)
+                            this.drawYBrush(xScale, yScale, chartSvg, dimension, ganttRect);
+                    };
+                    Visual.prototype.setProperties = function (options) {
+                        if (options.dataViews[0].metadata.objects) {
+                            if (options.dataViews[0].metadata.objects["axis"]) {
+                                var axis = options.dataViews[0].metadata.objects["axis"];
+                                if (axis.showXaxisBrush !== undefined)
+                                    this.showXaxisBrush = axis["showXaxisBrush"];
+                                if (axis.showYaxisBrush !== undefined)
+                                    this.showYaxisBrush = axis["showYaxisBrush"];
+                            }
+                        }
                     };
                     Visual.prototype.getDimensions = function (vp, data) {
                         var _this = this;
                         var max = d3.max(data.map(function (d) { return d.activity.length * (_this.fontSize / 2); }));
                         var xOffset, yOffset, chartWidth, chartHeight;
-                        var xbrushOffset = 30;
+                        var xbrushOffset = this.showXaxisBrush ? 30 : 0;
+                        var ybrushOffset = this.showYaxisBrush ? 20 : 0;
                         xOffset = xbrushOffset + 40;
-                        yOffset = max;
+                        yOffset = max + ybrushOffset;
                         chartWidth = vp.width - yOffset;
                         chartHeight = vp.height - xOffset;
                         return {
@@ -9012,6 +9031,7 @@ var powerbi;
                             xOffset: xOffset,
                             yOffset: yOffset,
                             xbrushOffset: xbrushOffset,
+                            ybrushOffset: ybrushOffset,
                             chartWidth: chartWidth,
                             chartHeight: chartHeight
                         };
@@ -9064,9 +9084,12 @@ var powerbi;
                         var yAxisG = chartSvg
                             .append("g")
                             .attr("fill", "rgb(119, 119, 119)")
-                            .attr("transform", "translate(" + (dimension.yOffset) + "," + (0) + ")")
-                            .attr("class", "axis")
+                            .attr("transform", "translate(" + (dimension.yOffset - dimension.ybrushOffset) + "," + (0) + ")")
+                            .attr("class", "yaxis")
                             .call(yaxis);
+                        this.updateYaxisLines(yAxisG, dimension, yScale);
+                    };
+                    Visual.prototype.updateYaxisLines = function (yAxisG, dimension, yScale) {
                         yAxisG.selectAll("text")
                             .attr("font-size", this.fontSize + "px")
                             .attr("fill", "rgb(119, 119, 119)");
@@ -9074,7 +9097,8 @@ var powerbi;
                             .attr("transform", "translate(" + (-dimension.yOffset) + "," + (-yScale.rangeBand() / 2 - yScale.rangeBand() * .1) + ")");
                     };
                     Visual.prototype.setRectPosition = function (rectG, xScale, yScale, dimension) {
-                        rectG.attr("transform", function (d) {
+                        rectG
+                            .attr("transform", function (d) {
                             var xVal, yVal;
                             xVal = xScale(d.timeFrom);
                             yVal = yScale(d.activity);
@@ -9084,6 +9108,7 @@ var powerbi;
                                 xVal = -10000;
                             return "translate(" + (xVal + dimension.yOffset) + "," + yVal + ")";
                         });
+                        rectG.selectAll('rect').attr("height", yScale.rangeBand());
                     };
                     Visual.prototype.drawActivityRect = function (xScale, yScale, chartSvg, data, dimension) {
                         var _this = this;
@@ -9160,8 +9185,45 @@ var powerbi;
                             .attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.height - dimension.xbrushOffset) + ")")
                             .call(brush);
                         xBrush.selectAll("rect")
+                            .style("visibility", "visible")
                             .attr("fill", "#f6f6f6")
                             .attr("height", 20);
+                        xBrush.selectAll(".extent").attr("fill", "#b3b3b3");
+                    };
+                    Visual.prototype.drawYBrush = function (xScale, yScale, chartSvg, dimension, rectG) {
+                        var _this = this;
+                        var yaxis, yAxisG;
+                        var yScaleCopy = yScale.copy();
+                        var brush = d3.svg.brush()
+                            .y(yScaleCopy)
+                            .on("brush", function () {
+                            var extent = brush.extent();
+                            var selected = yScaleCopy.domain().filter(function (d) {
+                                return (extent[0] <= yScaleCopy(d)) && (yScaleCopy(d) <= extent[1]);
+                            });
+                            if (selected.length === 0)
+                                selected = yScaleCopy.domain();
+                            yScale
+                                .domain(selected)
+                                .rangeBands([0, dimension.chartHeight], .2);
+                            yaxis = d3.svg.axis()
+                                .scale(yScale)
+                                .tickSize(-dimension.width, 0)
+                                .orient("left");
+                            yAxisG = chartSvg.select("g.yaxis")
+                                .call(yaxis);
+                            _this.updateYaxisLines(yAxisG, dimension, yScale);
+                            _this.setRectPosition(rectG, xScale, yScale, dimension);
+                        });
+                        var yBrush = chartSvg
+                            .append("g")
+                            .attr("transform", "translate(" + (dimension.yOffset - dimension.ybrushOffset) + "," + (0) + ")")
+                            .call(brush);
+                        yBrush.selectAll("rect")
+                            .style("visibility", "visible")
+                            .attr("fill", "#f6f6f6")
+                            .attr("width", 15);
+                        yBrush.selectAll(".extent").attr("fill", "#b3b3b3");
                     };
                     Visual.prototype.getDateFormat = function (format) {
                         var dataFormat;
@@ -9218,8 +9280,9 @@ var powerbi;
                         var objectName = options.objectName;
                         var objectEnumeration = [];
                         switch (objectName) {
-                            case 'Actual':
-                                objectEnumeration.push({ objectName: objectName, properties: { currentHeader: this.currentHeader }, selector: null });
+                            case 'axis':
+                                objectEnumeration.push({ objectName: objectName, properties: { showXaxisBrush: this.showXaxisBrush }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { showYaxisBrush: this.showYaxisBrush }, selector: null });
                                 break;
                         }
                         ;

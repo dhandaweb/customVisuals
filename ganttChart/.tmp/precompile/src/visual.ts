@@ -72,7 +72,11 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
         private timeFromIndex: any = 0;
         private timeToIndex: any = 0;
 
-        private color =["#8950FC","#3699FF","#019C8C","#7A084B","#0BB7AF","#F65163"];
+        private showXaxisBrush:any = false;
+        private showYaxisBrush:any = false;
+
+        //private color =["#8950FC","#3699FF","#019C8C","#7A084B","#0BB7AF","#F65163","#0BB783",];
+        private color =["#00B9FA","#63A8FF","#63A8FF","#7EA0FF","#9798FF","#AF8EFD","#C683F2","#FF4FAC","#F95CC2","#FF4FAC","#FF4395"];
 
         constructor(options: VisualConstructorOptions) {
 
@@ -84,7 +88,7 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
 
         public update(options: VisualUpdateOptions) {
             this.columns = options.dataViews[0].metadata.columns;
-
+            this.setProperties(options);
             this.selectionManager.registerOnSelectCallback(() => {
                
             });
@@ -152,7 +156,20 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
        
         var ganttRect  = this.drawActivityRect(xScale,yScale, chartSvg,data,dimension);
 
-        this.drawXBrush(xScale,yScale,chartSvg,dimension,ganttRect)
+        if(this.showXaxisBrush) this.drawXBrush(xScale,yScale,chartSvg,dimension,ganttRect);
+        if(this.showYaxisBrush) this.drawYBrush(xScale,yScale,chartSvg,dimension,ganttRect);
+        }
+
+        private setProperties(options) {
+
+            if (options.dataViews[0].metadata.objects) {
+
+                if (options.dataViews[0].metadata.objects["axis"]) {
+                    var axis = options.dataViews[0].metadata.objects["axis"];
+                    if (axis.showXaxisBrush !== undefined) this.showXaxisBrush = axis["showXaxisBrush"];
+                    if (axis.showYaxisBrush !== undefined) this.showYaxisBrush = axis["showYaxisBrush"];
+                }
+            }
         }
 
         private getDimensions(vp, data) {
@@ -160,10 +177,11 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
            var max = d3.max(data.map(d=>d.activity.length*(this.fontSize/2)));
 
             let xOffset, yOffset, chartWidth, chartHeight;
-            let xbrushOffset = 30;
+            let xbrushOffset = this.showXaxisBrush ? 30 : 0;
+            let ybrushOffset = this.showYaxisBrush ? 20 : 0;
             xOffset = xbrushOffset + 40;
            
-            yOffset = max;
+            yOffset = max + ybrushOffset;
             chartWidth = vp.width - yOffset ;
             chartHeight = vp.height - xOffset;
            
@@ -173,6 +191,7 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
                 xOffset: xOffset,
                 yOffset: yOffset,
                 xbrushOffset:xbrushOffset,
+                ybrushOffset:ybrushOffset,
                 chartWidth: chartWidth,
                 chartHeight: chartHeight
             }
@@ -243,10 +262,15 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
             var yAxisG = chartSvg
                 .append("g")
                 .attr("fill", "rgb(119, 119, 119)")
-                .attr("transform", "translate(" + (dimension.yOffset) + "," + (0) + ")")
-                .attr("class", "axis")
+                .attr("transform", "translate(" + (dimension.yOffset - dimension.ybrushOffset) + "," + (0) + ")")
+                .attr("class", "yaxis")
                 .call(yaxis);
+           
+                this.updateYaxisLines(yAxisG,dimension,yScale);
+            
+        }
 
+        private updateYaxisLines(yAxisG,dimension,yScale){
             yAxisG.selectAll("text")
             .attr("font-size",this.fontSize + "px")
             .attr("fill", "rgb(119, 119, 119)");
@@ -256,7 +280,9 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
         }
 
         private setRectPosition(rectG,xScale,yScale,dimension){
-            rectG.attr("transform", function (d) {
+            
+            rectG
+            .attr("transform", function (d) {
                 var xVal, yVal;
 
                 xVal = xScale(d.timeFrom);
@@ -267,6 +293,8 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
 
                 return "translate(" + (xVal + dimension.yOffset) + "," + yVal + ")";
             });
+
+            rectG.selectAll('rect').attr("height", yScale.rangeBand())
         }
         
         public drawActivityRect(xScale, yScale, chartSvg,data,dimension){
@@ -306,6 +334,7 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
 
         return rectG;
         }
+
         private getTooltipData(data: any): VisualTooltipDataItem[] {
             var retData = [];
         
@@ -359,8 +388,53 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
                             .call(brush);  
                             
                             xBrush.selectAll("rect")
+                                   .style("visibility","visible")
                                    .attr("fill","#f6f6f6")
                                    .attr("height", 20);
+                            xBrush.selectAll(".extent").attr("fill","#b3b3b3")
+        }
+
+        public drawYBrush(xScale,yScale,chartSvg,dimension,rectG){
+            var yaxis,yAxisG;
+            var yScaleCopy = yScale.copy();
+            var brush = d3.svg.brush()
+                            .y(yScaleCopy)
+                            .on("brush", ()=>{
+                                
+                                var extent = brush.extent();
+                                var selected = yScaleCopy.domain().filter(function (d) { 
+                                    return (extent[0] <= yScaleCopy(d)) && (yScaleCopy(d) <= extent[1]);
+                                 });
+
+                                if (selected.length === 0) selected = yScaleCopy.domain();
+                                
+                                yScale
+                                    .domain(selected)
+                                    .rangeBands([0, dimension.chartHeight], .2);
+
+                                yaxis = d3.svg.axis()
+                                .scale(yScale)
+                                .tickSize(-dimension.width, 0)
+                                .orient("left");
+
+                                yAxisG = chartSvg.select("g.yaxis")
+                                .call(yaxis);
+
+                                this.updateYaxisLines(yAxisG,dimension,yScale);
+                                this.setRectPosition(rectG,xScale,yScale,dimension);
+                            });
+
+             var yBrush = chartSvg
+                            .append("g")
+                            .attr("transform", "translate(" + (dimension.yOffset - dimension.ybrushOffset) + "," + (0) + ")")
+                            .call(brush);  
+                            
+                            yBrush.selectAll("rect")
+                                   .style("visibility","visible")
+                                   .attr("fill","#f6f6f6")
+                                   .attr("width", 15);
+
+                                   yBrush.selectAll(".extent").attr("fill","#b3b3b3")
         }
 
         public getDateFormat(format) {
@@ -425,8 +499,9 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
             let objectEnumeration: VisualObjectInstance[] = [];
 
             switch (objectName) {
-                case 'Actual':
-                    objectEnumeration.push({ objectName: objectName, properties: { currentHeader: this.currentHeader},selector: null});
+                case 'axis':
+                    objectEnumeration.push({ objectName: objectName, properties: { showXaxisBrush: this.showXaxisBrush},selector: null});
+                    objectEnumeration.push({ objectName: objectName, properties: { showYaxisBrush: this.showYaxisBrush},selector: null});
                  break;
                     
              

@@ -89,13 +89,16 @@
         }
     ],
     "objects": {
-        "Heat": {
-            "displayName": "Heat",
+        "axis": {
+            "displayName": "Axis",
             "properties": {
-              
-                "currentHeader": {
-                    "displayName": "Heat",
-                    "type": { "text": true }
+                "showXaxisBrush": {
+                    "displayName": "X Axis Brush",
+                    "type": { "bool": true }
+                },
+                "showYaxisBrush": {
+                    "displayName": "Y Axis Brush",
+                    "type": { "bool": true }
                 }
             }
         }
