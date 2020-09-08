@@ -65,15 +65,20 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
         private timeTo: any = false;
         private activity: any = false;
         private group: any = false;
+        private milestone: any = false;
         private dateFormat: any;
 
         private activityIndex: any = 0;
         private groupIndex: any = 0;
         private timeFromIndex: any = 0;
         private timeToIndex: any = 0;
+        private milestoneIndex: any = 0;
+        
 
         private showXaxisBrush:any = false;
         private showYaxisBrush:any = false;
+        private milestoneSymbol:any = "diamond";
+        private milestoneColor:any = { solid: { color: "#50005C" } };
 
         //private color =["#8950FC","#3699FF","#019C8C","#7A084B","#0BB7AF","#F65163","#0BB783",];
         private color =["#00B9FA","#63A8FF","#63A8FF","#7EA0FF","#9798FF","#AF8EFD","#C683F2","#FF4FAC","#F95CC2","#FF4FAC","#FF4395"];
@@ -112,6 +117,10 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
                     this.timeTo = true;
                     this.timeToIndex=i;
                 }
+                if (d.roles["timeTo"]) {
+                    this.milestone = true;
+                    this.milestoneIndex=i;
+                }
                 return d;
             });
 
@@ -123,7 +132,8 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
                     timeFrom:(d[this.timeFromIndex]),
                     timeTo:(d[this.timeToIndex]),
                     group:d[this.groupIndex],
-                    activity:d[this.activityIndex]
+                    activity:d[this.activityIndex],
+                    milestone:this.milestone ? d[this.milestoneIndex] : null
                 });
 
             });
@@ -156,8 +166,10 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
        
         var ganttRect  = this.drawActivityRect(xScale,yScale, chartSvg,data,dimension);
 
+        if(this.milestone) this.drawMilestone(xScale, yScale, chartSvg,data,dimension);
         if(this.showXaxisBrush) this.drawXBrush(xScale,yScale,chartSvg,dimension,ganttRect);
         if(this.showYaxisBrush) this.drawYBrush(xScale,yScale,chartSvg,dimension,ganttRect);
+
         }
 
         private setProperties(options) {
@@ -168,6 +180,11 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
                     var axis = options.dataViews[0].metadata.objects["axis"];
                     if (axis.showXaxisBrush !== undefined) this.showXaxisBrush = axis["showXaxisBrush"];
                     if (axis.showYaxisBrush !== undefined) this.showYaxisBrush = axis["showYaxisBrush"];
+                }
+                if (options.dataViews[0].metadata.objects["milestone"]) {
+                    var milestone = options.dataViews[0].metadata.objects["milestone"];
+                    if (milestone.milestoneSymbol !== undefined) this.milestoneSymbol = milestone["milestoneSymbol"];
+                    if (milestone.milestoneColor !== undefined) this.milestoneColor = milestone["milestoneColor"];
                 }
             }
         }
@@ -296,6 +313,24 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
 
             rectG.selectAll('rect').attr("height", yScale.rangeBand())
         }
+
+        private setMilestonePosition(xScale,yScale,dimension){
+            
+            d3.selectAll(".milestone")
+                .attr("transform", function (d) {
+                    var xVal, yVal;
+
+                    xVal = xScale(d.milestone);
+                    yVal = yScale(d.activity);
+
+                    if (yVal === undefined) yVal = -1000;
+                    if (xVal < 0 || isNaN(xVal) || xVal === undefined) xVal = -10000;
+
+                    return "translate(" + (xVal + dimension.yOffset) + "," + (yVal + yScale.rangeBand()/2) + ")";
+                });
+
+            //rectG.selectAll('rect').attr("height", yScale.rangeBand())
+        }
         
         public drawActivityRect(xScale, yScale, chartSvg,data,dimension){
         
@@ -333,6 +368,29 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
             );
 
         return rectG;
+        }
+
+        public drawMilestone(xScale, yScale, chartSvg,data,dimension){
+        console.log(this.milestoneSymbol);
+            var arc = d3.svg.symbol().type(String(this.milestoneSymbol))
+                            .size(50);
+
+            var symbol = chartSvg
+                    .selectAll(".ganttrect")
+                    .data(data)
+                .enter()
+                .append('path')
+                .attr("class","milestone")
+                .attr('d',arc)
+                .attr("fill",this.milestoneColor.solid.color);
+
+            this.setMilestonePosition(xScale,yScale,dimension);
+
+            this.tooltipServiceWrapper.addTooltip(symbol,
+                (tooltipEvent: TooltipEventArgs<any>) => this.getTooltipData(tooltipEvent.data),
+                (tooltipEvent: TooltipEventArgs<any>) => null
+            );
+
         }
 
         private getTooltipData(data: any): VisualTooltipDataItem[] {
@@ -380,6 +438,7 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
                                 chartSvg.select("g.xaxis").call(xaxis);
                                 this.setXAxisStyle(chartSvg); 
                                 this.setRectPosition(rectG,xScale,yScale,dimension);
+                                this.setMilestonePosition(xScale,yScale,dimension);
                             });
 
              var xBrush = chartSvg
@@ -422,6 +481,7 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
 
                                 this.updateYaxisLines(yAxisG,dimension,yScale);
                                 this.setRectPosition(rectG,xScale,yScale,dimension);
+                                this.setMilestonePosition(xScale,yScale,dimension);
                             });
 
              var yBrush = chartSvg
@@ -503,7 +563,10 @@ module powerbi.extensibility.visual.ganttChartCCFC224D9885417F9AAF5BB8D45B007E  
                     objectEnumeration.push({ objectName: objectName, properties: { showXaxisBrush: this.showXaxisBrush},selector: null});
                     objectEnumeration.push({ objectName: objectName, properties: { showYaxisBrush: this.showYaxisBrush},selector: null});
                  break;
-                    
+                 case 'milestone':
+                    objectEnumeration.push({ objectName: objectName, properties: { milestoneSymbol: this.milestoneSymbol},selector: null});
+                    objectEnumeration.push({ objectName: objectName, properties: { milestoneColor: this.milestoneColor},selector: null});
+                 break;   
              
 
             };

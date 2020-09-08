@@ -23,6 +23,11 @@
             "kind": "Grouping"
         },
         {
+            "displayName": "Milestone",
+            "name": "milestone",
+            "kind": "Grouping"
+        },
+        {
             "displayName": "Additional",
             "name": "additional",
             "kind": "Measure"
@@ -47,6 +52,11 @@
                         {
                             "for": {
                                 "in": "timeTo"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "milestone"
                             }
                         },
                         {
@@ -99,6 +109,48 @@
                 "showYaxisBrush": {
                     "displayName": "Y Axis Brush",
                     "type": { "bool": true }
+                }
+            }
+        },
+        "milestone": {
+            "displayName": "Milestone",
+            "properties": {
+                "milestoneSymbol": {
+                    "displayName": "Symbol",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "circle",
+                                "displayName": "Circle"
+                            },
+                            {
+                                "value": "square",
+                                "displayName": "Square"
+                            },
+                            {
+                                "value": "diamond",
+                                "displayName": "Diamond"
+                            },
+                            {
+                                "value": "cross",
+                                "displayName": "Cross"
+                            },
+                            {
+                                "value": "triangle-up",
+                                "displayName": "Triangle"
+                            }
+                        ]
+                    }
+                },
+                "milestoneColor": {
+                    "displayName": "Y Axis Brush",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
                 }
             }
         }
