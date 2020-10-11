@@ -8931,30 +8931,54 @@ var powerbi;
                         this.activity = false;
                         this.group = false;
                         this.milestone = false;
+                        this.milestoneDesc = false;
+                        this.projectName = false;
                         this.activityIndex = 0;
                         this.groupIndex = 0;
                         this.timeFromIndex = 0;
                         this.timeToIndex = 0;
                         this.milestoneIndex = 0;
+                        this.milestoneDescIndex = 0;
+                        this.projectNameIndex = 0;
                         this.showXaxisBrush = false;
                         this.showYaxisBrush = false;
                         this.milestoneSymbol = "diamond";
                         this.milestoneColor = { solid: { color: "#50005C" } };
-                        //private color =["#8950FC","#3699FF","#019C8C","#7A084B","#0BB7AF","#F65163","#0BB783",];
-                        this.color = ["#00B9FA", "#63A8FF", "#63A8FF", "#7EA0FF", "#9798FF", "#AF8EFD", "#C683F2", "#FF4FAC", "#F95CC2", "#FF4FAC", "#FF4395"];
+                        this.colorBy = "phase";
+                        this.colorType = "linear";
+                        this.legendPosition = "right";
+                        this.legendName = "Phase";
+                        this.legendFontSize = 10;
                         this.element = d3.select(options.element);
                         this.host = options.host;
+                        this.colorPalette = this.host.colorPalette;
                         this.tooltipServiceWrapper = ganttChartCCFC224D9885417F9AAF5BB8D45B007E.createTooltipServiceWrapper(this.host.tooltipService, options.element);
                         this.selectionManager = options.host.createSelectionManager();
                     }
                     Visual.prototype.update = function (options) {
                         var _this = this;
+                        this.activityIndex = 0;
+                        this.groupIndex = 0;
+                        this.timeFromIndex = 0;
+                        this.timeToIndex = 0;
+                        this.milestoneIndex = 0;
+                        this.milestoneDescIndex = 0;
+                        this.projectNameIndex = 0;
+                        this.timeFrom = false;
+                        this.timeTo = false;
+                        this.activity = false;
+                        this.group = false;
+                        this.milestone = false;
+                        this.milestoneDesc = false;
+                        this.projectName = false;
                         this.columns = options.dataViews[0].metadata.columns;
+                        this.colorPalette.reset();
                         this.setProperties(options);
                         this.selectionManager.registerOnSelectCallback(function () {
                         });
                         this.dateFormat = this.getDateFormat("DD/MM/YYYY");
                         this.element.select('.ganttChart').remove();
+                        this.milestone = false;
                         this.columns.map(function (d, i) {
                             if (d.roles["activity"]) {
                                 _this.activity = true;
@@ -8972,9 +8996,17 @@ var powerbi;
                                 _this.timeTo = true;
                                 _this.timeToIndex = i;
                             }
-                            if (d.roles["timeTo"]) {
+                            if (d.roles["milestone"]) {
                                 _this.milestone = true;
                                 _this.milestoneIndex = i;
+                            }
+                            if (d.roles["milestoneDesc"]) {
+                                _this.milestoneDesc = true;
+                                _this.milestoneDescIndex = i;
+                            }
+                            if (d.roles["projectName"]) {
+                                _this.projectName = true;
+                                _this.projectNameIndex = i;
                             }
                             return d;
                         });
@@ -8986,7 +9018,9 @@ var powerbi;
                                 timeTo: (d[_this.timeToIndex]),
                                 group: d[_this.groupIndex],
                                 activity: d[_this.activityIndex],
-                                milestone: _this.milestone ? d[_this.milestoneIndex] : null
+                                milestone: _this.milestone ? d[_this.milestoneIndex] : null,
+                                milestoneDesc: _this.milestoneDesc ? d[_this.milestoneDescIndex] : null,
+                                projectName: _this.projectName ? d[_this.projectNameIndex] : null
                             });
                         });
                         var dimension = this.getDimensions(options.viewport, data);
@@ -9004,16 +9038,44 @@ var powerbi;
                             _this.selectionManager.clear();
                         });
                         var chartSvg = chart.append("g");
+                        var chartLegend = chart.append("g");
                         chartSvg.attr("transform", "translate(0," + 5 + ")");
                         this.drawXScale(xScale, chartSvg, dimension);
-                        this.drawYScale(yScale, chartSvg, dimension, data);
                         var ganttRect = this.drawActivityRect(xScale, yScale, chartSvg, data, dimension);
+                        chartSvg.append("rect")
+                            .attr("height", dimension.height)
+                            .attr("width", dimension.yOffset)
+                            .attr("fill", "#fff");
+                        this.drawYScale(yScale, chartSvg, dimension, data);
                         if (this.milestone)
                             this.drawMilestone(xScale, yScale, chartSvg, data, dimension);
                         if (this.showXaxisBrush)
                             this.drawXBrush(xScale, yScale, chartSvg, dimension, ganttRect);
                         if (this.showYaxisBrush)
                             this.drawYBrush(xScale, yScale, chartSvg, dimension, ganttRect);
+                        if (this.legendPosition !== "none")
+                            this.drawLegend(chartLegend, chartSvg, dimension, data);
+                        if (this.xAxisBrushExtent !== undefined && this.showXaxisBrush)
+                            this.setXAxisBrushExtent(xScale, dimension, chartSvg, ganttRect, yScale);
+                    };
+                    Visual.prototype.getLegendData = function (data) {
+                        var _this = this;
+                        var legendData = [];
+                        if (this.legendPosition !== "none") {
+                            data.map(function (d) {
+                                _this.colorBy === "project" ? legendData.push(d.activity) : legendData.push(d.group);
+                            });
+                            legendData = legendData.filter(function (v, i, a) { return a.indexOf(v) === i; }).filter(function (d) { return d !== null; });
+                        }
+                        if (this.legendPosition !== "none"
+                            && this.colorBy === "project"
+                            && this.activity === false)
+                            return [];
+                        if (this.legendPosition !== "none"
+                            && this.colorBy === "phase"
+                            && this.group === false)
+                            return [];
+                        return legendData;
                     };
                     Visual.prototype.setProperties = function (options) {
                         if (options.dataViews[0].metadata.objects) {
@@ -9031,18 +9093,44 @@ var powerbi;
                                 if (milestone.milestoneColor !== undefined)
                                     this.milestoneColor = milestone["milestoneColor"];
                             }
+                            if (options.dataViews[0].metadata.objects["ganttColor"]) {
+                                var ganttColor = options.dataViews[0].metadata.objects["ganttColor"];
+                                if (ganttColor.colorBy !== undefined)
+                                    this.colorBy = ganttColor["colorBy"];
+                                if (ganttColor.colorType !== undefined)
+                                    this.colorType = ganttColor["colorType"];
+                            }
+                            if (options.dataViews[0].metadata.objects["Legend"]) {
+                                var legend = options.dataViews[0].metadata.objects["Legend"];
+                                if (legend.legendPosition !== undefined)
+                                    this.legendPosition = legend["legendPosition"];
+                                if (legend.fontSize !== undefined)
+                                    this.legendFontSize = legend["fontSize"];
+                                if (legend.legendName !== undefined)
+                                    this.legendName = legend["legendName"];
+                            }
                         }
                     };
                     Visual.prototype.getDimensions = function (vp, data) {
                         var _this = this;
                         var max = d3.max(data.map(function (d) { return d.activity.length * (_this.fontSize / 2); }));
+                        var legendDataRaw = this.getLegendData(data);
+                        var legendData = this.setLegendWidth(this.element, legendDataRaw);
+                        var xlegendOffset = 0;
+                        var ylegendOffset = 0;
+                        if (legendData.length > 0) {
+                            if (this.legendPosition == "right")
+                                ylegendOffset = d3.max(legendData.map(function (d) { return d.width; })) + (4 * this.legendFontSize);
+                            if (this.legendPosition == "top" || this.legendPosition === "bottom")
+                                xlegendOffset = this.legendFontSize * 3;
+                        }
                         var xOffset, yOffset, chartWidth, chartHeight;
-                        var xbrushOffset = this.showXaxisBrush ? 30 : 0;
+                        var xbrushOffset = this.showXaxisBrush ? 40 : 0;
                         var ybrushOffset = this.showYaxisBrush ? 20 : 0;
                         xOffset = xbrushOffset + 40;
                         yOffset = max + ybrushOffset;
-                        chartWidth = vp.width - yOffset;
-                        chartHeight = vp.height - xOffset;
+                        chartWidth = vp.width - yOffset - ylegendOffset;
+                        chartHeight = vp.height - xOffset - xlegendOffset;
                         return {
                             width: vp.width,
                             height: vp.height,
@@ -9051,7 +9139,9 @@ var powerbi;
                             xbrushOffset: xbrushOffset,
                             ybrushOffset: ybrushOffset,
                             chartWidth: chartWidth,
-                            chartHeight: chartHeight
+                            chartHeight: chartHeight,
+                            ylegendOffset: ylegendOffset,
+                            xlegendOffset: xlegendOffset
                         };
                     };
                     Visual.prototype.setXScale = function (data, dimension) {
@@ -9076,8 +9166,8 @@ var powerbi;
                             .attr("fill", "rgb(119, 119, 119)")
                             .style("text-anchor", "end")
                             .attr("font-size", this.fontSize + "px")
-                            .attr("dx", 6)
-                            .attr("dy", -1)
+                            .attr("dx", -2)
+                            .attr("dy", 5)
                             .attr("transform", function (d) {
                             return "rotate(-50)";
                         });
@@ -9085,6 +9175,7 @@ var powerbi;
                     Visual.prototype.drawXScale = function (xScale, chartSvg, dimension) {
                         var xaxis = d3.svg.axis()
                             .scale(xScale)
+                            .ticks(Math.floor(dimension.chartWidth / 40))
                             .tickSize(-dimension.chartHeight, 0)
                             .orient("bottom");
                         var xAxisG = chartSvg
@@ -9119,6 +9210,7 @@ var powerbi;
                             .attr("transform", function (d) {
                             var xVal, yVal;
                             xVal = xScale(d.timeFrom);
+                            xVal = xScale(d.timeFrom);
                             yVal = yScale(d.activity);
                             if (yVal === undefined)
                                 yVal = -1000;
@@ -9144,8 +9236,6 @@ var powerbi;
                     };
                     Visual.prototype.drawActivityRect = function (xScale, yScale, chartSvg, data, dimension) {
                         var _this = this;
-                        var colorScale = d3.scale.ordinal()
-                            .range(this.color);
                         var rectG = chartSvg
                             .selectAll(".ganttrect")
                             .data(data)
@@ -9153,7 +9243,6 @@ var powerbi;
                             .append("g");
                         this.setRectPosition(rectG, xScale, yScale, dimension);
                         var rect = rectG.append("rect")
-                            .attr("fill", function (d) { return colorScale(d.activity); })
                             .attr("width", function (d) {
                             var width = xScale(d.timeTo) - xScale(d.timeFrom);
                             if (width === undefined || isNaN(width))
@@ -9170,12 +9259,29 @@ var powerbi;
                             .attr("rx", 3)
                             .attr("ry", 3)
                             .attr("height", yScale.rangeBand());
+                        this.setColor(rect);
+                        if (this.projectName) {
+                            rectG.append("text").text(function (d) {
+                                return d.projectName;
+                            })
+                                .attr("dy", 5)
+                                .attr("font-size", 10)
+                                .attr("y", yScale.rangeBand() / 2);
+                        }
                         this.tooltipServiceWrapper.addTooltip(rect, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
                         return rectG;
                     };
+                    Visual.prototype.setColor = function (rect) {
+                        var _this = this;
+                        var color = ["#00B9FA", "#63A8FF", "#63A8FF", "#7EA0FF", "#9798FF", "#AF8EFD", "#C683F2", "#FF4FAC", "#F95CC2", "#FF4FAC", "#FF4395"];
+                        var colorScale = d3.scale.ordinal()
+                            .range(color);
+                        rect.attr("fill", function (d) {
+                            return _this.colorBy === "project" ? _this.colorPalette.getColor(d.activity).value : _this.colorPalette.getColor(d.group).value;
+                        });
+                    };
                     Visual.prototype.drawMilestone = function (xScale, yScale, chartSvg, data, dimension) {
                         var _this = this;
-                        console.log(this.milestoneSymbol);
                         var arc = d3.svg.symbol().type(String(this.milestoneSymbol))
                             .size(50);
                         var symbol = chartSvg
@@ -9187,30 +9293,62 @@ var powerbi;
                             .attr('d', arc)
                             .attr("fill", this.milestoneColor.solid.color);
                         this.setMilestonePosition(xScale, yScale, dimension);
-                        this.tooltipServiceWrapper.addTooltip(symbol, function (tooltipEvent) { return _this.getTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
+                        this.tooltipServiceWrapper.addTooltip(symbol, function (tooltipEvent) { return _this.getMilestoneTooltipData(tooltipEvent.data); }, function (tooltipEvent) { return null; });
                     };
                     Visual.prototype.getTooltipData = function (data) {
                         var retData = [];
-                        retData.push({
-                            displayName: data.activity,
-                            value: data.group
-                        });
-                        retData.push({
-                            displayName: 'Start date',
-                            value: data.timeFrom.toLocaleString("en-GB", {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric"
-                            })
-                        });
-                        retData.push({
-                            displayName: 'End date',
-                            value: data.timeTo.toLocaleString("en-GB", {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric"
-                            })
-                        });
+                        if (data.activity) {
+                            retData.push({
+                                displayName: 'Project',
+                                value: data.activity,
+                            });
+                        }
+                        if (data.group) {
+                            retData.push({
+                                displayName: "Phase",
+                                value: data.group
+                            });
+                        }
+                        if (data.timeFrom) {
+                            retData.push({
+                                displayName: 'Start date',
+                                value: data.timeFrom.toLocaleString("en-GB", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric"
+                                })
+                            });
+                        }
+                        if (data.timeTo) {
+                            retData.push({
+                                displayName: 'End date',
+                                value: data.timeTo.toLocaleString("en-GB", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric"
+                                })
+                            });
+                        }
+                        return retData;
+                    };
+                    Visual.prototype.getMilestoneTooltipData = function (data) {
+                        var retData = [];
+                        if (data.milestone) {
+                            retData.push({
+                                displayName: 'Milestone Date',
+                                value: data.milestone.toLocaleString("en-GB", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric"
+                                }),
+                            });
+                        }
+                        if (data.milestoneDesc) {
+                            retData.push({
+                                displayName: "Description",
+                                value: data.milestoneDesc
+                            });
+                        }
                         return retData;
                     };
                     Visual.prototype.drawXBrush = function (xScale, yScale, chartSvg, dimension, rectG) {
@@ -9219,9 +9357,11 @@ var powerbi;
                         var brush = d3.svg.brush()
                             .x(xScale.copy())
                             .on("brush", function () {
+                            _this.xAxisBrushExtent = JSON.stringify(brush.extent());
                             xScale.domain(brush.empty() ? xScale.domain() : brush.extent());
                             xaxis = d3.svg.axis()
                                 .scale(xScale)
+                                .ticks(Math.floor(dimension.chartWidth / 40))
                                 .tickSize(-dimension.chartHeight, 0)
                                 .orient("bottom");
                             chartSvg.select("g.xaxis").call(xaxis);
@@ -9229,15 +9369,45 @@ var powerbi;
                             _this.setRectPosition(rectG, xScale, yScale, dimension);
                             _this.setMilestonePosition(xScale, yScale, dimension);
                         });
+                        if (this.xAxisBrushExtent) {
+                            var extent = JSON.parse(this.xAxisBrushExtent);
+                            extent = [new Date(extent[0]), new Date(extent[1])];
+                            var startextent = xScale(extent[0]);
+                            var endextent = xScale(extent[1]);
+                            if (!(startextent < 0 || isNaN(startextent) || startextent === undefined)
+                                && !(endextent < 0 || isNaN(endextent) || endextent === undefined)) {
+                                brush.extent(extent);
+                            }
+                        }
                         var xBrush = chartSvg
                             .append("g")
-                            .attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.height - dimension.xbrushOffset) + ")")
+                            .attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.height - (dimension.xbrushOffset - 10)) + ")")
                             .call(brush);
                         xBrush.selectAll("rect")
                             .style("visibility", "visible")
                             .attr("fill", "#f6f6f6")
                             .attr("height", 20);
                         xBrush.selectAll(".extent").attr("fill", "#b3b3b3");
+                    };
+                    Visual.prototype.setXAxisBrushExtent = function (xScale, dimension, chartSvg, rectG, yScale) {
+                        var xaxis;
+                        var extent = JSON.parse(this.xAxisBrushExtent);
+                        extent = [new Date(extent[0]), new Date(extent[1])];
+                        var startextent = xScale(extent[0]);
+                        var endextent = xScale(extent[1]);
+                        if (!(startextent < 0 || isNaN(startextent) || startextent === undefined)
+                            && !(endextent < 0 || isNaN(endextent) || endextent === undefined)) {
+                            xScale.domain(extent);
+                            xaxis = d3.svg.axis()
+                                .scale(xScale)
+                                .ticks(Math.floor(dimension.chartWidth / 40))
+                                .tickSize(-dimension.chartHeight, 0)
+                                .orient("bottom");
+                            chartSvg.select("g.xaxis").call(xaxis);
+                            this.setXAxisStyle(chartSvg);
+                            this.setRectPosition(rectG, xScale, yScale, dimension);
+                            this.setMilestonePosition(xScale, yScale, dimension);
+                        }
                     };
                     Visual.prototype.drawYBrush = function (xScale, yScale, chartSvg, dimension, rectG) {
                         var _this = this;
@@ -9314,6 +9484,85 @@ var powerbi;
                         }
                         return dataFormat;
                     };
+                    Visual.prototype.getTextWidth = function (container, text, fontsize) {
+                        var dummytext = container.append("text").text(text).attr("font-size", fontsize);
+                        var bbox = { width: 10, height: 10 };
+                        if (dummytext.node() !== null)
+                            bbox = dummytext.node().getBBox();
+                        dummytext.remove();
+                        return bbox.width;
+                    };
+                    ;
+                    Visual.prototype.setLegendWidth = function (el, legendData) {
+                        var _this = this;
+                        var svg = el.append("svg").attr("width", 0).attr("height", 0);
+                        var legend = legendData.map(function (d) {
+                            return {
+                                width: _this.getTextWidth(svg, d, _this.legendFontSize) + 20,
+                                color: _this.colorPalette.getColor(d).value,
+                                text: d
+                            };
+                        });
+                        svg.remove();
+                        return legend;
+                    };
+                    Visual.prototype.drawLegend = function (chartLegend, chartSvg, dimension, data) {
+                        var legendData = this.getLegendData(data);
+                        if (legendData.length > 0) {
+                            var legend = this.setLegendWidth(this.element, legendData);
+                            if (this.legendName.length > 0) {
+                                var svg = this.element.append("svg").attr("width", 0).attr("height", 0);
+                                var wd = this.getTextWidth(svg, this.legendName, this.legendFontSize);
+                                svg.remove();
+                                legend.unshift({ text: this.legendName, color: "transparent", width: 50 });
+                            }
+                            if (this.legendPosition == "right") {
+                                chartLegend.attr("transform", "translate(" + (dimension.chartWidth + dimension.yOffset + (this.legendFontSize * 2)) + "," + (5) + ")");
+                                chartLegend.append("rect").attr("height", dimension.height).attr("width", dimension.ylegendOffset).attr("fill", "#fff");
+                            }
+                            if (this.legendPosition == "top") {
+                                chartSvg.attr("transform", "translate(0," + this.legendFontSize * 3 + ")");
+                                chartLegend.attr("transform", "translate(" + (dimension.yOffset) + "," + this.legendFontSize + ")");
+                            }
+                            if (this.legendPosition == "bottom") {
+                                chartLegend.attr("transform", "translate(" + (dimension.yOffset) + "," + (dimension.chartHeight + dimension.xOffset + (this.legendFontSize * 2)) + ")");
+                            }
+                            var fontSize = parseInt(this.legendFontSize);
+                            var legengG = chartLegend.selectAll(".legend")
+                                .data(legend)
+                                .enter()
+                                .append("g");
+                            if (this.legendPosition == "right")
+                                legengG.attr("transform", function (d, i) { return "translate(10," + i * (fontSize + 5) + ")"; });
+                            else {
+                                var wd = 0, rt;
+                                legengG.attr("transform", function (d, i) {
+                                    rt = "translate(" + wd + ",0)";
+                                    wd = wd + d.width;
+                                    return rt;
+                                });
+                            }
+                            legengG.append("circle")
+                                .attr("r", fontSize / 2)
+                                .attr("cy", fontSize / 5)
+                                .attr("fill", function (d) { return d.color; });
+                            legengG
+                                .append("text")
+                                .attr("x", function (d) { return d.color === "transparent" ? -5 : fontSize; })
+                                .attr("font-weight", function (d) { return d.color === "transparent" ? "bold" : "normal"; })
+                                .attr("style", function (d) {
+                                if (d.color === "transparent")
+                                    return 'fill:rgb(102, 102, 102);font-family: "Segoe UI Semibold", wf_segoe-ui_semibold, helvetica, arial, sans-serif;';
+                                else
+                                    return 'fill:rgb(102, 102, 102);font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif';
+                            })
+                                .style("font-size", fontSize + "px")
+                                .attr("y", fontSize / 2)
+                                .text(function (d) { return d.text; });
+                            legengG.style("font-size", fontSize);
+                        }
+                    };
+                    ;
                     //#endregion
                     Visual.prototype.pickTextColorBasedOnBgColorSimple = function (bgColor, lightColor, darkColor) {
                         var color = (bgColor.charAt(0) === '#') ? bgColor.substring(1, 7) : bgColor;
@@ -9338,6 +9587,15 @@ var powerbi;
                                 objectEnumeration.push({ objectName: objectName, properties: { milestoneSymbol: this.milestoneSymbol }, selector: null });
                                 objectEnumeration.push({ objectName: objectName, properties: { milestoneColor: this.milestoneColor }, selector: null });
                                 break;
+                            case 'ganttColor':
+                                objectEnumeration.push({ objectName: objectName, properties: { colorBy: this.colorBy }, selector: null });
+                                // objectEnumeration.push({ objectName: objectName, properties: { colorType: this.colorType},selector: null});
+                                break;
+                            case 'Legend':
+                                objectEnumeration.push({ objectName: objectName, properties: { legendPosition: this.legendPosition }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { legendName: this.legendName }, selector: null });
+                                objectEnumeration.push({ objectName: objectName, properties: { fontSize: this.legendFontSize }, selector: null });
+                                break;
                         }
                         ;
                         return objectEnumeration;
@@ -9356,8 +9614,8 @@ var powerbi;
     (function (visuals) {
         var plugins;
         (function (plugins) {
-            plugins.ganttChartCCFC224D9885417F9AAF5BB8D45B007E_DEBUG = {
-                name: 'ganttChartCCFC224D9885417F9AAF5BB8D45B007E_DEBUG',
+            plugins.ganttChartCCFC224D9885417F9AAF5BB8D45B007E = {
+                name: 'ganttChartCCFC224D9885417F9AAF5BB8D45B007E',
                 displayName: 'Gantt Chart',
                 class: 'Visual',
                 version: '1.0.0',

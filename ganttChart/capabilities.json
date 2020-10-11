@@ -1,13 +1,19 @@
 {
     "dataRoles": [
         {
-            "displayName": "Activity",
+            "displayName": "Project",
             "name": "activity",
             "kind": "Grouping"
            
         },
         {
-            "displayName": "Group",
+            "displayName": "Project name",
+            "name": "projectName",
+            "kind": "Grouping"
+           
+        },
+        {
+            "displayName": "Phase",
             "name": "group",
             "kind": "Grouping"
         },
@@ -28,9 +34,9 @@
             "kind": "Grouping"
         },
         {
-            "displayName": "Additional",
-            "name": "additional",
-            "kind": "Measure"
+            "displayName": "Milestone Description",
+            "name": "milestoneDesc",
+            "kind": "Grouping"
           
         }
     ],
@@ -61,7 +67,17 @@
                         },
                         {
                             "for": {
+                                "in": "milestoneDesc"
+                            }
+                        },
+                        {
+                            "for": {
                                 "in": "group"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "projectName"
                             }
                         },
                         {
@@ -93,6 +109,10 @@
                     "group": {
                         "min": 0,
                         "max": 1
+                    },
+                    "milestoneDesc": {
+                        "min": 0,
+                        "max": 1
                     }
                 }
             ]
@@ -106,9 +126,17 @@
                     "displayName": "X Axis Brush",
                     "type": { "bool": true }
                 },
+                "xAxisBrushExtent": {
+                    "displayName": "xAxisBrushExtent",
+                    "type": { "text": true }
+                },
                 "showYaxisBrush": {
                     "displayName": "Y Axis Brush",
                     "type": { "bool": true }
+                },
+                "yAxisBrushExtent": {
+                    "displayName": "yAxisBrushExtent",
+                    "type": { "text": true }
                 }
             }
         },
@@ -149,6 +177,81 @@
                             "solid": {
                                 "color": true
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "ganttColor": {
+            "displayName": "Color",
+            "properties": {
+                "colorBy": {
+                    "displayName": "Color By",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "project",
+                                "displayName": "Project"
+                            },
+                            {
+                                "value": "phase",
+                                "displayName": "Phase"
+                            }
+                        ]
+                    }
+                },
+                "colorType": {
+                    "displayName": "Color Type",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "linear",
+                                "displayName": "Linear"
+                            },
+                            {
+                                "value": "palette",
+                                "displayName": "Palette"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "Legend": {
+            "displayName": "Legend",
+            "properties": {
+                "legendPosition": {
+                    "displayName": "Legend Position",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "none",
+                                "displayName": "None"
+                            },
+                            {
+                                "value": "right",
+                                "displayName": "Right"
+                            },
+                            {
+                                "value": "top",
+                                "displayName": "Top"
+                            },
+                            {
+                                "value": "bottom",
+                                "displayName": "Bottom"
+                            }
+                        ]
+                    }
+                },
+                "legendName": {
+                    "displayName": "Legend Name",
+                    "type": { "text": true }
+                },
+                "fontSize": {
+                    "displayName": "Legend Font Size",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
                         }
                     }
                 }
