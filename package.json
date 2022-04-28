@@ -51,7 +51,7 @@
   "deprecated": false,
   "description": "Command line tool for creating and publishing visuals for Power BI",
   "devDependencies": {
-    "async": "2.0.1",
+    "async": "2.6.4",
     "eslint": "5.6.1",
     "jasmine": "2.8.0",
     "jasmine-spec-reporter": "2.5.0",
